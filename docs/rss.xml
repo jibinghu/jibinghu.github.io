@@ -1,4 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_BLACK_</title><link>https://jibinghu.github.io</link><description>TO LIVE TOWARD DEATH -&gt;&gt;</description><copyright>ZOMBIE_BLACK_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 28 May 2024 15:28:56 +0000</lastBuildDate><managingEditor>ZOMBIE_BLACK_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_BLACK_</webMaster><item><title>记录侯战森的罪证！</title><link>https://jibinghu.github.io/post/ji-lu-hou-zhan-sen-de-zui-zheng-%EF%BC%81.html</link><description>#### **天地可证**，侯战森是个大傻逼&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_BLACK_</title><link>https://jibinghu.github.io</link><description>TO LIVE TOWARD DEATH -&gt;&gt;</description><copyright>ZOMBIE_BLACK_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Wed, 29 May 2024 11:24:37 +0000</lastBuildDate><managingEditor>ZOMBIE_BLACK_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_BLACK_</webMaster><item><title>PaperReading_ConvStencil</title><link>https://jibinghu.github.io/post/PaperReading_ConvStencil.html</link><description>##### *PAPER READING*&#13;
+&#13;
+**@address: https://dl.acm.org/doi/10.1145/3627535.3638476**&#13;
+**@github: https://github.com/microsoft/ConvStencil**&#13;
+&#13;
+### ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Cores&#13;
+&#13;
+##### 关键词：&#13;
+    模版计算，卷积，张量核，矩阵乘&#13;
+&#13;
+##### 摘要：&#13;
+&#13;
+文章提出了ConvStencil，通过有效地将stencil模版计算转化为在张量核Tensor Core上的矩阵计算来实现。</description><guid isPermaLink="true">https://jibinghu.github.io/post/PaperReading_ConvStencil.html</guid><pubDate>Wed, 29 May 2024 11:24:12 +0000</pubDate></item><item><title>记录侯战森的罪证！</title><link>https://jibinghu.github.io/post/ji-lu-hou-zhan-sen-de-zui-zheng-%EF%BC%81.html</link><description>#### **天地可证**，侯战森是个大傻逼&#13;
 &#13;
 &lt;img src='https://img2024.cnblogs.com/blog/3358182/202405/3358182-20240528232629437-1616844405.jpg'&gt;。</description><guid isPermaLink="true">https://jibinghu.github.io/post/ji-lu-hou-zhan-sen-de-zui-zheng-%EF%BC%81.html</guid><pubDate>Tue, 28 May 2024 15:27:34 +0000</pubDate></item><item><title>new </title><link>https://jibinghu.github.io/post/new%20.html</link><description>first。</description><guid isPermaLink="true">https://jibinghu.github.io/post/new%20.html</guid><pubDate>Tue, 28 May 2024 10:09:39 +0000</pubDate></item></channel></rss>

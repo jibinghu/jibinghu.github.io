@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark-blue" data-light-theme="dark" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href="//cdn.staticfile.net/Primer/21.0.7/primer.css" rel="stylesheet" />
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<meta name="description" content="##### *PAPER READING*
+
+**@address: https://dl.acm.org/doi/10.1145/3627535.3638476**
+**@github: https://github.com/microsoft/ConvStencil**
+
+### ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Cores
+
+##### 关键词：
+    模版计算，卷积，张量核，矩阵乘
+
+##### 摘要：
+
+文章提出了ConvStencil，通过有效地将stencil模版计算转化为在张量核Tensor Core上的矩阵计算来实现。">
+<meta property="og:title" content="PaperReading_ConvStencil">
+<meta property="og:description" content="##### *PAPER READING*
+
+**@address: https://dl.acm.org/doi/10.1145/3627535.3638476**
+**@github: https://github.com/microsoft/ConvStencil**
+
+### ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Cores
+
+##### 关键词：
+    模版计算，卷积，张量核，矩阵乘
+
+##### 摘要：
+
+文章提出了ConvStencil，通过有效地将stencil模版计算转化为在张量核Tensor Core上的矩阵计算来实现。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/PaperReading_ConvStencil.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>PaperReading_ConvStencil</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">PaperReading_ConvStencil</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/3" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题"style="display:none;">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h5><em>PAPER READING</em></h5>
+<p><strong><a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/address/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/address">@address</a>: <a href="https://dl.acm.org/doi/10.1145/3627535.3638476" rel="nofollow">https://dl.acm.org/doi/10.1145/3627535.3638476</a></strong><br>
+<strong><a class="user-mention notranslate" data-hovercard-type="organization" data-hovercard-url="/orgs/github/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/github">@github</a>: <a href="https://github.com/microsoft/ConvStencil">https://github.com/microsoft/ConvStencil</a></strong></p>
+<h3>ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Cores</h3>
+<h5>关键词：</h5>
+<pre class="notranslate"><code class="notranslate">模版计算，卷积，张量核，矩阵乘
+</code></pre>
+<h5>摘要：</h5>
+<p>文章提出了ConvStencil，通过有效地将stencil模版计算转化为在张量核Tensor Core上的矩阵计算来实现。<br>
+文章提出三种技术来实现ConvStencil：</p>
+<ul>
+<li>使用sencil2row方式实现内存高效布局转换</li>
+<li>基于Dual Tessel-lation and kernel fusion的计算密度自适应算法</li>
+<li>使用可扩展表和脏位实现性能提升冲突的消除</li>
+</ul>
+<h5>引言：</h5>
+<blockquote>
+<p>引言提供了将张量核心单元（TCU）集成到现代处理器中以增强矩阵乘法性能的背景信息。它指出了TCU在模板计算中未得到充分利用的问题，并提出了ConvStencil作为解决方案。主要贡献包括性能模型、内存高效布局转换、计算适配和冲突消除技术。</p>
+</blockquote>
+<p>Tensor Core已经被完成的工作证实可以用作一些简单的reduction和scan原语操作，目前的工作，比如TCStencil关注Tensor Core是否可以应用于更复杂的类似stenci的操作。但目前，一方面TCStencil仅支持精度FP16且只适用于对称矩阵乘操作，而大多数模版计算需要FP64精度下的非对称矩阵乘；另一方面，TCStencil会遇到全局内存的非合并内存访问以及共享内存的bank conflict，从而限制Tensor Core的充分利用。</p>
+<p>通过im2row(col)方式使得在张量核上将卷积操作转化为矩阵乘操作，所以本文的关键在于在Tensor Core和Stencil计算之间通过im2row方式进行连接和转化。但是</p>
+<ol>
+<li>im2row将卷积操作转化为矩阵乘，然而，这种转换会导致矩阵-向量乘法，因为在每次迭代中，模板核和通道的数量都是1，这可能导致显著的内存膨胀和低张量核心（Tensor Core）利用率。</li>
+<li>另外，对于高精度的FP64位数据，张量核只适合小型的非对称矩阵计算。</li>
+<li>此外，算法的实现和设计可能会遇到影响性能的冲突，如warp分歧和bank冲突，导致性能大幅下降。</li>
+</ol>
+<blockquote>
+<p>im2row:在卷积运算中，我们需要对图像的每一个局部区域（称为感受野）进行卷积操作，将其与卷积核进行元素级乘法和求和。传统的卷积操作是通过滑动窗口在输入图像上移动卷积核来实现的。然而，这种操作在计算上不够高效。im2row 操作通过将卷积操作转化为矩阵乘法，从而利用高度优化的矩阵乘法实现进行加速。</p>
+</blockquote>
+<p><strong>im2row 的具体步骤：</strong></p>
+<p>假设我们有一个大小为  $H \times W$ 的输入图像和一个大小为 $K \times K$ 的卷积核。<code class="notranslate">im2row</code> 操作的步骤如下：</p>
+<ul>
+<li>提取感受野：对于输入图像中的每一个 $K \times K$ 的感受野，将其展开为一个行向量。</li>
+<li>构建矩阵：将所有的行向量堆叠成一个矩阵，每一行对应一个感受野。</li>
+<li>矩阵乘法：将这个矩阵与展开后的卷积核进行矩阵乘法，得到卷积操作的结果。</li>
+</ul>
+<p>文章中提出的Convstencil方式解决了上述的三种问题；</p>
+<ul>
+<li>对于Layout Transformation， 引入了stencil2row方式减少了内存空间占用；</li>
+<li>在计算适配中，提出双镶嵌（Dual Tessellation）方法，通过矩阵镶嵌来提高张量核心（Tensor Core）的利用率。同时利用kernel fusion减少矩阵稀疏度提高核心利用率。</li>
+<li>在减少冲突中，提出查找表来减少大量的地址计算以及额外的消耗；使用脏位空间来填充脏位来避免条件分支。</li>
+</ul>
+<p>相对于同样使用Tensor Core的TCStencil，全局内存非合并访存以及共享内存bank冲突都有大幅度减少。</p>
+<p>EXPAND：</p>
+<ol>
+<li>Stencil 计算<br>
+Stencil 计算是科学和工程计算中常见的计算模式。它通过迭代更新网格上的每个点，依赖于其邻域点的值。常见应用包括：流体动力学：计算流体流动。地球建模：地震波传播模拟。天气模拟：气象预报。</li>
+</ol>
+<p>Stencil 计算及其原理：</p>
+<blockquote>
+<p>Stencil计算是一种在科学和工程领域中广泛应用的数值计算技术，主要用于求解偏微分方程（PDEs）、模拟物理现象（如流体动力学、地球建模和气象预报）等。Stencil计算的基本原理是在多维空间网格上迭代更新每个点的值，该值是该点及其邻近点在上一个时间步的加权和。具体来说，Stencil计算包含一个预定义的模式，该模式规定如何使用网格上一个点及其周围邻近点的值来计算该点在下一个时间步的值。</p>
+</blockquote>
+<ul>
+<li>
+<p>基本组成部分</p>
+<ul>
+<li>空间网格: 一个d维网格，用来表示计算区域，每个网格点都保存一个数值。</li>
+<li>Stencil核: 一个定义了每个网格点如何通过自身及其邻近点的值来更新的权重模式。常见的Stencil核形状包括星形和盒形。</li>
+<li>时间步: Stencil计算通过时间步迭代更新网格点的值，每个时间步表示一个独立的计算过程。</li>
+</ul>
+</li>
+<li>
+<p>Stencil计算原理</p>
+<ul>
+<li>初始化: 在第一个时间步开始时，根据初始条件设置网格中每个点的初始值。</li>
+<li>迭代更新: 对于每个时间步，根据Stencil核的定义计算网格中每个点的新值。新的值是该点及其邻近点在上一个时间步的加权和。</li>
+<li>边界条件: 处理网格边界上的点，边界条件决定了如何计算这些点的值（例如，固定值或周期性条件）。</li>
+</ul>
+</li>
+<li>
+<p>Stencil 计算公式：<br>
+对于一个二维网格上的Stencil计算，假设时间步为 $t$，空间坐标为 $(i, j)$，则Stencil计算的一般公式为：</p>
+<p>$$u_{i,j}^{(t+1)} = \sum_{k,l} w_{k,l} \cdot u_{i+k, j+l}^{(t)}$$</p>
+<p>其中， $u_{i,j}^{(t+1)}$ 是在时间步 $t+1$ 时网格点 $(i, j)$ 的值， $w_{k,l}$ 是Stencil核的权重， $u_{i+k, j+l}^{(t)}$ 是时间步 $t$时相应邻近点的值。</p>
+</li>
+<li>
+<p>优化技术<br>
+Stencil计算的性能优化是一个重要的研究领域，常见的优化技术包括：</p>
+<ul>
+<li>内存布局优化: 通过调整数据存储方式减少内存访问冲突，提高内存带宽利用率。</li>
+<li>计算密度优化: 增加计算过程中有意义的计算操作比例，减少无效计算和数据传输。</li>
+<li>并行计算技术: 使用多线程、GPU加速、向量化等技术提高计算效率。</li>
+<li>重用数据: 通过数据重用减少内存访问次数，例如缓存优化和数据局部性优化。</li>
+<li>时间步融合: 将多个时间步的计算合并到一次计算中，减少内存传输和同步开销。</li>
+</ul>
+</li>
+<li>
+<p>延伸与应用<br>
+Stencil计算可以应用于多种科学和工程领域，以下是一些典型的应用和延伸：</p>
+<ul>
+<li>流体动力学模拟: 用于模拟流体流动和行为，例如风洞实验和海洋流动模拟。</li>
+<li>地球物理建模: 用于模拟地震波传播、地下水流动和地质结构分析。</li>
+<li>气象预报: 用于天气预报模型，模拟大气现象和气候变化。</li>
+<li>图像处理: 用于图像滤波、边缘检测和图像去噪。</li>
+<li>并行计算优化: Stencil计算具有高度的数据并行性，可以在高性能计算（HPC）平台上进行优化，例如使用GPU或多核处理器来加速计算。</li>
+</ul>
+</li>
+</ul>
+<ol>
+<li>
+<p>Tensor Core<br>
+Tensor Core 是 NVIDIA GPU 的一个硬件单元，专门用于加速矩阵乘法。它在深度学习训练和推理中发挥重要作用，能够高效地执行混合精度运算（FP16 和 FP32）。</p>
+</li>
+<li>
+<p>矩阵乘法 (Matrix Multiplication, MM)<br>
+矩阵乘法是线性代数中的基本操作，将两个矩阵相乘以生成第三个矩阵。Tensor Core 特别优化了这一操作，可以显著加速计算。</p>
+</li>
+<li>
+<p>性能模型 (Performance Model)<br>
+性能模型是一种理论工具，用于预测和分析算法在特定硬件上的性能。论文中，性能模型用于指导 Tensor Core 上的算法设计和优化。</p>
+</li>
+<li>
+<p>内存高效的布局转换（stencil2row 方法）<br>
+内存高效的布局转换是指将数据重新排列成一种便于计算和存储的格式。stencil2row 方法通过减少不必要的数据重复和占用，显著降低了内存使用。</p>
+</li>
+</ol>
+<p>传统方法（im2row）：通常将输入数据展开为行，这会导致大量的冗余数据。<br>
+stencil2row 方法：通过更紧凑的方式重新排列数据，减少内存占用 70% 到 96.4%。</p>
+<ol start="6">
+<li>
+<p>双重镶嵌（Dual Tessellation）<br>
+双重镶嵌是一种将计算任务划分为更小块的技术，使其更适合 Tensor Core 的计算模式。通过分块处理，可以最大化 Tensor Core 的利用率。</p>
+</li>
+<li>
+<p>内核融合（Kernel Fusion）<br>
+内核融合是将多个计算内核合并为一个内核，以减少内存访问和数据传输。通过内核融合，可以提高计算密度和效率，减少稀疏性问题。</p>
+</li>
+<li>
+<p>冲突消除<br>
+冲突消除是指通过优化数据访问模式，减少内存访问冲突和银行冲突。</p>
+</li>
+</ol>
+<p>查找表：预计算并存储指针偏移，减少运行时的计算。<br>
+脏位填充（Dirty Bits Padding）：通过在数据中添加填充位，避免条件分支和冲突，提高数据访问效率。</p>
+<p><strong>实验与评估</strong><br>
+论文通过在 AMD EPYC 7V13 处理器和 NVIDIA A100 Tensor Core GPU 上进行实验，验证了 ConvStencil 系统的性能提升。使用了多种 Stencil 核（如 Heat-1D、Box-2D9P、Heat-3D 等）进行基准测试。</p>
+<p><strong>结果与结论</strong><br>
+性能提升：相比于其他优化框架，ConvStencil 展示了显著的加速效果。<br>
+内存访问优化：显著减少了非合并全局内存访问和银行冲突。<br>
+通用性：适用于多种 Stencil 核，具有良好的通用性和扩展性。</p>
+<p><strong>总结</strong><br>
+ConvStencil 提供了一种创新的方法，通过将 Stencil 计算转换为矩阵乘法来充分利用 Tensor Core 的计算能力。通过内存优化、计算适配和冲突消除，ConvStencil 显著提升了 Stencil 计算的性能，展示了在高性能计算领域的广泛应用前景。</p>
+<h4>和分解(sum factorization)</h4>
+<pre class="notranslate"><code class="notranslate">化矩阵向量乘为矩阵矩阵乘，
+</code></pre>
+<p>谱元，谱变换，傅立叶谱方法，高阶有限元，</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cuda_runtime.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cusparse_v2.h<span class="pl-pds">&gt;</span></span>
+
+<span class="pl-c"><span class="pl-c">//</span> 定义矩阵和向量大小</span>
+<span class="pl-k">const</span> <span class="pl-k">int</span> N = <span class="pl-c1">100</span>;  <span class="pl-c"><span class="pl-c">//</span> 网格大小</span>
+<span class="pl-k">const</span> <span class="pl-k">int</span> NNZ = <span class="pl-c1">300</span>;  <span class="pl-c"><span class="pl-c">//</span> 非零元素数量</span>
+
+<span class="pl-c"><span class="pl-c">//</span> 检查CUDA错误的宏</span>
+#<span class="pl-k">define</span> <span class="pl-en">CHECK_CUDA</span>(<span class="pl-v">call</span>) \
+<span class="pl-k">do</span> { \
+    cudaError_t err = call; \
+    <span class="pl-k">if</span> (err != cudaSuccess) { \
+        std::cerr &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>CUDA error in <span class="pl-pds">"</span></span> &lt;&lt; __FILE__ &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span> at line <span class="pl-pds">"</span></span> &lt;&lt; __LINE__ &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>: <span class="pl-pds">"</span></span> \
+                  &lt;&lt; <span class="pl-c1">cudaGetErrorString</span>(err) &lt;&lt; std::endl; \
+        <span class="pl-c1">exit</span>(err); \
+    } \
+} <span class="pl-k">while</span> (<span class="pl-c1">0</span>)
+
+<span class="pl-k">void</span> <span class="pl-en">initialize_matrices</span>(<span class="pl-k">double</span>* h_D, <span class="pl-k">double</span>* h_G, <span class="pl-k">double</span>* h_u) {
+    <span class="pl-c"><span class="pl-c">//</span> 初始化矩阵和向量（用户自定义）</span>
+    <span class="pl-c"><span class="pl-c">//</span> 这里只是简单示例，用户可以根据需要填充实际值</span>
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; N * N; ++i) {
+        h_D[i] = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">double</span>&gt;(<span class="pl-c1">rand</span>()) / RAND_MAX;
+        h_G[i] = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">double</span>&gt;(<span class="pl-c1">rand</span>()) / RAND_MAX;
+    }
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; N; ++i) {
+        h_u[i] = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">double</span>&gt;(<span class="pl-c1">rand</span>()) / RAND_MAX;
+    }
+}
+
+<span class="pl-k">void</span> <span class="pl-en">sum_factorization</span>(<span class="pl-k">double</span>* h_D, <span class="pl-k">double</span>* h_G, <span class="pl-k">double</span>* h_u, <span class="pl-k">double</span>* h_result) {
+    <span class="pl-k">double</span> *d_D, *d_G, *d_u, *d_intermediate, *d_result;
+    <span class="pl-c1">size_t</span> size_DG = N * N * <span class="pl-k">sizeof</span>(<span class="pl-k">double</span>);
+    <span class="pl-c1">size_t</span> size_u = N * <span class="pl-k">sizeof</span>(<span class="pl-k">double</span>);
+
+    <span class="pl-c"><span class="pl-c">//</span> 分配设备内存</span>
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_D, size_DG));
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_G, size_DG));
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_u, size_u));
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_intermediate, size_u));
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_result, size_u));
+
+    <span class="pl-c"><span class="pl-c">//</span> 将数据从主机内存传输到设备内存</span>
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMemcpy</span>(d_D, h_D, size_DG, cudaMemcpyHostToDevice));
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMemcpy</span>(d_G, h_G, size_DG, cudaMemcpyHostToDevice));
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMemcpy</span>(d_u, h_u, size_u, cudaMemcpyHostToDevice));
+
+    <span class="pl-c"><span class="pl-c">//</span> 创建cuSPARSE句柄</span>
+    cusparseHandle_t handle;
+    <span class="pl-c1">cusparseCreate</span>(&amp;handle);
+
+    <span class="pl-c"><span class="pl-c">//</span> 计算D * u</span>
+    <span class="pl-k">const</span> <span class="pl-k">double</span> alpha = <span class="pl-c1">1.0</span>;
+    <span class="pl-k">const</span> <span class="pl-k">double</span> beta = <span class="pl-c1">0.0</span>;
+    cusparseDnMatDescr_t matD, matG;
+    cusparseDnVecDescr_t vecU, vecIntermediate, vecResult;
+
+    <span class="pl-c"><span class="pl-c">//</span> 创建cuSPARSE描述符</span>
+    <span class="pl-c1">cusparseCreateDnMat</span>(&amp;matD, N, N, N, d_D, CUDA_R_64F, CUSPARSE_ORDER_ROW);
+    <span class="pl-c1">cusparseCreateDnMat</span>(&amp;matG, N, N, N, d_G, CUDA_R_64F, CUSPARSE_ORDER_ROW);
+    <span class="pl-c1">cusparseCreateDnVec</span>(&amp;vecU, N, d_u, CUDA_R_64F);
+    <span class="pl-c1">cusparseCreateDnVec</span>(&amp;vecIntermediate, N, d_intermediate, CUDA_R_64F);
+    <span class="pl-c1">cusparseCreateDnVec</span>(&amp;vecResult, N, d_result, CUDA_R_64F);
+
+    <span class="pl-c"><span class="pl-c">//</span> 进行矩阵向量乘法D * u</span>
+    <span class="pl-c1">cusparseDnMatVec</span>(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &amp;alpha, matD, vecU, &amp;beta, vecIntermediate, CUDA_R_64F);
+
+    <span class="pl-c"><span class="pl-c">//</span> 进行矩阵向量乘法G * (D * u)</span>
+    <span class="pl-c1">cusparseDnMatVec</span>(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &amp;alpha, matG, vecIntermediate, &amp;beta, vecResult, CUDA_R_64F);
+
+    <span class="pl-c"><span class="pl-c">//</span> 进行矩阵向量乘法D^T * (G * (D * u))</span>
+    <span class="pl-c1">cusparseDnMatVec</span>(handle, CUSPARSE_OPERATION_TRANSPOSE, &amp;alpha, matD, vecResult, &amp;beta, vecIntermediate, CUDA_R_64F);
+
+    <span class="pl-c"><span class="pl-c">//</span> 将结果从设备内存传输到主机内存</span>
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMemcpy</span>(h_result, d_intermediate, size_u, cudaMemcpyDeviceToHost));
+
+    <span class="pl-c"><span class="pl-c">//</span> 释放设备内存</span>
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaFree</span>(d_D));
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaFree</span>(d_G));
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaFree</span>(d_u));
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaFree</span>(d_intermediate));
+    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaFree</span>(d_result));
+
+    <span class="pl-c"><span class="pl-c">//</span> 销毁cuSPARSE描述符和句柄</span>
+    <span class="pl-c1">cusparseDestroyDnMat</span>(matD);
+    <span class="pl-c1">cusparseDestroyDnMat</span>(matG);
+    <span class="pl-c1">cusparseDestroyDnVec</span>(vecU);
+    <span class="pl-c1">cusparseDestroyDnVec</span>(vecIntermediate);
+    <span class="pl-c1">cusparseDestroyDnVec</span>(vecResult);
+    <span class="pl-c1">cusparseDestroy</span>(handle);
+}
+
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    <span class="pl-k">double</span> *h_D = <span class="pl-k">new</span> <span class="pl-k">double</span>[N * N];
+    <span class="pl-k">double</span> *h_G = <span class="pl-k">new</span> <span class="pl-k">double</span>[N * N];
+    <span class="pl-k">double</span> *h_u = <span class="pl-k">new</span> <span class="pl-k">double</span>[N];
+    <span class="pl-k">double</span> *h_result = <span class="pl-k">new</span> <span class="pl-k">double</span>[N];
+
+    <span class="pl-c"><span class="pl-c">//</span> 初始化矩阵和向量</span>
+    <span class="pl-c1">initialize_matrices</span>(h_D, h_G, h_u);
+
+    <span class="pl-c"><span class="pl-c">//</span> 进行和分解计算</span>
+    <span class="pl-c1">sum_factorization</span>(h_D, h_G, h_u, h_result);
+
+    <span class="pl-c"><span class="pl-c">//</span> 输出结果</span>
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; N; ++i) {
+        std::cout &lt;&lt; h_result[i] &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span> <span class="pl-pds">"</span></span>;
+    }
+    std::cout &lt;&lt; std::endl;
+
+    <span class="pl-k">delete[]</span> h_D;
+    <span class="pl-k">delete[]</span> h_G;
+    <span class="pl-k">delete[]</span> h_u;
+    <span class="pl-k">delete[]</span> h_result;
+
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+</div>
+    <div id="footer">Copyright © <span id="year"></span><a href="https://jibinghu.github.io"> ZOMBIE_BLACK_ </a>
+<p>
+<span id="runday"></span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a>
+</p>
+
+<script>
+if("05/28/2024"!=""){
+    var now=new Date();
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("year").innerHTML=now.getFullYear();
+    if(""!=""){document.getElementById("runday").innerHTML=" • "+"网站运行"+diffDay+"天"+" • ";}
+    else{document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";}
+}
+</script>
+</div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n\n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    script.setAttribute("theme","dark-blue");
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+</script>
+<script>MathJax = {tex: {inlineMath: [["$", "$"]]}};</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</html>
