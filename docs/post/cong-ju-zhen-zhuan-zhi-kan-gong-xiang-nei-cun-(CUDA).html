@@ -63,7 +63,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     .postTitle{font-size:24px;}
 }
 </style>
-
+<style>.markdown-alert{padding:0.5rem 1rem;margin-bottom:1rem;border-left:.25em solid var(--borderColor-default,var(--color-border-default));}.markdown-alert .markdown-alert-title {display:flex;font-weight:var(--base-text-weight-medium,500);align-items:center;line-height:1;}.markdown-alert>:first-child {margin-top:0;}.markdown-alert>:last-child {margin-bottom:0;}</style><style>.markdown-alert.markdown-alert-tip {border-left-color:var(--borderColor-success-emphasis, var(--color-success-emphasis));background-color:var(--color-success-subtle);}.markdown-alert.markdown-alert-tip .markdown-alert-title {color: var(--fgColor-success,var(--color-success-fg));}</style>
 
 
 
@@ -652,7 +652,8 @@ error_exit:
   <span class="pl-c1">free</span>(gold);
 }</pre></div>
 <p>上述程序参考了NIVIDA官方社区示例程序并加以补充完善，基本实现了完整的CUDA程序的编写过程，且程序中每个线程都跨列执行4个数据的执行。程序中首先定义checkCuda标准错误函数以及结果检验和带宽计算postprocess函数，接着定义copy和copySharedMem两个基准程序以作为不使用/使用Shared Memory下的最大带宽。</p>
-<p>在转置的实现中，transposeNaive函数利用Global Memory实现了基本的转置操作，但由于转置操作特性，导致其只在读取矩阵时实现了合并访存，在写入时并没有实现。在transposeCoalesced函数中，利用Shared Memory实现了对于全局内存读取以及写入的访存合并，但在共享内存的读取时由于转置操作特性，导致了bank conflict的出现。最后在transposeNoBankConflicts程序中，通过引入padding，解决了内存冲突的问题。</p>
+<div class="markdown-alert markdown-alert-tip"><p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p><p>在转置的实现中，transposeNaive函数利用Global Memory实现了基本的转置操作，但由于转置操作特性，导致其只在读取矩阵时实现了合并访存，在写入时并没有实现。在transposeCoalesced函数中，利用Shared Memory实现了对于全局内存读取以及写入的访存合并，但在共享内存的读取时由于转置操作特性，导致了bank conflict的出现。最后在transposeNoBankConflicts程序中，通过引入padding，解决了内存冲突的问题。</p>
+</div>
 <div>
     <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/92d93cf23ea56618475f043e3fcaae1c207a66a19e1cc75713b58b8c3c33425a/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130323432363433342d313636373234363136352e706e67"><img src="https://camo.githubusercontent.com/92d93cf23ea56618475f043e3fcaae1c207a66a19e1cc75713b58b8c3c33425a/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130323432363433342d313636373234363136352e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603102426434-1667246165.png" style="max-width: 100%;"></a>
     <p>运行结果</p>

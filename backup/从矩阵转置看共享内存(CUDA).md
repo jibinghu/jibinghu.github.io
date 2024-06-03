@@ -586,7 +586,8 @@ error_exit:
 
 上述程序参考了NIVIDA官方社区示例程序并加以补充完善，基本实现了完整的CUDA程序的编写过程，且程序中每个线程都跨列执行4个数据的执行。程序中首先定义checkCuda标准错误函数以及结果检验和带宽计算postprocess函数，接着定义copy和copySharedMem两个基准程序以作为不使用/使用Shared Memory下的最大带宽。
 
-在转置的实现中，transposeNaive函数利用Global Memory实现了基本的转置操作，但由于转置操作特性，导致其只在读取矩阵时实现了合并访存，在写入时并没有实现。在transposeCoalesced函数中，利用Shared Memory实现了对于全局内存读取以及写入的访存合并，但在共享内存的读取时由于转置操作特性，导致了bank conflict的出现。最后在transposeNoBankConflicts程序中，通过引入padding，解决了内存冲突的问题。
+> [!TIP]
+> 在转置的实现中，transposeNaive函数利用Global Memory实现了基本的转置操作，但由于转置操作特性，导致其只在读取矩阵时实现了合并访存，在写入时并没有实现。在transposeCoalesced函数中，利用Shared Memory实现了对于全局内存读取以及写入的访存合并，但在共享内存的读取时由于转置操作特性，导致了bank conflict的出现。最后在transposeNoBankConflicts程序中，通过引入padding，解决了内存冲突的问题。
 
 <div style="text-align: center;">
     <img src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603102426434-1667246165.png" weight="500" height="200">
