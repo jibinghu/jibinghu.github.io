@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark-blue" data-light-theme="dark" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href="//cdn.staticfile.net/Primer/21.0.7/primer.css" rel="stylesheet" />
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<meta name="description" content="### 从矩阵转置看共享内存(CUDA的使用：Bank Conflict与Memory Coalesce)
+---
+- [从矩阵转置看共享内存(CUDA的使用与bank conflict)](#从矩阵转置看共享内存cuda的使用与bank-conflict)
+  - [矩阵转置的几种方法： {#chapter\_1}](#矩阵转置的几种方法-chapter_1)
+    - [矩阵转置朴素实现： {#sector\_1}](#矩阵转置朴素实现-sector_1)
+    - [利用共享内存合并访存： {#sector\_2}](#利用共享内存合并访存-sector_2)
+    - [利用 padding 解决 bank conflict： {#sector\_3}](#利用-padding-解决-bank-conflict-sector_3)
+    - [增加每个线程的处理元素个数： {#sector\_4}](#增加每个线程的处理元素个数-sector_4)
+    - [向量化存取： {#sector\_5}](#向量化存取-sector_5)
+  - [矩阵转置综合应用： {#chapter\_2}](#矩阵转置综合应用-chapter_2)
+    - [Float数据类型转置： {#float}](#float数据类型转置-float)
+    - [Double数据类型转置： {#double}](#double数据类型转置-double)
+---
+> 矩阵转置是一种基础的矩阵操作, 即将二维矩阵的行列进行反转，本文主要围绕行主序的二维单精度矩阵的转置考虑相关的优化。">
+<meta property="og:title" content="从矩阵转置看共享内存(CUDA)">
+<meta property="og:description" content="### 从矩阵转置看共享内存(CUDA的使用：Bank Conflict与Memory Coalesce)
+---
+- [从矩阵转置看共享内存(CUDA的使用与bank conflict)](#从矩阵转置看共享内存cuda的使用与bank-conflict)
+  - [矩阵转置的几种方法： {#chapter\_1}](#矩阵转置的几种方法-chapter_1)
+    - [矩阵转置朴素实现： {#sector\_1}](#矩阵转置朴素实现-sector_1)
+    - [利用共享内存合并访存： {#sector\_2}](#利用共享内存合并访存-sector_2)
+    - [利用 padding 解决 bank conflict： {#sector\_3}](#利用-padding-解决-bank-conflict-sector_3)
+    - [增加每个线程的处理元素个数： {#sector\_4}](#增加每个线程的处理元素个数-sector_4)
+    - [向量化存取： {#sector\_5}](#向量化存取-sector_5)
+  - [矩阵转置综合应用： {#chapter\_2}](#矩阵转置综合应用-chapter_2)
+    - [Float数据类型转置： {#float}](#float数据类型转置-float)
+    - [Double数据类型转置： {#double}](#double数据类型转置-double)
+---
+> 矩阵转置是一种基础的矩阵操作, 即将二维矩阵的行列进行反转，本文主要围绕行主序的二维单精度矩阵的转置考虑相关的优化。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/cong-ju-zhen-zhuan-zhi-kan-gong-xiang-nei-cun-%28CUDA%29.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>从矩阵转置看共享内存(CUDA)</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">从矩阵转置看共享内存(CUDA)</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/4" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题"style="display:none;">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h3>从矩阵转置看共享内存(CUDA的使用：Bank Conflict与Memory Coalesce)</h3>
+<hr>
+<ul>
+<li><a href="#%E4%BB%8E%E7%9F%A9%E9%98%B5%E8%BD%AC%E7%BD%AE%E7%9C%8B%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98cuda%E7%9A%84%E4%BD%BF%E7%94%A8%E4%B8%8Ebank-conflict">从矩阵转置看共享内存(CUDA的使用与bank conflict)</a>
+<ul>
+<li><a href="#%E7%9F%A9%E9%98%B5%E8%BD%AC%E7%BD%AE%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95-chapter_1">矩阵转置的几种方法： {#chapter_1}</a>
+<ul>
+<li><a href="#%E7%9F%A9%E9%98%B5%E8%BD%AC%E7%BD%AE%E6%9C%B4%E7%B4%A0%E5%AE%9E%E7%8E%B0-sector_1">矩阵转置朴素实现： {#sector_1}</a></li>
+<li><a href="#%E5%88%A9%E7%94%A8%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98%E5%90%88%E5%B9%B6%E8%AE%BF%E5%AD%98-sector_2">利用共享内存合并访存： {#sector_2}</a></li>
+<li><a href="#%E5%88%A9%E7%94%A8-padding-%E8%A7%A3%E5%86%B3-bank-conflict-sector_3">利用 padding 解决 bank conflict： {#sector_3}</a></li>
+<li><a href="#%E5%A2%9E%E5%8A%A0%E6%AF%8F%E4%B8%AA%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%A4%84%E7%90%86%E5%85%83%E7%B4%A0%E4%B8%AA%E6%95%B0-sector_4">增加每个线程的处理元素个数： {#sector_4}</a></li>
+<li><a href="#%E5%90%91%E9%87%8F%E5%8C%96%E5%AD%98%E5%8F%96-sector_5">向量化存取： {#sector_5}</a></li>
+</ul>
+</li>
+<li><a href="#%E7%9F%A9%E9%98%B5%E8%BD%AC%E7%BD%AE%E7%BB%BC%E5%90%88%E5%BA%94%E7%94%A8-chapter_2">矩阵转置综合应用： {#chapter_2}</a>
+<ul>
+<li><a href="#float%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E8%BD%AC%E7%BD%AE-float">Float数据类型转置： {#float}</a></li>
+<li><a href="#double%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E8%BD%AC%E7%BD%AE-double">Double数据类型转置： {#double}</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<hr>
+<blockquote>
+<p>矩阵转置是一种基础的矩阵操作, 即将二维矩阵的行列进行反转，本文主要围绕行主序的二维单精度矩阵的转置考虑相关的优化。</p>
+</blockquote>
+<p>矩阵的转置就是将矩阵中的元素按照主对角线进行交换。具体来说，对于一个矩阵 𝐴A ，其转置矩阵 $ A^T $ 的定义是： $ A^T[i][j] = A[j][i] $ 。这意味着，矩阵 $ A $ 的第 $ i $ 行第 $ j $ 列的元素在转置矩阵 $ A^T $ 中变成了第 $ j $ 行第 $ i $ 列的元素。换句话说，矩阵中的元素是相对于主对角线对称交换的。</p>
+<p><strong>🌰：</strong></p>
+<div class="highlight highlight-source-c++"><pre class="notranslate">Original matrix:
+    <span class="pl-c1">1</span>    <span class="pl-c1">2</span>    <span class="pl-c1">3</span>    <span class="pl-c1">4</span>
+    <span class="pl-c1">5</span>    <span class="pl-c1">6</span>    <span class="pl-c1">7</span>    <span class="pl-c1">8</span>
+    <span class="pl-c1">9</span>   <span class="pl-c1">10</span>   <span class="pl-c1">11</span>   <span class="pl-c1">12</span>
+   <span class="pl-c1">13</span>   <span class="pl-c1">14</span>   <span class="pl-c1">15</span>   <span class="pl-c1">16</span>
+Transposed matrix:
+    <span class="pl-c1">1</span>    <span class="pl-c1">5</span>    <span class="pl-c1">9</span>   <span class="pl-c1">13</span>
+    <span class="pl-c1">2</span>    <span class="pl-c1">6</span>   <span class="pl-c1">10</span>   <span class="pl-c1">14</span>
+    <span class="pl-c1">3</span>    <span class="pl-c1">7</span>   <span class="pl-c1">11</span>   <span class="pl-c1">15</span>
+    <span class="pl-c1">4</span>    <span class="pl-c1">8</span>   <span class="pl-c1">12</span>   <span class="pl-c1">16</span></pre></div>
+<hr>
+<h4>矩阵转置的几种方法： {#chapter_1}</h4>
+<h5>矩阵转置朴素实现： {#sector_1}</h5>
+<div class="highlight highlight-source-c++"><pre class="notranslate">__global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kernel_v0</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
+    <span class="pl-k">const</span> <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * blockDim.<span class="pl-smi">x</span> + threadIdx.<span class="pl-smi">x</span>;
+    <span class="pl-k">const</span> <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * blockDim.<span class="pl-smi">y</span> + threadIdx.<span class="pl-smi">y</span>;
+
+    <span class="pl-k">if</span> (y &lt; M &amp;&amp; x &lt; N) {
+        odata[x * M + y] = idata[y * N + x];
+    }
+}
+
+
+<span class="pl-k">void</span> <span class="pl-en">mat_transpose_v0</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> BLOCK_SZ = <span class="pl-c1">16</span>;
+    dim3 <span class="pl-smi">block</span>(BLOCK_SZ, BLOCK_SZ);
+    dim3 <span class="pl-smi">grid</span>((N + BLOCK_SZ - <span class="pl-c1">1</span>) / BLOCK_SZ, (M + BLOCK_SZ - <span class="pl-c1">1</span>) / BLOCK_SZ));
+    mat_transpose_kernel_v0&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
+}</pre></div>
+<blockquote>
+<p>矩阵转置的朴素实现非常直观, 思路即使用二维的线程/线程块排布, 让每个线程负责一个矩阵元素的转置. 实现上, 只需要将矩阵的行列索引 x y 进行反转即可.<br>
+需要注意的是 grid 和 block 的中维度设置与多维数组中的表示是相反的, 即 grid.x 应该对应 N 维度, grid.y 应该对应 M 维度.</p>
+</blockquote>
+<p>结合矩阵转置的逻辑以及 Nsight Compute 容易判断出, 矩阵转置本身是一个 memory-bound 的 kernel, 因为其核心是完成矩阵内存排布的转换, 这个过程基本不涉及计算, 因此对该 kernel 优化很重要的一点就是提高访存性能.</p>
+<p><em>朴素实现直接操作矩阵所在的 GMEM, 直观看来, 矩阵转置不会涉及数据的重用, 直接操作 GMEM 本身没有问题, 但此时应该注意 GMEM 的访存特性, 其中很重要的即 GMEM 的访存合并, 即连续线程访问的 GMEM 中的数据地址是连续的, 可以将多个线程的内存访问合并为一个(或多个)内存访问, 从而减少访存次数, 提高带宽利用率. 在 Version 0 的 kernel 中, 容易看出读取时 idata[y * N + x] 是访存合并的, 因为连续线程对应的 x 是连续的, 即访问矩阵同一行连续的列; 但是写入时 odata[x * M + y] 并不是访存合并的, 因为转置后连续线程写入的是同一列连续的行, 但由于内存布局是行主序的, 因此此时每个线程访问的地址实际上并不连续, 地址差 N, 因此对 GMEM 访存性能有很大影响.</em></p>
+<h5>利用共享内存合并访存： {#sector_2}</h5>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template </span>&lt;<span class="pl-k">int</span> BLOCK_SZ&gt;
+__global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kernel_v1</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
+    <span class="pl-k">const</span> <span class="pl-k">int</span> bx = blockIdx.<span class="pl-smi">x</span>, by = blockIdx.<span class="pl-smi">y</span>;
+    <span class="pl-k">const</span> <span class="pl-k">int</span> tx = threadIdx.<span class="pl-smi">x</span>, ty = threadIdx.<span class="pl-smi">y</span>;
+
+    __shared__ <span class="pl-k">float</span> sdata[BLOCK_SZ][BLOCK_SZ];
+
+    <span class="pl-k">int</span> x = bx * BLOCK_SZ + tx;
+    <span class="pl-k">int</span> y = by * BLOCK_SZ + ty;
+
+    <span class="pl-k">if</span> (y &lt; M &amp;&amp; x &lt; N) {
+        sdata[ty][tx] = idata[y * N + x];
+    }
+    <span class="pl-c1">__syncthreads</span>();
+
+    x = by * BLOCK_SZ + tx;
+    y = bx * BLOCK_SZ + ty;
+    <span class="pl-k">if</span> (y &lt; N &amp;&amp; x &lt; M) {
+        odata[y * M + x] = sdata[tx][ty];
+    }
+}
+
+<span class="pl-k">void</span> <span class="pl-en">mat_transpose_v1</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> BLOCK_SZ = <span class="pl-c1">16</span>;
+    dim3 <span class="pl-smi">block</span>(BLOCK_SZ, BLOCK_SZ);
+    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, BLOCK_SZ), <span class="pl-c1">Ceil</span>(M, BLOCK_SZ));
+    mat_transpose_kernel_v1&lt;BLOCK_SZ&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
+}</pre></div>
+<p>利用共享内存进行合并访存时，实现了读出和写入时的访存合并 (Memory Coalesce).但此时在共享内存中会出现由于读入和写出时数据操作不一致导致的 <code class="notranslate">odata[y * M + x] = sdata[tx][ty]; </code> 出现每两行出现 Bank Conflict 冲突,从而造成了 <strong>16路的内存冲突</strong>；</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/f9f699f20e6b802bf6f2603738572bc69b965da2625887437d493e48065859ec/68747470733a2f2f646576656c6f7065722e6e76696469612e636f6d2f626c6f672f77702d636f6e74656e742f75706c6f6164732f323031322f31312f7368617265645472616e73706f73652d31303234783430392e6a7067"><img src="https://camo.githubusercontent.com/f9f699f20e6b802bf6f2603738572bc69b965da2625887437d493e48065859ec/68747470733a2f2f646576656c6f7065722e6e76696469612e636f6d2f626c6f672f77702d636f6e74656e742f75706c6f6164732f323031322f31312f7368617265645472616e73706f73652d31303234783430392e6a7067" height="200" data-canonical-src="https://developer.nvidia.com/blog/wp-content/uploads/2012/11/sharedTranspose-1024x409.jpg" style="max-width: 100%;"></a>
+    <p>利用共享内存进行矩阵转置</p>
+</div>
+<blockquote>
+<p>Version 1 的核心思想可以使用上图进行表示, 中间的 "tile" 即可理解为存在 SMEM 的数据分片.<br>
+在读取矩阵阶段, 操作与 Version 0 一致, 区别在于将数据直接写入 SMEM 中, 对应上图橙色部分. 接着通过设置 x = by * BLOCK_SZ + tx; y = bx * BLOCK_SZ + ty; 两条语句进行了索引的重计算, 进行了线程块索引 bx 和 by 交换, 对应上图右上角的数据分片转置后成为了左下角的数据分片. 由于此时 tx 和 ty 并没有交换, 因此按照 odata[y * M + x] 写入 GMEM 时, 访存是合并的, 但需要读取 SMEM 时 tx 与 ty 进行交换, 实现数据分片内的转置, 对应上图绿色部分.</p>
+</blockquote>
+<h5>利用 padding 解决 bank conflict： {#sector_3}</h5>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template </span>&lt;<span class="pl-k">int</span> BLOCK_SZ&gt;
+__global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kernel_v2</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
+    <span class="pl-k">const</span> <span class="pl-k">int</span> bx = blockIdx.<span class="pl-smi">x</span>, by = blockIdx.<span class="pl-smi">y</span>;
+    <span class="pl-k">const</span> <span class="pl-k">int</span> tx = threadIdx.<span class="pl-smi">x</span>, ty = threadIdx.<span class="pl-smi">y</span>;
+
+    __shared__ <span class="pl-k">float</span> sdata[BLOCK_SZ][BLOCK_SZ+<span class="pl-c1">1</span>];    <span class="pl-c"><span class="pl-c">//</span> padding</span>
+
+    <span class="pl-k">int</span> x = bx * BLOCK_SZ + tx;
+    <span class="pl-k">int</span> y = by * BLOCK_SZ + ty;
+
+    <span class="pl-k">if</span> (y &lt; M &amp;&amp; x &lt; N) {
+        sdata[ty][tx] = idata[y * N + x];
+    }
+    <span class="pl-c1">__syncthreads</span>();
+
+    x = by * BLOCK_SZ + tx;
+    y = bx * BLOCK_SZ + ty;
+    <span class="pl-k">if</span> (y &lt; N &amp;&amp; x &lt; M) {
+        odata[y * M + x] = sdata[tx][ty];
+    }
+}
+
+<span class="pl-k">void</span> <span class="pl-en">mat_transpose_v2</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> BLOCK_SZ = <span class="pl-c1">16</span>;
+    dim3 <span class="pl-smi">block</span>(BLOCK_SZ, BLOCK_SZ);
+    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, BLOCK_SZ), <span class="pl-c1">Ceil</span>(M, BLOCK_SZ));
+    mat_transpose_kernel_v2&lt;BLOCK_SZ&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
+}</pre></div>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/2c5f339126a6e67f6bb6afef1568adf4577e75f88c89cacd2c3e60c9eaca9d86/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130303730383330332d37303733333831372e706e67"><img src="https://camo.githubusercontent.com/2c5f339126a6e67f6bb6afef1568adf4577e75f88c89cacd2c3e60c9eaca9d86/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130303730383330332d37303733333831372e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603100708303-70733817.png" style="max-width: 100%;"></a>
+    <p>sdata[ty][tx]</p>
+</div>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/05eab97376188e0d5689090e3cfa16b9a62af33950a45ccd7ae7ee4ed6708cb2/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130303931333538342d3335323637393237362e706e67"><img src="https://camo.githubusercontent.com/05eab97376188e0d5689090e3cfa16b9a62af33950a45ccd7ae7ee4ed6708cb2/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130303931333538342d3335323637393237362e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603100913584-352679276.png" style="max-width: 100%;"></a>
+    <p>sdata[tx][ty]</p>
+</div>
+<blockquote>
+<p>Version 2 的代码相比于 Version 1 仅在 SMEM 内存分配时进行了变动, 将大小改为了 sdata[BLOCK_SZ][BLOCK_SZ+1], 即列维度上加入了 1 元素大小的 padding.<br>
+此时, 对于读取 SMEM 的 sdata[tx][ty], threadIdx 差 1 的线程访问的数据差 BLOCK_SZ+1, 即 17, 由于 17 与 32 互质, 因此不会有 bank conflict. 值得一提的是, 对于写入 SMEM 的 sdata[ty][tx], 由于有 1 个 padding, warp 中 lane 31 与 lane 0 访问的元素恰好差 31+1=32 个元素, 会有 1 个 bank conflict.</p>
+</blockquote>
+<h5>增加每个线程的处理元素个数： {#sector_4}</h5>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template </span>&lt;<span class="pl-k">int</span> BLOCK_SZ, <span class="pl-k">int</span> NUM_PER_THREAD&gt;
+__global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kernel_v3</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
+    <span class="pl-k">const</span> <span class="pl-k">int</span> bx = blockIdx.<span class="pl-smi">x</span>, by = blockIdx.<span class="pl-smi">y</span>;
+    <span class="pl-k">const</span> <span class="pl-k">int</span> tx = threadIdx.<span class="pl-smi">x</span>, ty = threadIdx.<span class="pl-smi">y</span>;
+
+    __shared__ <span class="pl-k">float</span> sdata[BLOCK_SZ][BLOCK_SZ+<span class="pl-c1">1</span>];
+
+    <span class="pl-k">int</span> x = bx * BLOCK_SZ + tx;
+    <span class="pl-k">int</span> y = by * BLOCK_SZ + ty;
+
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> ROW_STRIDE = BLOCK_SZ / NUM_PER_THREAD;
+
+    <span class="pl-k">if</span> (x &lt; N) {
+        #<span class="pl-k">pragma</span> unroll
+        <span class="pl-k">for</span> (<span class="pl-k">int</span> y_off = <span class="pl-c1">0</span>; y_off &lt; BLOCK_SZ; y_off += ROW_STRIDE) {
+            <span class="pl-k">if</span> (y + y_off &lt; M) {
+                sdata[ty + y_off][tx] = idata[(y + y_off) * N + x]; 
+            }
+        }
+    }
+    <span class="pl-c1">__syncthreads</span>();
+
+    x = by * BLOCK_SZ + tx;
+    y = bx * BLOCK_SZ + ty;
+    <span class="pl-k">if</span> (x &lt; M) {
+        <span class="pl-k">for</span> (<span class="pl-k">int</span> y_off = <span class="pl-c1">0</span>; y_off &lt; BLOCK_SZ; y_off += ROW_STRIDE) {
+            <span class="pl-k">if</span> (y + y_off &lt; N) {
+                odata[(y + y_off) * M + x] = sdata[tx][ty + y_off];
+            }
+        }
+    }
+}
+
+<span class="pl-k">void</span> <span class="pl-en">mat_transpose_v3</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> BLOCK_SZ = <span class="pl-c1">32</span>;
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> NUM_PER_THREAD = <span class="pl-c1">4</span>;
+    dim3 <span class="pl-smi">block</span>(BLOCK_SZ, BLOCK_SZ/NUM_PER_THREAD);
+    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, BLOCK_SZ), <span class="pl-c1">Ceil</span>(M, BLOCK_SZ));
+    mat_transpose_kernel_v3&lt;BLOCK_SZ, NUM_PER_THREAD&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
+}</pre></div>
+<p>对于增加线程计算元素个数，使用了更少的线程来进行转置从而提高计算访存比(广义上的计算，因为矩阵转置实质上不进行计算，仅仅是访存及位置的互换)，实现了在列维度上的线程数量的减少。在这时，sdata[ty + y_off][tx] 的 bank 实现了无冲突 (这时其实由于共享内存的bank是32路，其实也没有冲突)。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/51313e25c370adadcad52ad55c37d09ab64f203482439b8147336f6e2a26f89f/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333039353330393139362d313537363735303138372e706e67"><img src="https://camo.githubusercontent.com/51313e25c370adadcad52ad55c37d09ab64f203482439b8147336f6e2a26f89f/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333039353330393139362d313537363735303138372e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603095309196-1576750187.png" style="max-width: 100%;"></a>
+    <p>sdata[ty + y_off][tx]</p>
+</div>
+<p>而在sdata[tx][ty + y_off] 中，由于交错排列，也避免了内存冲突。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/789bb4c5ff54554135216402840eb0f52c971ce715c865cd52e9c7e5db81bfbd/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333039353633303439362d313735363331333336312e706e67"><img src="https://camo.githubusercontent.com/789bb4c5ff54554135216402840eb0f52c971ce715c865cd52e9c7e5db81bfbd/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333039353633303439362d313735363331333336312e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603095630496-1756313361.png" style="max-width: 100%;"></a>
+    <p>sdata[tx][ty + y_off]</p>
+</div>
+<blockquote>
+<p>Version 3 相比于 Version 2, 增加了每个线程处理的元素个数, 即由先前的每个线程处理 1 个元素的转置, 变为处理 NUM_PER_THREAD 个元素的转置. 该实现主要是参考了 英伟达的技术博客.<br>
+在实现上, 同样保持原本 256 线程的线程块大小, 设置每个线程处理 4 个元素, 则每个线程块数据分片的大小调整为 32×32, 而线程块的线程采取 8×32 的二维排布, 因此需要在行维度上需要迭代 4 次完成转置.<br>
+考虑 Version 3 相比于 Version 2 的优势, 主要是在保持线程块中线程数量不变的情况下, 处理的线程块数据分片大小变大, 这样会减少线程网格中启动的线程块数量, 而增大了每个线程的计算强度; 此外, 由于 BLOCK_SZ 变为 32, Version 2 中写入 SMEM 的 1 个 bank conflict 也可以被避免.<br>
+这让笔者想到了 Reduce 算子中也会考虑增加每个线程处理的元素来提高性能, 笔者主观的感觉是对于这种计算强度比较低的 kernel, 增加线程处理的元素个数即计算强度, 一定程度上能增大 GPU 中计算与访存的掩盖, 并配合循环展开提高指令级并行; 此外, 由于线程块数量的减少, 能在相对少的 wave 中完成计算, 减少 GPU 的线程块调度上可能也会带来性能的收益.</p>
+</blockquote>
+<h5>向量化存取： {#sector_5}</h5>
+<p>向量化存取的关键在于</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">define</span> <span class="pl-en">FETCH_CFLOAT4</span>(<span class="pl-v">p</span>) (<span class="pl-k">reinterpret_cast</span>&lt;<span class="pl-k">const</span> float4*&gt;(&amp;(p))[<span class="pl-c1">0</span>])
+#<span class="pl-k">define</span> <span class="pl-en">FETCH_FLOAT4</span>(<span class="pl-v">p</span>) (<span class="pl-k">reinterpret_cast</span>&lt;float4*&gt;(&amp;(p))[<span class="pl-c1">0</span>])</pre></div>
+<p>这两句代码实现了使用FETCH_FLOAT4和FETCH_CFLOAT4一次性读取和存储4个浮点数。将指针p强制转换为const float4<em>和float4</em>类型，并获取第一个float4类型的值。float4是一个包含4个浮点数的CUDA内置向量类型，这种转换可以一次性处理4个浮点数，从而提高内存访问的效率。</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">define</span> <span class="pl-en">FETCH_CFLOAT4</span>(<span class="pl-v">p</span>) (<span class="pl-k">reinterpret_cast</span>&lt;<span class="pl-k">const</span> float4*&gt;(&amp;(p))[<span class="pl-c1">0</span>])
+#<span class="pl-k">define</span> <span class="pl-en">FETCH_FLOAT4</span>(<span class="pl-v">p</span>) (<span class="pl-k">reinterpret_cast</span>&lt;float4*&gt;(&amp;(p))[<span class="pl-c1">0</span>])
+
+<span class="pl-k">template </span>&lt;<span class="pl-k">int</span> BLOCK_SZ&gt;
+__global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kernel_v3_5</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
+    <span class="pl-k">const</span> <span class="pl-k">int</span> bx = blockIdx.<span class="pl-smi">x</span>, by = blockIdx.<span class="pl-smi">y</span>;
+    <span class="pl-k">const</span> <span class="pl-k">int</span> tx = threadIdx.<span class="pl-smi">x</span>, ty = threadIdx.<span class="pl-smi">y</span>;
+
+    __shared__ <span class="pl-k">float</span> sdata[BLOCK_SZ][BLOCK_SZ];
+
+    <span class="pl-k">int</span> x = bx * BLOCK_SZ + tx * <span class="pl-c1">4</span>;
+    <span class="pl-k">int</span> y = by * BLOCK_SZ + ty;
+
+    <span class="pl-k">if</span> (x &lt; N &amp;&amp; y &lt; M) {
+        <span class="pl-c1">FETCH_FLOAT4</span>(sdata[ty][tx * <span class="pl-c1">4</span>]) = <span class="pl-c1">FETCH_CFLOAT4</span>(idata[y * N + x]);
+    }
+    <span class="pl-c1">__syncthreads</span>();
+
+    x = by * BLOCK_SZ + tx * <span class="pl-c1">4</span>;
+    y = bx * BLOCK_SZ + ty;
+    <span class="pl-k">float</span> tmp[<span class="pl-c1">4</span>];
+    <span class="pl-k">if</span> (x &lt; M &amp;&amp; y &lt; N) {
+        #<span class="pl-k">pragma</span> unroll
+        <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">4</span>; ++i) {
+            tmp[i] = sdata[tx * <span class="pl-c1">4</span> + i][ty];
+        }
+        <span class="pl-c1">FETCH_FLOAT4</span>(odata[y * M + x]) = <span class="pl-c1">FETCH_FLOAT4</span>(tmp);
+    }
+}
+
+<span class="pl-k">void</span> <span class="pl-en">mat_transpose_v3_5</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> BLOCK_SZ = <span class="pl-c1">32</span>;
+    dim3 <span class="pl-smi">block</span>(BLOCK_SZ / <span class="pl-c1">4</span>, BLOCK_SZ);
+    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, BLOCK_SZ), <span class="pl-c1">Ceil</span>(M, BLOCK_SZ));
+    mat_transpose_kernel_v3_5&lt;BLOCK_SZ&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
+}</pre></div>
+<p>此时利用向量化访存的效率是比单纯利用共享内存高的，但是由于无法避免bank conflict，运行时间还是有较大延迟。</p>
+<hr>
+<h4>矩阵转置综合应用： {#chapter_2}</h4>
+<h5>Float数据类型转置： {#float}</h5>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">/*</span> Copyright (c) 1993-2015, NVIDIA CORPORATION. All rights reserved.</span>
+<span class="pl-c"> *</span>
+<span class="pl-c"> * Redistribution and use in source and binary forms, with or without</span>
+<span class="pl-c"> * modification, are permitted provided that the following conditions</span>
+<span class="pl-c"> * are met:</span>
+<span class="pl-c"> *  * Redistributions of source code must retain the above copyright</span>
+<span class="pl-c"> *    notice, this list of conditions and the following disclaimer.</span>
+<span class="pl-c"> *  * Redistributions in binary form must reproduce the above copyright</span>
+<span class="pl-c"> *    notice, this list of conditions and the following disclaimer in the</span>
+<span class="pl-c"> *    documentation and/or other materials provided with the distribution.</span>
+<span class="pl-c"> *  * Neither the name of NVIDIA CORPORATION nor the names of its</span>
+<span class="pl-c"> *    contributors may be used to endorse or promote products derived</span>
+<span class="pl-c"> *    from this software without specific prior written permission.</span>
+<span class="pl-c"> *</span>
+<span class="pl-c"> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY</span>
+<span class="pl-c"> * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="pl-c"> * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR</span>
+<span class="pl-c"> * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR</span>
+<span class="pl-c"> * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="pl-c"> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="pl-c"> * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="pl-c"> * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY</span>
+<span class="pl-c"> * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="pl-c"> * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="pl-c"> * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="pl-c"> <span class="pl-c">*/</span></span>
+
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>stdio.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>assert.h<span class="pl-pds">&gt;</span></span>
+
+<span class="pl-c"><span class="pl-c">//</span> 方便的CUDA运行时API结果检查函数</span>
+<span class="pl-c"><span class="pl-c">//</span> 可以包装任何运行时API调用。在发布版本中无操作。</span>
+<span class="pl-k">inline</span> 
+cudaError_t <span class="pl-en">checkCuda</span>(cudaError_t result)
+{
+#<span class="pl-k">if</span> defined(DEBUG) || defined(_DEBUG)
+  <span class="pl-k">if</span> (result != cudaSuccess) {
+    <span class="pl-c1">fprintf</span>(stderr, <span class="pl-s"><span class="pl-pds">"</span>CUDA Runtime Error: %s<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-c1">cudaGetErrorString</span>(result));
+    <span class="pl-c1">assert</span>(result == cudaSuccess);
+  }
+#<span class="pl-k">endif</span>
+  <span class="pl-k">return</span> result;
+}
+
+<span class="pl-k">const</span> <span class="pl-k">int</span> TILE_DIM = <span class="pl-c1">32</span>;
+<span class="pl-k">const</span> <span class="pl-k">int</span> BLOCK_ROWS = <span class="pl-c1">8</span>;
+<span class="pl-c"><span class="pl-c">//</span> 内核重复执行次数</span>
+<span class="pl-k">const</span> <span class="pl-k">int</span> NUM_REPS = <span class="pl-c1">5</span>;
+
+<span class="pl-c"><span class="pl-c">//</span> 检查错误并打印GB/s</span>
+<span class="pl-k">void</span> <span class="pl-en">postprocess</span>(<span class="pl-k">const</span> <span class="pl-k">float</span> *ref, <span class="pl-k">const</span> <span class="pl-k">float</span> *res, <span class="pl-k">int</span> n, <span class="pl-k">float</span> ms)
+{
+  <span class="pl-k">bool</span> passed = <span class="pl-c1">true</span>;
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; n; i++)
+    <span class="pl-k">if</span> (res[i] != ref[i]) {
+      <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%d %f %f<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, i, res[i], ref[i]);
+      <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>*** FAILED ***<span class="pl-pds">"</span></span>);
+      passed = <span class="pl-c1">false</span>;
+      <span class="pl-k">break</span>;
+    }
+  <span class="pl-k">if</span> (passed)
+    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%20.2f<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-c1">2</span> * n * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>) * <span class="pl-c1">1e-6</span> * NUM_REPS / ms );
+}
+
+<span class="pl-c"><span class="pl-c">//</span> 简单复制内核</span>
+<span class="pl-c"><span class="pl-c">//</span> 作为基准案例，表示最佳有效带宽。</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">copy</span>(<span class="pl-k">float</span> *odata, <span class="pl-k">const</span> <span class="pl-k">float</span> *idata)
+{
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j+= BLOCK_ROWS)
+    odata[(y+j)*width + x] = idata[(y+j)*width + x];
+}
+
+<span class="pl-c"><span class="pl-c">//</span> 使用共享内存的复制内核</span>
+<span class="pl-c"><span class="pl-c">//</span> 也是基准案例，展示了使用共享内存的效果。</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">copySharedMem</span>(<span class="pl-k">float</span> *odata, <span class="pl-k">const</span> <span class="pl-k">float</span> *idata)
+{
+  __shared__ <span class="pl-k">float</span> tile[TILE_DIM * TILE_DIM];
+  
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     tile[(threadIdx.<span class="pl-smi">y</span>+j)*TILE_DIM + threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
+
+  <span class="pl-c1">__syncthreads</span>();
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     odata[(y+j)*width + x] = tile[(threadIdx.<span class="pl-smi">y</span>+j)*TILE_DIM + threadIdx.<span class="pl-smi">x</span>];          
+}
+
+<span class="pl-c"><span class="pl-c">//</span> 简单转置</span>
+<span class="pl-c"><span class="pl-c">//</span> 最简单的转置；不使用共享内存。</span>
+<span class="pl-c"><span class="pl-c">//</span> 全局内存读取是合并的，但写入不是。</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">transposeNaive</span>(<span class="pl-k">float</span> *odata, <span class="pl-k">const</span> <span class="pl-k">float</span> *idata)
+{
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j+= BLOCK_ROWS)
+    odata[x*width + (y+j)] = idata[(y+j)*width + x];
+}
+
+<span class="pl-c"><span class="pl-c">//</span> 合并转置</span>
+<span class="pl-c"><span class="pl-c">//</span> 使用共享内存来实现读取和写入的合并</span>
+<span class="pl-c"><span class="pl-c">//</span> tile宽度==bank数量会导致共享内存bank冲突。</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">transposeCoalesced</span>(<span class="pl-k">float</span> *odata, <span class="pl-k">const</span> <span class="pl-k">float</span> *idata)
+{
+  __shared__ <span class="pl-k">float</span> tile[TILE_DIM][TILE_DIM];
+    
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     tile[threadIdx.<span class="pl-smi">y</span>+j][threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
+
+  <span class="pl-c1">__syncthreads</span>();
+
+  x = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
+  y = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     odata[(y+j)*width + x] = tile[threadIdx.<span class="pl-smi">x</span>][threadIdx.<span class="pl-smi">y</span> + j];
+}
+
+<span class="pl-c"><span class="pl-c">//</span> 无bank冲突转置</span>
+<span class="pl-c"><span class="pl-c">//</span> 与transposeCoalesced相同，只是第一个tile维度填充</span>
+<span class="pl-c"><span class="pl-c">//</span> 以避免共享内存bank冲突。</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankConflicts</span>(<span class="pl-k">float</span> *odata, <span class="pl-k">const</span> <span class="pl-k">float</span> *idata)
+{
+  __shared__ <span class="pl-k">float</span> tile[TILE_DIM][TILE_DIM+<span class="pl-c1">1</span>];
+    
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     tile[threadIdx.<span class="pl-smi">y</span>+j][threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
+
+  <span class="pl-c1">__syncthreads</span>();
+
+  x = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
+  y = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     odata[(y+j)*width + x] = tile[threadIdx.<span class="pl-smi">x</span>][threadIdx.<span class="pl-smi">y</span> + j];
+}
+
+<span class="pl-k">int</span> <span class="pl-en">main</span>(<span class="pl-k">int</span> argc, <span class="pl-k">char</span> **argv)
+{
+  <span class="pl-k">const</span> <span class="pl-k">int</span> nx = <span class="pl-c1">2048</span>;
+  <span class="pl-k">const</span> <span class="pl-k">int</span> ny = <span class="pl-c1">2048</span>;
+  <span class="pl-k">const</span> <span class="pl-k">int</span> mem_size = nx*ny*<span class="pl-k">sizeof</span>(<span class="pl-k">float</span>);
+
+  dim3 <span class="pl-smi">dimGrid</span>(nx/TILE_DIM, ny/TILE_DIM, <span class="pl-c1">1</span>);
+  dim3 <span class="pl-smi">dimBlock</span>(TILE_DIM, BLOCK_ROWS, <span class="pl-c1">1</span>);
+
+  <span class="pl-k">int</span> devId = <span class="pl-c1">0</span>;
+  <span class="pl-k">if</span> (argc &gt; <span class="pl-c1">1</span>) devId = <span class="pl-c1">atoi</span>(argv[<span class="pl-c1">1</span>]);
+
+  cudaDeviceProp prop;
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaGetDeviceProperties</span>(&amp;prop, devId));
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\n</span>Device : %s<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, prop.<span class="pl-smi">name</span>);
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>Matrix size: %d %d, Block size: %d %d, Tile size: %d %d<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, 
+         nx, ny, TILE_DIM, BLOCK_ROWS, TILE_DIM, TILE_DIM);
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>dimGrid: %d %d %d. dimBlock: %d %d %d<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>,
+         dimGrid.<span class="pl-smi">x</span>, dimGrid.<span class="pl-smi">y</span>, dimGrid.<span class="pl-smi">z</span>, dimBlock.<span class="pl-smi">x</span>, dimBlock.<span class="pl-smi">y</span>, dimBlock.<span class="pl-smi">z</span>);
+  
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaSetDevice</span>(devId) );
+
+  <span class="pl-k">float</span> *h_idata = (<span class="pl-k">float</span>*)<span class="pl-c1">malloc</span>(mem_size);
+  <span class="pl-k">float</span> *h_cdata = (<span class="pl-k">float</span>*)<span class="pl-c1">malloc</span>(mem_size);
+  <span class="pl-k">float</span> *h_tdata = (<span class="pl-k">float</span>*)<span class="pl-c1">malloc</span>(mem_size);
+  <span class="pl-k">float</span> *gold    = (<span class="pl-k">float</span>*)<span class="pl-c1">malloc</span>(mem_size);
+  
+  <span class="pl-k">float</span> *d_idata, *d_cdata, *d_tdata;
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMalloc</span>(&amp;d_idata, mem_size) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMalloc</span>(&amp;d_cdata, mem_size) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMalloc</span>(&amp;d_tdata, mem_size) );
+
+  <span class="pl-c"><span class="pl-c">//</span> 检查参数并计算执行配置</span>
+  <span class="pl-k">if</span> (nx % TILE_DIM || ny % TILE_DIM) {
+    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>nx 和 ny 必须是 TILE_DIM 的倍数<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
+    <span class="pl-k">goto</span> error_exit;
+  }
+
+  <span class="pl-k">if</span> (TILE_DIM % BLOCK_ROWS) {
+    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>TILE_DIM 必须是 BLOCK_ROWS 的倍数<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
+    <span class="pl-k">goto</span> error_exit;
+  }
+    
+  <span class="pl-c"><span class="pl-c">//</span> 主机</span>
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; ny; j++)
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; nx; i++)
+      h_idata[j*nx + i] = j*nx + i;
+
+  <span class="pl-c"><span class="pl-c">//</span> 用于错误检查的正确结果</span>
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; ny; j++)
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; nx; i++)
+      gold[j*nx + i] = h_idata[i*nx + j];
+  
+  <span class="pl-c"><span class="pl-c">//</span> 设备</span>
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(d_idata, h_idata, mem_size, cudaMemcpyHostToDevice) );
+  
+  <span class="pl-c"><span class="pl-c">//</span> 用于计时的事件</span>
+  cudaEvent_t startEvent, stopEvent;
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventCreate</span>(&amp;startEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventCreate</span>(&amp;stopEvent) );
+  <span class="pl-k">float</span> ms;
+
+  <span class="pl-c"><span class="pl-c">//</span> ------------</span>
+  <span class="pl-c"><span class="pl-c">//</span> 内核计时</span>
+  <span class="pl-c"><span class="pl-c">//</span> ------------</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s%25s<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Routine<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Bandwidth (GB/s)<span class="pl-pds">"</span></span>);
+  
+  <span class="pl-c"><span class="pl-c">//</span> ----</span>
+  <span class="pl-c"><span class="pl-c">//</span> 复制</span>
+  <span class="pl-c"><span class="pl-c">//</span> ----</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>copy<span class="pl-pds">"</span></span>);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemset</span>(d_cdata, <span class="pl-c1">0</span>, mem_size) );
+  <span class="pl-c"><span class="pl-c">//</span> 预热</span>
+  copy&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+     copy&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventElapsedTime</span>(&amp;ms, startEvent, stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(h_cdata, d_cdata, mem_size, cudaMemcpyDeviceToHost) );
+  <span class="pl-c1">postprocess</span>(h_idata, h_cdata, nx*ny, ms);
+
+  <span class="pl-c"><span class="pl-c">//</span> -------------</span>
+  <span class="pl-c"><span class="pl-c">//</span> 使用共享内存的复制</span>
+  <span class="pl-c"><span class="pl-c">//</span> -------------</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>shared memory copy<span class="pl-pds">"</span></span>);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemset</span>(d_cdata, <span class="pl-c1">0</span>, mem_size) );
+  <span class="pl-c"><span class="pl-c">//</span> 预热</span>
+  copySharedMem&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+     copySharedMem&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventElapsedTime</span>(&amp;ms, startEvent, stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(h_cdata, d_cdata, mem_size, cudaMemcpyDeviceToHost) );
+  <span class="pl-c1">postprocess</span>(h_idata, h_cdata, nx * ny, ms);
+
+  <span class="pl-c"><span class="pl-c">//</span> --------------</span>
+  <span class="pl-c"><span class="pl-c">//</span> 简单转置</span>
+  <span class="pl-c"><span class="pl-c">//</span> --------------</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>naive transpose<span class="pl-pds">"</span></span>);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemset</span>(d_tdata, <span class="pl-c1">0</span>, mem_size) );
+  <span class="pl-c"><span class="pl-c">//</span> 预热</span>
+  transposeNaive&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+     transposeNaive&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventElapsedTime</span>(&amp;ms, startEvent, stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(h_tdata, d_tdata, mem_size, cudaMemcpyDeviceToHost) );
+  <span class="pl-c1">postprocess</span>(gold, h_tdata, nx * ny, ms);
+
+  <span class="pl-c"><span class="pl-c">//</span> ------------------</span>
+  <span class="pl-c"><span class="pl-c">//</span> 合并转置</span>
+  <span class="pl-c"><span class="pl-c">//</span> ------------------</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>coalesced transpose<span class="pl-pds">"</span></span>);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemset</span>(d_tdata, <span class="pl-c1">0</span>, mem_size) );
+  <span class="pl-c"><span class="pl-c">//</span> 预热</span>
+  transposeCoalesced&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+     transposeCoalesced&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventElapsedTime</span>(&amp;ms, startEvent, stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(h_tdata, d_tdata, mem_size, cudaMemcpyDeviceToHost) );
+  <span class="pl-c1">postprocess</span>(gold, h_tdata, nx * ny, ms);
+
+  <span class="pl-c"><span class="pl-c">//</span> ------------------------</span>
+  <span class="pl-c"><span class="pl-c">//</span> 无bank冲突转置</span>
+  <span class="pl-c"><span class="pl-c">//</span> ------------------------</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>conflict-free transpose<span class="pl-pds">"</span></span>);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemset</span>(d_tdata, <span class="pl-c1">0</span>, mem_size) );
+  <span class="pl-c"><span class="pl-c">//</span> 预热</span>
+  transposeNoBankConflicts&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+     transposeNoBankConflicts&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventElapsedTime</span>(&amp;ms, startEvent, stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(h_tdata, d_tdata, mem_size, cudaMemcpyDeviceToHost) );
+  <span class="pl-c1">postprocess</span>(gold, h_tdata, nx * ny, ms);
+
+error_exit:
+  <span class="pl-c"><span class="pl-c">//</span> 清理</span>
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventDestroy</span>(startEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventDestroy</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaFree</span>(d_tdata) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaFree</span>(d_cdata) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaFree</span>(d_idata) );
+  <span class="pl-c1">free</span>(h_idata);
+  <span class="pl-c1">free</span>(h_tdata);
+  <span class="pl-c1">free</span>(h_cdata);
+  <span class="pl-c1">free</span>(gold);
+}</pre></div>
+<p>上述程序参考了NIVIDA官方社区示例程序并加以补充完善，基本实现了完整的CUDA程序的编写过程，且程序中每个线程都跨列执行4个数据的执行。程序中首先定义checkCuda标准错误函数以及结果检验和带宽计算postprocess函数，接着定义copy和copySharedMem两个基准程序以作为不使用/使用Shared Memory下的最大带宽。</p>
+<p>在转置的实现中，transposeNaive函数利用Global Memory实现了基本的转置操作，但由于转置操作特性，导致其只在读取矩阵时实现了合并访存，在写入时并没有实现。在transposeCoalesced函数中，利用Shared Memory实现了对于全局内存读取以及写入的访存合并，但在共享内存的读取时由于转置操作特性，导致了bank conflict的出现。最后在transposeNoBankConflicts程序中，通过引入padding，解决了内存冲突的问题。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/92d93cf23ea56618475f043e3fcaae1c207a66a19e1cc75713b58b8c3c33425a/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130323432363433342d313636373234363136352e706e67"><img src="https://camo.githubusercontent.com/92d93cf23ea56618475f043e3fcaae1c207a66a19e1cc75713b58b8c3c33425a/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130323432363433342d313636373234363136352e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603102426434-1667246165.png" style="max-width: 100%;"></a>
+    <p>运行结果</p>
+</div>
+<h5>Double数据类型转置： {#double}</h5>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">/*</span> Copyright (c) 1993-2015, NVIDIA CORPORATION. All rights reserved.</span>
+<span class="pl-c"> *</span>
+<span class="pl-c"> * Redistribution and use in source and binary forms, with or without</span>
+<span class="pl-c"> * modification, are permitted provided that the following conditions</span>
+<span class="pl-c"> * are met:</span>
+<span class="pl-c"> *  * Redistributions of source code must retain the above copyright</span>
+<span class="pl-c"> *    notice, this list of conditions and the following disclaimer.</span>
+<span class="pl-c"> *  * Redistributions in binary form must reproduce the above copyright</span>
+<span class="pl-c"> *    notice, this list of conditions and the following disclaimer in the</span>
+<span class="pl-c"> *    documentation and/or other materials provided with the distribution.</span>
+<span class="pl-c"> *  * Neither the name of NVIDIA CORPORATION nor the names of its</span>
+<span class="pl-c"> *    contributors may be used to endorse or promote products derived</span>
+<span class="pl-c"> *    from this software without specific prior written permission.</span>
+<span class="pl-c"> *</span>
+<span class="pl-c"> * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY</span>
+<span class="pl-c"> * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="pl-c"> * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR</span>
+<span class="pl-c"> * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR</span>
+<span class="pl-c"> * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="pl-c"> * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="pl-c"> * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="pl-c"> * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY</span>
+<span class="pl-c"> * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="pl-c"> * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="pl-c"> * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="pl-c"> <span class="pl-c">*/</span></span>
+
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>stdio.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>assert.h<span class="pl-pds">&gt;</span></span>
+
+<span class="pl-c"><span class="pl-c">//</span> 方便的CUDA运行时API结果检查函数</span>
+<span class="pl-c"><span class="pl-c">//</span> 可以包装任何运行时API调用。在发布版本中无操作。</span>
+<span class="pl-k">inline</span>
+cudaError_t <span class="pl-en">checkCuda</span>(cudaError_t result)
+{
+#<span class="pl-k">if</span> defined(DEBUG) || defined(_DEBUG)
+  <span class="pl-k">if</span> (result != cudaSuccess) {
+    <span class="pl-c1">fprintf</span>(stderr, <span class="pl-s"><span class="pl-pds">"</span>CUDA Runtime Error: %s<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-c1">cudaGetErrorString</span>(result));
+    <span class="pl-c1">assert</span>(result == cudaSuccess);
+  }
+#<span class="pl-k">endif</span>
+  <span class="pl-k">return</span> result;
+}
+
+<span class="pl-c"><span class="pl-c">//</span> 定义常量</span>
+<span class="pl-k">const</span> <span class="pl-k">int</span> TILE_DIM = <span class="pl-c1">32</span>;  <span class="pl-c"><span class="pl-c">//</span> tile维度</span>
+<span class="pl-k">const</span> <span class="pl-k">int</span> BLOCK_ROWS = <span class="pl-c1">8</span>;  <span class="pl-c"><span class="pl-c">//</span> 块行数</span>
+<span class="pl-k">const</span> <span class="pl-k">int</span> NUM_REPS = <span class="pl-c1">5</span>;  <span class="pl-c"><span class="pl-c">//</span> 内核重复执行次数</span>
+
+<span class="pl-c"><span class="pl-c">//</span> 检查错误并打印GB/s</span>
+<span class="pl-k">void</span> <span class="pl-en">postprocess</span>(<span class="pl-k">const</span> <span class="pl-k">double</span> *ref, <span class="pl-k">const</span> <span class="pl-k">double</span> *res, <span class="pl-k">int</span> n, <span class="pl-k">double</span> ms)
+{
+  <span class="pl-k">bool</span> passed = <span class="pl-c1">true</span>;
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; n; i++)
+    <span class="pl-k">if</span> (res[i] != ref[i]) {
+      <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%d %f %f<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, i, res[i], ref[i]);
+      <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>*** FAILED ***<span class="pl-pds">"</span></span>);
+      passed = <span class="pl-c1">false</span>;
+      <span class="pl-k">break</span>;
+    }
+  <span class="pl-k">if</span> (passed)
+    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%20.2f<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-c1">2</span> * n * <span class="pl-k">sizeof</span>(<span class="pl-k">double</span>) * <span class="pl-c1">1e-6</span> * NUM_REPS / ms );
+}
+
+<span class="pl-c"><span class="pl-c">//</span> 简单复制内核</span>
+<span class="pl-c"><span class="pl-c">//</span> 作为基准案例，表示最佳有效带宽。</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">copy</span>(<span class="pl-k">double</span> *odata, <span class="pl-k">const</span> <span class="pl-k">double</span> *idata)
+{
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j+= BLOCK_ROWS)
+    odata[(y+j)*width + x] = idata[(y+j)*width + x];
+}
+
+<span class="pl-c"><span class="pl-c">//</span> 使用共享内存的复制内核</span>
+<span class="pl-c"><span class="pl-c">//</span> 也是基准案例，展示了使用共享内存的效果。</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">copySharedMem</span>(<span class="pl-k">double</span> *odata, <span class="pl-k">const</span> <span class="pl-k">double</span> *idata)
+{
+  __shared__ <span class="pl-k">double</span> tile[TILE_DIM * TILE_DIM];
+  
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     tile[(threadIdx.<span class="pl-smi">y</span>+j)*TILE_DIM + threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
+
+  <span class="pl-c1">__syncthreads</span>();
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     odata[(y+j)*width + x] = tile[(threadIdx.<span class="pl-smi">y</span>+j)*TILE_DIM + threadIdx.<span class="pl-smi">x</span>];          
+}
+
+<span class="pl-c"><span class="pl-c">//</span> 简单转置内核</span>
+<span class="pl-c"><span class="pl-c">//</span> 最简单的转置；不使用共享内存。</span>
+<span class="pl-c"><span class="pl-c">//</span> 全局内存读取是合并的，但写入不是。</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">transposeNaive</span>(<span class="pl-k">double</span> *odata, <span class="pl-k">const</span> <span class="pl-k">double</span> *idata)
+{
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j+= BLOCK_ROWS)
+    odata[x*width + (y+j)] = idata[(y+j)*width + x];
+}
+
+<span class="pl-c"><span class="pl-c">//</span> 合并转置内核</span>
+<span class="pl-c"><span class="pl-c">//</span> 使用共享内存来实现读取和写入的合并</span>
+<span class="pl-c"><span class="pl-c">//</span> tile宽度==ban k数量会导致共享内存bank冲突。</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">transposeCoalesced</span>(<span class="pl-k">double</span> *odata, <span class="pl-k">const</span> <span class="pl-k">double</span> *idata)
+{
+  __shared__ <span class="pl-k">double</span> tile[TILE_DIM][TILE_DIM];
+    
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     tile[threadIdx.<span class="pl-smi">y</span>+j][threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
+
+  <span class="pl-c1">__syncthreads</span>();
+
+  x = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
+  y = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     odata[(y+j)*width + x] = tile[threadIdx.<span class="pl-smi">x</span>][threadIdx.<span class="pl-smi">y</span> + j];
+}
+
+<span class="pl-c"><span class="pl-c">//</span> 无bank冲突转置内核</span>
+<span class="pl-c"><span class="pl-c">//</span> 与transposeCoalesced相同，只是第一个ti le维度填充</span>
+<span class="pl-c"><span class="pl-c">//</span> 以避免共享内存bank冲突。</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankConflicts</span>(<span class="pl-k">double</span> *odata, <span class="pl-k">const</span> <span class="pl-k">double</span> *idata)
+{
+  __shared__ <span class="pl-k">double</span> tile[TILE_DIM][TILE_DIM+<span class="pl-c1">1</span>];
+    
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+
+  <span class="pl-c"><span class="pl-c">//</span> 卷帘方式存取</span>
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     tile[threadIdx.<span class="pl-smi">y</span>+j][threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
+
+  <span class="pl-c1">__syncthreads</span>();
+
+  x = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
+  y = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+     odata[(y+j)*width + x] = tile[threadIdx.<span class="pl-smi">x</span>][threadIdx.<span class="pl-smi">y</span> + j];
+}
+
+<span class="pl-k">int</span> <span class="pl-en">main</span>(<span class="pl-k">int</span> argc, <span class="pl-k">char</span> **argv)
+{
+  <span class="pl-k">const</span> <span class="pl-k">int</span> nx = <span class="pl-c1">2048</span>;  <span class="pl-c"><span class="pl-c">//</span> 矩阵的x维度</span>
+  <span class="pl-k">const</span> <span class="pl-k">int</span> ny = <span class="pl-c1">2048</span>;  <span class="pl-c"><span class="pl-c">//</span> 矩阵的y维度</span>
+  <span class="pl-k">const</span> <span class="pl-k">int</span> mem_size = nx*ny*<span class="pl-k">sizeof</span>(<span class="pl-k">double</span>);  <span class="pl-c"><span class="pl-c">//</span> 矩阵所需的内存大小</span>
+
+  dim3 <span class="pl-smi">dimGrid</span>(nx/TILE_DIM, ny/TILE_DIM, <span class="pl-c1">1</span>);  <span class="pl-c"><span class="pl-c">//</span> 网格维度</span>
+  dim3 <span class="pl-smi">dimBlock</span>(TILE_DIM, BLOCK_ROWS, <span class="pl-c1">1</span>);  <span class="pl-c"><span class="pl-c">//</span> 块维度</span>
+
+  <span class="pl-k">int</span> devId = <span class="pl-c1">0</span>;
+  <span class="pl-k">if</span> (argc &gt; <span class="pl-c1">1</span>) devId = <span class="pl-c1">atoi</span>(argv[<span class="pl-c1">1</span>]);
+
+  cudaDeviceProp prop;
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaGetDeviceProperties</span>(&amp;prop, devId));
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\n</span>Device : %s<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, prop.<span class="pl-smi">name</span>);
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>Matrix size: %d %d, Block size: %d %d, Tile size: %d %d<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, 
+         nx, ny, TILE_DIM, BLOCK_ROWS, TILE_DIM, TILE_DIM);
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>dimGrid: %d %d %d. dimBlock: %d %d %d<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>,
+         dimGrid.<span class="pl-smi">x</span>, dimGrid.<span class="pl-smi">y</span>, dimGrid.<span class="pl-smi">z</span>, dimBlock.<span class="pl-smi">x</span>, dimBlock.<span class="pl-smi">y</span>, dimBlock.<span class="pl-smi">z</span>);
+  
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaSetDevice</span>(devId) );
+
+  <span class="pl-k">double</span> *h_idata = (<span class="pl-k">double</span>*)<span class="pl-c1">malloc</span>(mem_size);  <span class="pl-c"><span class="pl-c">//</span> 主机输入数据</span>
+  <span class="pl-k">double</span> *h_cdata = (<span class="pl-k">double</span>*)<span class="pl-c1">malloc</span>(mem_size);  <span class="pl-c"><span class="pl-c">//</span> 主机复制数据</span>
+  <span class="pl-k">double</span> *h_tdata = (<span class="pl-k">double</span>*)<span class="pl-c1">malloc</span>(mem_size);  <span class="pl-c"><span class="pl-c">//</span> 主机转置数据</span>
+  <span class="pl-k">double</span> *gold    = (<span class="pl-k">double</span>*)<span class="pl-c1">malloc</span>(mem_size);  <span class="pl-c"><span class="pl-c">//</span> 主机正确结果</span>
+  
+  <span class="pl-k">double</span> *d_idata, *d_cdata, *d_tdata;
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMalloc</span>(&amp;d_idata, mem_size) );  <span class="pl-c"><span class="pl-c">//</span> 设备输入数据</span>
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMalloc</span>(&amp;d_cdata, mem_size) );  <span class="pl-c"><span class="pl-c">//</span> 设备复制数据</span>
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMalloc</span>(&amp;d_tdata, mem_size) );  <span class="pl-c"><span class="pl-c">//</span> 设备转置数据</span>
+
+  <span class="pl-c"><span class="pl-c">//</span> 检查参数并计算执行配置</span>
+  <span class="pl-k">if</span> (nx % TILE_DIM || ny % TILE_DIM) {
+    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>nx 和 ny 必须是 TILE_DIM 的倍数<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
+    <span class="pl-k">goto</span> error_exit;
+  }
+
+  <span class="pl-k">if</span> (TILE_DIM % BLOCK_ROWS) {
+    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>TILE_DIM 必须是 BLOCK_ROWS 的倍数<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
+    <span class="pl-k">goto</span> error_exit;
+  }
+    
+  <span class="pl-c"><span class="pl-c">//</span> 初始化主机输入数据</span>
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; ny; j++)
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; nx; i++)
+      h_idata[j*nx + i] = j*nx + i;
+
+  <span class="pl-c"><span class="pl-c">//</span> 初始化主机正确结果</span>
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; ny; j++)
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; nx; i++)
+      gold[j*nx + i] = h_idata[i*nx + j];
+  
+  <span class="pl-c"><span class="pl-c">//</span> 将输入数据从主机复制到设备</span>
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(d_idata, h_idata, mem_size, cudaMemcpyHostToDevice) );
+  
+  <span class="pl-c"><span class="pl-c">//</span> 用于计时的事件</span>
+  cudaEvent_t startEvent, stopEvent;
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventCreate</span>(&amp;startEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventCreate</span>(&amp;stopEvent) );
+  <span class="pl-k">float</span> ms;
+
+  <span class="pl-c"><span class="pl-c">//</span> ------------</span>
+  <span class="pl-c"><span class="pl-c">//</span> 内核计时</span>
+  <span class="pl-c"><span class="pl-c">//</span> ------------</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s%25s<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Routine<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Bandwidth (GB/s)<span class="pl-pds">"</span></span>);
+  
+  <span class="pl-c"><span class="pl-c">//</span> ----</span>
+  <span class="pl-c"><span class="pl-c">//</span> 复制</span>
+  <span class="pl-c"><span class="pl-c">//</span> ----</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>copy<span class="pl-pds">"</span></span>);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemset</span>(d_cdata, <span class="pl-c1">0</span>, mem_size) );  <span class="pl-c"><span class="pl-c">//</span> 清空设备复制数据</span>
+  <span class="pl-c"><span class="pl-c">//</span> 预热</span>
+  copy&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+     copy&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventElapsedTime</span>(&amp;ms, startEvent, stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(h_cdata, d_cdata, mem_size, cudaMemcpyDeviceToHost) );
+  <span class="pl-c1">postprocess</span>(h_idata, h_cdata, nx*ny, ms);
+
+  <span class="pl-c"><span class="pl-c">//</span> -------------</span>
+  <span class="pl-c"><span class="pl-c">//</span> 使用共享内存的复制</span>
+  <span class="pl-c"><span class="pl-c">//</span> -------------</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>shared memory copy<span class="pl-pds">"</span></span>);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemset</span>(d_cdata, <span class="pl-c1">0</span>, mem_size) );  <span class="pl-c"><span class="pl-c">//</span> 清空设备复制数据</span>
+  <span class="pl-c"><span class="pl-c">//</span> 预热</span>
+  copySharedMem&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+     copySharedMem&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventElapsedTime</span>(&amp;ms, startEvent, stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(h_cdata, d_cdata, mem_size, cudaMemcpyDeviceToHost) );
+  <span class="pl-c1">postprocess</span>(h_idata, h_cdata, nx * ny, ms);
+
+  <span class="pl-c"><span class="pl-c">//</span> --------------</span>
+  <span class="pl-c"><span class="pl-c">//</span> 简单转置</span>
+  <span class="pl-c"><span class="pl-c">//</span> --------------</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>naive transpose<span class="pl-pds">"</span></span>);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemset</span>(d_tdata, <span class="pl-c1">0</span>, mem_size) );  <span class="pl-c"><span class="pl-c">//</span> 清空设备转置数据</span>
+  <span class="pl-c"><span class="pl-c">//</span> 预热</span>
+  transposeNaive&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+     transposeNaive&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventElapsedTime</span>(&amp;ms, startEvent, stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(h_tdata, d_tdata, mem_size, cudaMemcpyDeviceToHost) );
+  <span class="pl-c1">postprocess</span>(gold, h_tdata, nx * ny, ms);
+
+  <span class="pl-c"><span class="pl-c">//</span> ------------------</span>
+  <span class="pl-c"><span class="pl-c">//</span> 合并转置</span>
+  <span class="pl-c"><span class="pl-c">//</span> ------------------</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>coalesced transpose<span class="pl-pds">"</span></span>);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemset</span>(d_tdata, <span class="pl-c1">0</span>, mem_size) );  <span class="pl-c"><span class="pl-c">//</span> 清空设备转置数据</span>
+  <span class="pl-c"><span class="pl-c">//</span> 预热</span>
+  transposeCoalesced&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+     transposeCoalesced&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventElapsedTime</span>(&amp;ms, startEvent, stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(h_tdata, d_tdata, mem_size, cudaMemcpyDeviceToHost) );
+  <span class="pl-c1">postprocess</span>(gold, h_tdata, nx * ny, ms);
+
+  <span class="pl-c"><span class="pl-c">//</span> ------------------------</span>
+  <span class="pl-c"><span class="pl-c">//</span> 无bank冲突转置</span>
+  <span class="pl-c"><span class="pl-c">//</span> ------------------------</span>
+  <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%25s<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>conflict-free transpose<span class="pl-pds">"</span></span>);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemset</span>(d_tdata, <span class="pl-c1">0</span>, mem_size) );  <span class="pl-c"><span class="pl-c">//</span> 清空设备转置数据</span>
+  <span class="pl-c"><span class="pl-c">//</span> 预热</span>
+  transposeNoBankConflicts&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+     transposeNoBankConflicts&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventElapsedTime</span>(&amp;ms, startEvent, stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMemcpy</span>(h_tdata, d_tdata, mem_size, cudaMemcpyDeviceToHost) );
+  <span class="pl-c1">postprocess</span>(gold, h_tdata, nx * ny, ms);
+
+error_exit:
+  <span class="pl-c"><span class="pl-c">//</span> 清理</span>
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventDestroy</span>(startEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventDestroy</span>(stopEvent) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaFree</span>(d_tdata) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaFree</span>(d_cdata) );
+  <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaFree</span>(d_idata) );
+  <span class="pl-c1">free</span>(h_idata);
+  <span class="pl-c1">free</span>(h_tdata);
+  <span class="pl-c1">free</span>(h_cdata);
+  <span class="pl-c1">free</span>(gold);
+}</pre></div>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/0dcb7869cc27b32a3f633716ea089fab99a5674e393c8f7afc62670c35c3fd08/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130333535373937302d313938303233363232322e706e67"><img src="https://camo.githubusercontent.com/0dcb7869cc27b32a3f633716ea089fab99a5674e393c8f7afc62670c35c3fd08/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130333535373937302d313938303233363232322e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603103557970-1980236222.png" style="max-width: 100%;"></a>
+    <p>运行结果</p>
+</div>
+<p>由于共享内存的bank为32位即4字节，所以本来以为double和float的优化机制会有些许不同，但就代码本身来看并没有需要编程人员值得注意的，编译器将其都优化完成，只需按照float类型进行处理即可。</p>
+<hr>
+<p><strong>REFERENCE(感谢引用)：</strong></p>
+<ul>
+<li><a href="https://zhuanlan.zhihu.com/p/692010210" rel="nofollow">[CUDA 学习笔记] 矩阵转置算子优化</a></li>
+<li><a href="https://developer.nvidia.com/blog/efficient-matrix-transpose-cuda-cc/" rel="nofollow">An Efficient Matrix Transpose in CUDA C/C++</a></li>
+</ul></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+</div>
+    <div id="footer">Copyright © <span id="year"></span><a href="https://jibinghu.github.io"> ZOMBIE_ </a>
+<p>
+<span id="runday"></span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a>
+</p>
+
+<script>
+if("05/28/2024"!=""){
+    var now=new Date();
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("year").innerHTML=now.getFullYear();
+    if(""!=""){document.getElementById("runday").innerHTML=" • "+"网站运行"+diffDay+"天"+" • ";}
+    else{document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";}
+}
+</script>
+</div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n\n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    script.setAttribute("theme","dark-blue");
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+</script>
+
+
+</html>
