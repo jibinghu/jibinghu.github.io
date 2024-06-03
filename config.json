@@ -5,7 +5,7 @@
     "GMEEK_VERSION":"last",
     "startSite":"05/28/2024",
     "onePageListNum":15,
-    "themeMode":"fix",
-    "dayTheme":"dark_high_contrast",
-    "nightTheme":"dark-blue"
+    "themeMode":"maunal",
+    "dayTheme":"light_high_contrast",
+    "nightTheme":"dark_high_contrast"
 }
