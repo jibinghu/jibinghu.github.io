@@ -11,31 +11,29 @@
     </script>
 <meta name="description" content="### 从矩阵转置看共享内存(CUDA的使用：Bank Conflict与Memory Coalesce)
 ---
-- [从矩阵转置看共享内存(CUDA的使用与bank conflict)](#从矩阵转置看共享内存cuda的使用与bank-conflict)
-  - [矩阵转置的几种方法： {#chapter\_1}](#矩阵转置的几种方法-chapter_1)
-    - [矩阵转置朴素实现： {#sector\_1}](#矩阵转置朴素实现-sector_1)
-    - [利用共享内存合并访存： {#sector\_2}](#利用共享内存合并访存-sector_2)
-    - [利用 padding 解决 bank conflict： {#sector\_3}](#利用-padding-解决-bank-conflict-sector_3)
-    - [增加每个线程的处理元素个数： {#sector\_4}](#增加每个线程的处理元素个数-sector_4)
-    - [向量化存取： {#sector\_5}](#向量化存取-sector_5)
-  - [矩阵转置综合应用： {#chapter\_2}](#矩阵转置综合应用-chapter_2)
-    - [Float数据类型转置： {#float}](#float数据类型转置-float)
-    - [Double数据类型转置： {#double}](#double数据类型转置-double)
+- [矩阵转置的几种方法：](#sector_1)
+  - [矩阵转置朴素实现：](#sector_1)
+  - [利用共享内存合并访存：](#sector_2)
+  - [利用 padding 解决 bank conflict：](#sector_3)
+  - [增加每个线程的处理元素个数：](#sector_4)
+  - [向量化存取：](#sector_5)
+- [矩阵转置综合应用：](#chapter_2)
+  - [Float数据类型转置：](#float)
+  - [Double数据类型转置：](#double)
 ---
 > 矩阵转置是一种基础的矩阵操作, 即将二维矩阵的行列进行反转，本文主要围绕行主序的二维单精度矩阵的转置考虑相关的优化。">
 <meta property="og:title" content="从矩阵转置看共享内存(CUDA)">
 <meta property="og:description" content="### 从矩阵转置看共享内存(CUDA的使用：Bank Conflict与Memory Coalesce)
 ---
-- [从矩阵转置看共享内存(CUDA的使用与bank conflict)](#从矩阵转置看共享内存cuda的使用与bank-conflict)
-  - [矩阵转置的几种方法： {#chapter\_1}](#矩阵转置的几种方法-chapter_1)
-    - [矩阵转置朴素实现： {#sector\_1}](#矩阵转置朴素实现-sector_1)
-    - [利用共享内存合并访存： {#sector\_2}](#利用共享内存合并访存-sector_2)
-    - [利用 padding 解决 bank conflict： {#sector\_3}](#利用-padding-解决-bank-conflict-sector_3)
-    - [增加每个线程的处理元素个数： {#sector\_4}](#增加每个线程的处理元素个数-sector_4)
-    - [向量化存取： {#sector\_5}](#向量化存取-sector_5)
-  - [矩阵转置综合应用： {#chapter\_2}](#矩阵转置综合应用-chapter_2)
-    - [Float数据类型转置： {#float}](#float数据类型转置-float)
-    - [Double数据类型转置： {#double}](#double数据类型转置-double)
+- [矩阵转置的几种方法：](#sector_1)
+  - [矩阵转置朴素实现：](#sector_1)
+  - [利用共享内存合并访存：](#sector_2)
+  - [利用 padding 解决 bank conflict：](#sector_3)
+  - [增加每个线程的处理元素个数：](#sector_4)
+  - [向量化存取：](#sector_5)
+- [矩阵转置综合应用：](#chapter_2)
+  - [Float数据类型转置：](#float)
+  - [Double数据类型转置：](#double)
 ---
 > 矩阵转置是一种基础的矩阵操作, 即将二维矩阵的行列进行反转，本文主要围绕行主序的二维单精度矩阵的转置考虑相关的优化。">
 <meta property="og:type" content="article">
@@ -66,7 +64,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     .postTitle{font-size:24px;}
 }
 </style>
-<style>.markdown-alert{padding:0.5rem 1rem;margin-bottom:1rem;border-left:.25em solid var(--borderColor-default,var(--color-border-default));}.markdown-alert .markdown-alert-title {display:flex;font-weight:var(--base-text-weight-medium,500);align-items:center;line-height:1;}.markdown-alert>:first-child {margin-top:0;}.markdown-alert>:last-child {margin-bottom:0;}</style><style>.markdown-alert.markdown-alert-tip {border-left-color:var(--borderColor-success-emphasis, var(--color-success-emphasis));background-color:var(--color-success-subtle);}.markdown-alert.markdown-alert-tip .markdown-alert-title {color: var(--fgColor-success,var(--color-success-fg));}</style>
+<style>.markdown-alert{padding:0.5rem 1rem;margin-bottom:1rem;border-left:.25em solid var(--borderColor-default,var(--color-border-default));}.markdown-alert .markdown-alert-title {display:flex;font-weight:var(--base-text-weight-medium,500);align-items:center;line-height:1;}.markdown-alert>:first-child {margin-top:0;}.markdown-alert>:last-child {margin-bottom:0;}</style><style>.markdown-alert.markdown-alert-tip {border-left-color:var(--borderColor-success-emphasis, var(--color-success-emphasis));background-color:var(--color-success-subtle);}.markdown-alert.markdown-alert-tip .markdown-alert-title {color: var(--fgColor-success,var(--color-success-fg));}</style><style>.markdown-alert.markdown-alert-caution {border-left-color:var(--borderColor-danger-emphasis, var(--color-danger-emphasis));background-color:var(--color-danger-subtle);}.markdown-alert.markdown-alert-caution .markdown-alert-title {color: var(--fgColor-danger,var(--color-danger-fg));}</style>
 
 
 
@@ -99,23 +97,19 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <div class="markdown-body" id="postBody"><h3>从矩阵转置看共享内存(CUDA的使用：Bank Conflict与Memory Coalesce)</h3>
 <hr>
 <ul>
-<li><a href="#%E4%BB%8E%E7%9F%A9%E9%98%B5%E8%BD%AC%E7%BD%AE%E7%9C%8B%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98cuda%E7%9A%84%E4%BD%BF%E7%94%A8%E4%B8%8Ebank-conflict">从矩阵转置看共享内存(CUDA的使用与bank conflict)</a>
+<li><a href="#sector_1">矩阵转置的几种方法：</a>
 <ul>
-<li><a href="#%E7%9F%A9%E9%98%B5%E8%BD%AC%E7%BD%AE%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E6%B3%95-chapter_1">矩阵转置的几种方法： {#chapter_1}</a>
-<ul>
-<li><a href="#%E7%9F%A9%E9%98%B5%E8%BD%AC%E7%BD%AE%E6%9C%B4%E7%B4%A0%E5%AE%9E%E7%8E%B0-sector_1">矩阵转置朴素实现： {#sector_1}</a></li>
-<li><a href="#%E5%88%A9%E7%94%A8%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98%E5%90%88%E5%B9%B6%E8%AE%BF%E5%AD%98-sector_2">利用共享内存合并访存： {#sector_2}</a></li>
-<li><a href="#%E5%88%A9%E7%94%A8-padding-%E8%A7%A3%E5%86%B3-bank-conflict-sector_3">利用 padding 解决 bank conflict： {#sector_3}</a></li>
-<li><a href="#%E5%A2%9E%E5%8A%A0%E6%AF%8F%E4%B8%AA%E7%BA%BF%E7%A8%8B%E7%9A%84%E5%A4%84%E7%90%86%E5%85%83%E7%B4%A0%E4%B8%AA%E6%95%B0-sector_4">增加每个线程的处理元素个数： {#sector_4}</a></li>
-<li><a href="#%E5%90%91%E9%87%8F%E5%8C%96%E5%AD%98%E5%8F%96-sector_5">向量化存取： {#sector_5}</a></li>
+<li><a href="#sector_1">矩阵转置朴素实现：</a></li>
+<li><a href="#sector_2">利用共享内存合并访存：</a></li>
+<li><a href="#sector_3">利用 padding 解决 bank conflict：</a></li>
+<li><a href="#sector_4">增加每个线程的处理元素个数：</a></li>
+<li><a href="#sector_5">向量化存取：</a></li>
 </ul>
 </li>
-<li><a href="#%E7%9F%A9%E9%98%B5%E8%BD%AC%E7%BD%AE%E7%BB%BC%E5%90%88%E5%BA%94%E7%94%A8-chapter_2">矩阵转置综合应用： {#chapter_2}</a>
+<li><a href="#chapter_2">矩阵转置综合应用：</a>
 <ul>
-<li><a href="#float%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E8%BD%AC%E7%BD%AE-float">Float数据类型转置： {#float}</a></li>
-<li><a href="#double%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E8%BD%AC%E7%BD%AE-double">Double数据类型转置： {#double}</a></li>
-</ul>
-</li>
+<li><a href="#float">Float数据类型转置：</a></li>
+<li><a href="#double">Double数据类型转置：</a></li>
 </ul>
 </li>
 </ul>
@@ -136,7 +130,7 @@ Transposed matrix:
     <span class="pl-c1">3</span>    <span class="pl-c1">7</span>   <span class="pl-c1">11</span>   <span class="pl-c1">15</span>
     <span class="pl-c1">4</span>    <span class="pl-c1">8</span>   <span class="pl-c1">12</span>   <span class="pl-c1">16</span></pre></div>
 <hr>
-<h4>矩阵转置的几种方法： {#chapter_1}</h4>
+<h4>矩阵转置的几种方法：</h4>
 <h5>矩阵转置朴素实现： {#sector_1}</h5>
 <div class="highlight highlight-source-c++"><pre class="notranslate">__global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kernel_v0</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
     <span class="pl-k">const</span> <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * blockDim.<span class="pl-smi">x</span> + threadIdx.<span class="pl-smi">x</span>;
@@ -980,7 +974,30 @@ error_exit:
     <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/0dcb7869cc27b32a3f633716ea089fab99a5674e393c8f7afc62670c35c3fd08/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130333535373937302d313938303233363232322e706e67"><img src="https://camo.githubusercontent.com/0dcb7869cc27b32a3f633716ea089fab99a5674e393c8f7afc62670c35c3fd08/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130333535373937302d313938303233363232322e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603103557970-1980236222.png" style="max-width: 100%;"></a>
     <p>运行结果</p>
 </div>
-<p>由于共享内存的bank为32位即4字节，所以本来以为double和float的优化机制会有些许不同，但就代码本身来看并没有需要编程人员值得注意的，编译器将其都优化完成，只需按照float类型进行处理即可。</p>
+<p>由于共享内存的bank为32位即4字节，所以double和float的优化机制会有些许不同。<br>
+对于写入Shared Memory的操作：</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">16</span>; j += <span class="pl-c1">16</span>)
+  tile[threadIdx.y+j][threadIdx.x] = idata[(y+j)*width + x];
+<span class="pl-en">__syncthreads</span>();</pre></div>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/37cbbba8e3186de67290d92ee87ea2a9dfe1644ea457054b7d7bf60909d178a2/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333134313233343539372d313834303436313138352e706e67"><img src="https://camo.githubusercontent.com/37cbbba8e3186de67290d92ee87ea2a9dfe1644ea457054b7d7bf60909d178a2/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333134313233343539372d313834303436313138352e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603141234597-1840461185.png" style="max-width: 100%;"></a>
+    <p>Double类型'伪合并访存'</p>
+</div>
+<p>可以注意到，在每个warp中，每个线程负责两个double数据。</p>
+<p>另外，对于下述代码情况：</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">16</span>; j += <span class="pl-c1">16</span>)
+  odata[(y+j)*width + x] = tile[threadIdx.x][threadIdx.y + j];</pre></div>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/d71cf5c63243b2aec1129ab1cb6904196aec87ac2f0ecae74206c76469c74cc1/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333134353934373938312d313235373939383237352e706e67"><img src="https://camo.githubusercontent.com/d71cf5c63243b2aec1129ab1cb6904196aec87ac2f0ecae74206c76469c74cc1/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333134353934373938312d313235373939383237352e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603145947981-1257998275.png" style="max-width: 100%;"></a>
+    <p>Double类型'伪非合并访存'</p>
+</div>
+<p>在如上图中，每个bank中都会发生16路bank冲突，所以改进增加padding：</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/22e64d9c786ddd45a7ffe1e0b13098aee5dc39c3a37e2785020582eead3cda72/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333135303530373433322d313337313736303634382e706e67"><img src="https://camo.githubusercontent.com/22e64d9c786ddd45a7ffe1e0b13098aee5dc39c3a37e2785020582eead3cda72/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333135303530373433322d313337313736303634382e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603150507432-1371760648.png" style="max-width: 100%;"></a>
+    <p>Double类型'伪非合并访存'</p>
+</div>
+<div class="markdown-alert markdown-alert-caution"><p class="markdown-alert-title"><svg class="octicon octicon-stop mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Caution</p><p>在这里会有疑问，为什么同一个warp中的前16个线程和后16个线程不会发生bank conflict呢？事实上，要辩证深入本质看bank conflict的定义，当Shared Memory的32个bank发生非同时访问(即部分bank有一个access，另外部分不只有一个access)时，由于多个访问同时访问一个bank，导致产生顺序访问，拖慢了访存节奏，此时就会产生bank conflict。而在这里由于每次访问都会将32个bank同时访问，也就是占满了Shared Memory的带宽，当然也就不会发生冲突。</p>
+</div>
 <hr>
 <p><strong>REFERENCE(感谢引用)：</strong></p>
 <ul>

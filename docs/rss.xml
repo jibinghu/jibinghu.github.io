@@ -1,16 +1,15 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 03 Jun 2024 03:42:16 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>从矩阵转置看共享内存(CUDA)</title><link>https://jibinghu.github.io/post/cong-ju-zhen-zhuan-zhi-kan-gong-xiang-nei-cun-%28CUDA%29.html</link><description>### 从矩阵转置看共享内存(CUDA的使用：Bank Conflict与Memory Coalesce)&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 03 Jun 2024 07:27:08 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>从矩阵转置看共享内存(CUDA)</title><link>https://jibinghu.github.io/post/cong-ju-zhen-zhuan-zhi-kan-gong-xiang-nei-cun-%28CUDA%29.html</link><description>### 从矩阵转置看共享内存(CUDA的使用：Bank Conflict与Memory Coalesce)&#13;
 ---&#13;
-- [从矩阵转置看共享内存(CUDA的使用与bank conflict)](#从矩阵转置看共享内存cuda的使用与bank-conflict)&#13;
-  - [矩阵转置的几种方法： {#chapter\_1}](#矩阵转置的几种方法-chapter_1)&#13;
-    - [矩阵转置朴素实现： {#sector\_1}](#矩阵转置朴素实现-sector_1)&#13;
-    - [利用共享内存合并访存： {#sector\_2}](#利用共享内存合并访存-sector_2)&#13;
-    - [利用 padding 解决 bank conflict： {#sector\_3}](#利用-padding-解决-bank-conflict-sector_3)&#13;
-    - [增加每个线程的处理元素个数： {#sector\_4}](#增加每个线程的处理元素个数-sector_4)&#13;
-    - [向量化存取： {#sector\_5}](#向量化存取-sector_5)&#13;
-  - [矩阵转置综合应用： {#chapter\_2}](#矩阵转置综合应用-chapter_2)&#13;
-    - [Float数据类型转置： {#float}](#float数据类型转置-float)&#13;
-    - [Double数据类型转置： {#double}](#double数据类型转置-double)&#13;
+- [矩阵转置的几种方法：](#sector_1)&#13;
+  - [矩阵转置朴素实现：](#sector_1)&#13;
+  - [利用共享内存合并访存：](#sector_2)&#13;
+  - [利用 padding 解决 bank conflict：](#sector_3)&#13;
+  - [增加每个线程的处理元素个数：](#sector_4)&#13;
+  - [向量化存取：](#sector_5)&#13;
+- [矩阵转置综合应用：](#chapter_2)&#13;
+  - [Float数据类型转置：](#float)&#13;
+  - [Double数据类型转置：](#double)&#13;
 ---&#13;
 &gt; 矩阵转置是一种基础的矩阵操作, 即将二维矩阵的行列进行反转，本文主要围绕行主序的二维单精度矩阵的转置考虑相关的优化。</description><guid isPermaLink="true">https://jibinghu.github.io/post/cong-ju-zhen-zhuan-zhi-kan-gong-xiang-nei-cun-%28CUDA%29.html</guid><pubDate>Mon, 03 Jun 2024 03:41:48 +0000</pubDate></item><item><title>PaperReading_ConvStencil</title><link>https://jibinghu.github.io/post/PaperReading_ConvStencil.html</link><description>##### *PAPER READING*&#13;
 &#13;

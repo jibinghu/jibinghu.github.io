@@ -1,15 +1,14 @@
 ### 从矩阵转置看共享内存(CUDA的使用：Bank Conflict与Memory Coalesce)
 ---
-- [从矩阵转置看共享内存(CUDA的使用与bank conflict)](#从矩阵转置看共享内存cuda的使用与bank-conflict)
-  - [矩阵转置的几种方法： {#chapter\_1}](#矩阵转置的几种方法-chapter_1)
-    - [矩阵转置朴素实现： {#sector\_1}](#矩阵转置朴素实现-sector_1)
-    - [利用共享内存合并访存： {#sector\_2}](#利用共享内存合并访存-sector_2)
-    - [利用 padding 解决 bank conflict： {#sector\_3}](#利用-padding-解决-bank-conflict-sector_3)
-    - [增加每个线程的处理元素个数： {#sector\_4}](#增加每个线程的处理元素个数-sector_4)
-    - [向量化存取： {#sector\_5}](#向量化存取-sector_5)
-  - [矩阵转置综合应用： {#chapter\_2}](#矩阵转置综合应用-chapter_2)
-    - [Float数据类型转置： {#float}](#float数据类型转置-float)
-    - [Double数据类型转置： {#double}](#double数据类型转置-double)
+- [矩阵转置的几种方法：](#sector_1)
+  - [矩阵转置朴素实现：](#sector_1)
+  - [利用共享内存合并访存：](#sector_2)
+  - [利用 padding 解决 bank conflict：](#sector_3)
+  - [增加每个线程的处理元素个数：](#sector_4)
+  - [向量化存取：](#sector_5)
+- [矩阵转置综合应用：](#chapter_2)
+  - [Float数据类型转置：](#float)
+  - [Double数据类型转置：](#double)
 ---
 > 矩阵转置是一种基础的矩阵操作, 即将二维矩阵的行列进行反转，本文主要围绕行主序的二维单精度矩阵的转置考虑相关的优化。
 > 
@@ -29,7 +28,7 @@ Transposed matrix:
     4    8   12   16
 ```
 ---
-#### 矩阵转置的几种方法： {#chapter_1}
+#### 矩阵转置的几种方法：
 
 ##### 矩阵转置朴素实现： {#sector_1}
 
@@ -920,7 +919,45 @@ error_exit:
     <p>运行结果</p>
 </div>
 
-由于共享内存的bank为32位即4字节，所以本来以为double和float的优化机制会有些许不同，但就代码本身来看并没有需要编程人员值得注意的，编译器将其都优化完成，只需按照float类型进行处理即可。
+由于共享内存的bank为32位即4字节，所以double和float的优化机制会有些许不同。
+对于写入Shared Memory的操作：
+
+```cpp
+for (int j = 0; j < 16; j += 16)
+  tile[threadIdx.y+j][threadIdx.x] = idata[(y+j)*width + x];
+__syncthreads();
+```
+
+<div style="text-align: center;">
+    <img src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603141234597-1840461185.png" weight="500" height="200">
+    <p>Double类型'伪合并访存'</p>
+</div>
+
+可以注意到，在每个warp中，每个线程负责两个double数据。
+
+
+另外，对于下述代码情况：
+
+```cpp
+for (int j = 0; j < 16; j += 16)
+  odata[(y+j)*width + x] = tile[threadIdx.x][threadIdx.y + j];
+```
+
+<div style="text-align: center;">
+    <img src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603145947981-1257998275.png" weight="500" height="200">
+    <p>Double类型'伪非合并访存'</p>
+</div>
+
+在如上图中，每个bank中都会发生16路bank冲突，所以改进增加padding：
+
+
+<div style="text-align: center;">
+    <img src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603150507432-1371760648.png" weight="500" height="200">
+    <p>Double类型'伪非合并访存'</p>
+</div>
+
+> [!CAUTION]
+> 在这里会有疑问，为什么同一个warp中的前16个线程和后16个线程不会发生bank conflict呢？事实上，要辩证深入本质看bank conflict的定义，当Shared Memory的32个bank发生非同时访问(即部分bank有一个access，另外部分不只有一个access)时，由于多个访问同时访问一个bank，导致产生顺序访问，拖慢了访存节奏，此时就会产生bank conflict。而在这里由于每次访问都会将32个bank同时访问，也就是占满了Shared Memory的带宽，当然也就不会发生冲突。
 
 ---
 
