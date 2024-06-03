@@ -120,7 +120,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <blockquote>
 <p>矩阵转置是一种基础的矩阵操作, 即将二维矩阵的行列进行反转，本文主要围绕行主序的二维单精度矩阵的转置考虑相关的优化。</p>
 </blockquote>
-<p>矩阵的转置就是将矩阵中的元素按照主对角线进行交换。具体来说，对于一个矩阵 𝐴A ，其转置矩阵 $ A^T $ 的定义是： $ A^T[i][j] = A[j][i] $ 。这意味着，矩阵 $ A $ 的第 $ i $ 行第 $ j $ 列的元素在转置矩阵 $ A^T $ 中变成了第 $ j $ 行第 $ i $ 列的元素。换句话说，矩阵中的元素是相对于主对角线对称交换的。</p>
+<p>矩阵的转置就是将矩阵中的元素按照主对角线进行交换。具体来说，对于一个矩阵 $A$，其转置矩阵 $A^T$ 的定义是： $A^T[i][j] = A[j][i]$ 。这意味着，矩阵 $A$ 的第 $i$ 行第 $j$ 列的元素在转置矩阵 $A^T$ 中变成了第 $j$ 行第 $i$ 列的元素。换句话说，矩阵中的元素是相对于主对角线对称交换的。</p>
 <p><strong>🌰：</strong></p>
 <div class="highlight highlight-source-c++"><pre class="notranslate">Original matrix:
     <span class="pl-c1">1</span>    <span class="pl-c1">2</span>    <span class="pl-c1">3</span>    <span class="pl-c1">4</span>
@@ -1050,6 +1050,6 @@ function iFrameLoading(){
     }
 }
 </script>
-
+<script>MathJax = {tex: {inlineMath: [["$", "$"]]}};</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 </html>
