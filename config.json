@@ -6,7 +6,7 @@
     "startSite":"05/28/2024",
     "onePageListNum":15,
     "singlePage":["link"],
-    "themeMode":"fix",
-    "dayTheme":"dark",
-    "nightTheme":"dark-blue"
+    "themeMode":"manual",
+    "dayTheme":"light",
+    "nightTheme":"dark"
 }
