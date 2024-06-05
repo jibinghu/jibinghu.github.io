@@ -1,5 +1,17 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 04 Jun 2024 13:53:03 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>Tensor core 详解</title><link>https://jibinghu.github.io/post/Tensor%20core%20-xiang-jie.html</link><description>## Tensor core 详解&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Wed, 05 Jun 2024 07:57:32 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>CUDA 线程布局以及内存层次</title><link>https://jibinghu.github.io/post/CUDA%20-xian-cheng-bu-ju-yi-ji-nei-cun-ceng-ci.html</link><description>### CUDA线程布局和内存层次&#13;
+&#13;
+&gt; [!CAUTION]&#13;
+&gt; TODO :  CUDA 中 CUDA Core 硬件结构(SM/SP等)与软件层面布局对应关系及介绍&#13;
+&#13;
+**CUDA线程布局：**&#13;
+&#13;
+&lt;img src='https://img2024.cnblogs.com/blog/3358182/202405/3358182-20240514171810593-659841696.png' weight='300' height='200'&gt;&#13;
+&#13;
+如图所示，CUDA线程布局分为三层：网格(Grid),线程块(Block)以及线程(thread)&#13;
+&#13;
+&gt; [!IMPORTANT]&#13;
+&gt; 在计算机中，内存的访问是一维的，线程的访问实质上也是一维的。</description><guid isPermaLink="true">https://jibinghu.github.io/post/CUDA%20-xian-cheng-bu-ju-yi-ji-nei-cun-ceng-ci.html</guid><pubDate>Wed, 05 Jun 2024 07:57:05 +0000</pubDate></item><item><title>Tensor core 详解</title><link>https://jibinghu.github.io/post/Tensor%20core%20-xiang-jie.html</link><description>## Tensor core 详解&#13;
 &#13;
 ---&#13;
 &#13;
