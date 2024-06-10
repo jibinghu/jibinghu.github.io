@@ -457,9 +457,8 @@ __global__ void tensorCoreMatrixMul(float* A, float* B, float* C, int M, int N, 
 
 **REFERENCE:THANKS FOR**
 
-<a src="https://zhuanlan.zhihu.com/p/690052715?utm_id=0">1. 搞懂 CUDA Shared Memory 上的 bank conflicts 和向量化指令（LDS.128 / float4）的访存特点</a>
+<a href="https://zhuanlan.zhihu.com/p/690052715?utm_id=0">1. 搞懂 CUDA Shared Memory 上的 bank conflicts 和向量化指令（LDS.128 / float4）的访存特点</a>
 
-<a src="https://chiemon.github.io/2020/02/06/CUDA-%E7%9F%A9%E9%98%B5%E4%B9%98%E6%B3%95-%E4%BC%98%E5%8C%96%E5%8F%8A%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90-%E4%B8%8A.html">2. 矩阵乘法的 CUDA 实现、优化及性能分析</a>
+<a href="https://chiemon.github.io/2020/02/06/CUDA-%E7%9F%A9%E9%98%B5%E4%B9%98%E6%B3%95-%E4%BC%98%E5%8C%96%E5%8F%8A%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90-%E4%B8%8A.html">2. 矩阵乘法的 CUDA 实现、优化及性能分析</a>
 
-<a src="https://zhuanlan.zhihu.com/p/410278370">3. CUDA 矩阵乘法终极优化指南
-</a>
+<a href="https://zhuanlan.zhihu.com/p/410278370">3. CUDA 矩阵乘法终极优化指南</a>
