@@ -1,5 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Wed, 05 Jun 2024 07:57:32 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>CUDA 线程布局以及内存层次</title><link>https://jibinghu.github.io/post/CUDA%20-xian-cheng-bu-ju-yi-ji-nei-cun-ceng-ci.html</link><description>### CUDA线程布局和内存层次&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 10 Jun 2024 12:45:53 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>CUDA 矩阵乘优化分析</title><link>https://jibinghu.github.io/post/CUDA%20-ju-zhen-cheng-you-hua-fen-xi.html</link><description>#### 通过Shared Memory加速矩阵乘(Double等类型)分析&#13;
+---&#13;
+- [64位数据矩阵乘优化访存分析](#sector_1)&#13;
+- [矩阵乘法的 CUDA 优化](#sector_2)&#13;
+---&#13;
+&#13;
+#### 64位数据矩阵乘优化访存分析 {#sector_1}&#13;
+&#13;
+通过分析下面的代码，回答对应的两个问题(答案在文章结尾给出)。</description><guid isPermaLink="true">https://jibinghu.github.io/post/CUDA%20-ju-zhen-cheng-you-hua-fen-xi.html</guid><pubDate>Mon, 10 Jun 2024 12:45:09 +0000</pubDate></item><item><title>CUDA 线程布局以及内存层次</title><link>https://jibinghu.github.io/post/CUDA%20-xian-cheng-bu-ju-yi-ji-nei-cun-ceng-ci.html</link><description>### CUDA线程布局和内存层次&#13;
 &#13;
 &gt; [!CAUTION]&#13;
 &gt; TODO :  CUDA 中 CUDA Core 硬件结构(SM/SP等)与软件层面布局对应关系及介绍&#13;
