@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href="//cdn.staticfile.net/Primer/21.0.7/primer.css" rel="stylesheet" />
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="# 大话 Transformer(零基础看懂论文)
+
+---
+
+###### 由于课程实验要求以及专业学习关系，之前学过Transformer但仅局限于会用，这次深入探讨一下Transformer以便为大模型推理加速打个基础。">
+<meta property="og:title" content="大话 Transformer(零基础看懂论文)">
+<meta property="og:description" content="# 大话 Transformer(零基础看懂论文)
+
+---
+
+###### 由于课程实验要求以及专业学习关系，之前学过Transformer但仅局限于会用，这次深入探讨一下Transformer以便为大模型推理加速打个基础。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/da-hua-%20Transformer%28-ling-ji-chu-kan-dong-lun-wen-%29.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>大话 Transformer(零基础看懂论文)</title>
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+</style>
+<style>.markdown-alert{padding:0.5rem 1rem;margin-bottom:1rem;border-left:.25em solid var(--borderColor-default,var(--color-border-default));}.markdown-alert .markdown-alert-title {display:flex;font-weight:var(--base-text-weight-medium,500);align-items:center;line-height:1;}.markdown-alert>:first-child {margin-top:0;}.markdown-alert>:last-child {margin-bottom:0;}</style><style>.markdown-alert.markdown-alert-note {border-left-color:var(--borderColor-accent-emphasis, var(--color-accent-emphasis));background-color:var(--color-accent-subtle);}.markdown-alert.markdown-alert-note .markdown-alert-title {color: var(--fgColor-accent,var(--color-accent-fg));}</style><style>.markdown-alert.markdown-alert-important {border-left-color:var(--borderColor-done-emphasis, var(--color-done-emphasis));background-color:var(--color-done-subtle);}.markdown-alert.markdown-alert-important .markdown-alert-title {color: var(--fgColor-done,var(--color-done-fg));}</style>
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">大话 Transformer(零基础看懂论文)</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/11" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h1>大话 Transformer(零基础看懂论文)</h1>
+<hr>
+<h6>由于课程实验要求以及专业学习关系，之前学过Transformer但仅局限于会用，这次深入探讨一下Transformer以便为大模型推理加速打个基础。</h6>
+<p><strong>Transformer 简介：</strong></p>
+<p>Transformer模型的核心特点包括：</p>
+<ol>
+<li><strong>自注意力机制（Self-Attention Mechanism）</strong>：能够捕捉序列中各个位置之间的依赖关系，无论它们距离多远。</li>
+<li><strong>位置编码（Positional Encoding）</strong>：因为Transformer不使用RNN或CNN，因此需要通过位置编码来保留序列信息。</li>
+<li><strong>多头注意力（Multi-Head Attention）</strong>：使模型可以在不同的子空间中学习不同的特征表示。</li>
+<li><strong>前馈神经网络（Feed-Forward Neural Network）</strong>：应用于每个位置的独立全连接层。</li>
+</ol>
+<p>Transformer模型的工作流程如下：</p>
+<ul>
+<li><strong>编码器</strong>：输入序列通过若干层堆叠的编码器，每层包含一个自注意力机制和一个前馈神经网络。编码器输出是一个固定长度的表示，每个位置对应于输入序列中的一个位置。</li>
+<li><strong>解码器</strong>：解码器也由若干层组成，每层包括一个自注意力机制、一个对编码器输出的注意力机制和一个前馈神经网络。解码器利用编码器的输出和自身的先前输出生成目标序列。</li>
+</ul>
+<hr>
+<h2>一、Transformer 原文解析</h2>
+<h3>整体架构：</h3>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/cc4ce2c72e1414d609b5ee89e679a2dd96120aa0823f9a3efd3c3126cca3ef56/68747470733a2f2f6d696e696f2e63766d6172742e6e65742f63766d6172742d636f6d6d756e6974792f696d616765732f3230323230362f33302f302f303036433346674567793167756b7466733778766d6a36307530306c616a737330322e6a7067"><img src="https://camo.githubusercontent.com/cc4ce2c72e1414d609b5ee89e679a2dd96120aa0823f9a3efd3c3126cca3ef56/68747470733a2f2f6d696e696f2e63766d6172742e6e65742f63766d6172742d636f6d6d756e6974792f696d616765732f3230323230362f33302f302f303036433346674567793167756b7466733778766d6a36307530306c616a737330322e6a7067" width="390" height="350" data-canonical-src="https://minio.cvmart.net/cvmart-community/images/202206/30/0/006C3FgEgy1guktfs7xvmj60u00lajss02.jpg" style="max-width: 100%;"></a>
+    <p>The Transformer 整体架构</p>
+</div>
+<blockquote>
+<p>Transformer 是 seq2seq 模型，分为Encoder和Decoder两大部分，如上图，Encoder部分是由6个相同的encoder组成，Decoder部分也是由6个相同的decoder组成，与encoder不同的是，每一个decoder都会接受最后一个encoder的输出。</p>
+</blockquote>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/b8398b94e5b2f37eec1686bfd52f2e55e37e172dd1c3b7d88bbe42c49ec3dc6d/68747470733a2f2f61723569762e6c6162732e61727869762e6f72672f68746d6c2f313730362e30333736322f6173736574732f466967757265732f4d6f64616c4e65742d32312e706e67"><img src="https://camo.githubusercontent.com/b8398b94e5b2f37eec1686bfd52f2e55e37e172dd1c3b7d88bbe42c49ec3dc6d/68747470733a2f2f61723569762e6c6162732e61727869762e6f72672f68746d6c2f313730362e30333736322f6173736574732f466967757265732f4d6f64616c4e65742d32312e706e67" width="300" height="430" data-canonical-src="https://ar5iv.labs.arxiv.org/html/1706.03762/assets/Figures/ModalNet-21.png" style="max-width: 100%;"></a>
+    <p>The Transformer - model architecture</p>
+</div>
+<p>模型大致分为<strong>Encoder(编码器)</strong> 和 <strong>Decoder(解码器)</strong> 两个部分，分别对应上图中的左右两部分。</p>
+<ul>
+<li>其中编码器由N个相同的层堆叠在一起(我们后面的实验取N=6)，每一层又有两个子层。第一个子层是一个<strong>Multi-Head Attention(多头的自注意机制)</strong>，第二个子层是一个简单的<strong>Feed Forward(全连接前馈网络)</strong>。两个子层都添加了一个残差连接+layer normalization的操作。</li>
+<li>模型的解码器同样是堆叠了N个相同的层，不过和编码器中每层的结构稍有不同。对于解码器的每一层，除了编码器中的两个子层<strong>Multi-Head Attention和Feed Forward</strong>，解码器还包含一个子层<strong>Masked Multi-Head Attention</strong>，如图中所示每个子层同样也用了residual以及layer normalization。</li>
+<li>模型的输入由<strong>Input Embedding</strong>和<strong>Positional Encoding(位置编码)</strong> 两部分组合而成，模型的输出由Decoder的输出简单的经过softmax得到。结合上图，我们对Transformer模型的结构做了个大致的梳理，只需要先有个初步的了解，下面对提及的每个模块进行详细介绍：</li>
+</ul>
+<h3>1. <strong>模型输入(Word2Vec_Positional_Embedding)：</strong></h3>
+<pre class="notranslate"><code class="notranslate">首先我们来看模型的输入是什么样的，先明确模型输入，后面的模块理解才会更直观。输入部分包含两个模块，Embedding 和 Positional Encoding。
+</code></pre>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/6c5d956a3f0b5819cab6adff2f5347e53f635b4ed041f00dbb3cbf02648ffc07/68747470733a2f2f706963342e7a68696d672e636f6d2f38302f76322d62323665363661346366373862613133613665326261653033656638373765625f31343430772e77656270"><img src="https://camo.githubusercontent.com/6c5d956a3f0b5819cab6adff2f5347e53f635b4ed041f00dbb3cbf02648ffc07/68747470733a2f2f706963342e7a68696d672e636f6d2f38302f76322d62323665363661346366373862613133613665326261653033656638373765625f31343430772e77656270" width="500" height="250" data-canonical-src="https://pic4.zhimg.com/80/v2-b26e66a4cf78ba13a6e2bae03ef877eb_1440w.webp" style="max-width: 100%;"></a>
+    <p>输入部分</p>
+</div>
+<p>首先，我们需要把输入的文字进行Embedding，每一个字（词）用一个向量表示，称为字向量，一个句子就可以用一个矩阵表示。然后把字向量加上位置信息得到Encoder的输入矩阵。</p>
+<blockquote>
+<p>其实位置信息Positional Encoding是固定公式计算出来的，值不会改变，每次有数据来了直接加上Positional Encoding矩阵就行。</p>
+</blockquote>
+<ul>
+<li>由于模型不包含递归和卷积，为了使模型利用序列的顺序，必须注入一些关于序列中标记的相对或绝对位置的信息。为此，我们在编码器和解码器堆栈底部的输入嵌入中添加了“位置编码”。位置编码 $d_{model}$ 与嵌入具有相同的维度，因此可以将两者相加。位置编码有很多选择，有学习的，也有固定的。</li>
+</ul>
+<p>$\text{Positional Encoding计算公式：}$</p>
+<p>$\text{当 } i \text{ 为偶数时，} \quad PE_{pos, i} = \sin\left(\frac{pos}{10000^{\frac{2i}{d_{model}}}}\right)$<br>
+$\text{当 } i \text{ 为奇数时，} \quad PE_{pos, i} = \cos\left(\frac{pos}{10000^{\frac{2i}{d_{model}}}}\right)$</p>
+<p>pos：表示一句话中的第几个字。如图 $p^{23}$：表示第2个字（0开始计数）。<br>
+i：字向量的第i维度。如图 $p^{23}$：第3维度。i为偶数用sin函数（0开始计数），i为奇数用cos函数（0开始计数）。<br>
+$d_{model}$：字向量一共有多少维。上图每个字Embedding_size等于4（代码中取512）。<br>
+例如：上图中 $p^{12}$ 表示“是”字的第2维度，对应的值就等于 $PE_{1,2} = \sin\left(\frac{1}{10000^{2 \cdot 2 / 4}}\right)$<br>
+例如：上图中 $p^{23}$ 表示“学”字的第3维度，对应的值就等于 $PE_{2,3} = \cos\left(\frac{2}{10000^{2 \cdot 3 / 4}}\right)$</p>
+<div class="markdown-alert markdown-alert-important"><p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p><p>关于位置公式的思考一：正弦和余弦函数的这种交替使用能有效地捕捉位置信息，同时避免因周期性导致的位置编码重复问题。具体来说，尽管正弦和余弦函数具有周期性，但由于不同维度的频率不同，这种周期性不会在所有维度上同时发生重叠。正弦函数和余弦函数在奇偶维度上的交替使用进一步减少了冲突的可能性。</p>
+</div>
+<div class="markdown-alert markdown-alert-important"><p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p><p>关于位置公式的思考二：缩放因子中常数的选择：<strong>1.</strong> 10000作为缩放因子的选择，部分是基于经验和实验结果。在实际应用中，研究人员发现10000这个数值能在不同长度的序列上提供稳定和良好的性能。研究者们在开发Transformer模型时进行了大量实验，选择了这个值作为一个平衡点。<strong>2.</strong> 数值稳定性：选择一个太小的常数可能导致计算出的频率太高，太大又会导致数值精度受影响，导致数值不稳定，特别是在高维空间中。10000这个值足够大，能确保数值计算的稳定性，同时频率范围也适中，不会导致计算中的数值问题。</p>
+</div>
+<hr>
+<ul>
+<li>这里词向量Embedding的具体解释：</li>
+</ul>
+<div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p><p>词向量的生成过程是通过训练模型来学习单词的分布式表示，使得这些向量可以在向量空间中反映单词之间的语义关系。将单词转换为词向量（word embedding）的过程是一种将离散的文本数据转化为连续的向量表示的技术，以便计算机可以理解和处理自然语言。具体的过程如下：</p>
+</div>
+<h5>1. <strong>词汇表构建</strong></h5>
+<p>首先，构建一个包含所有要处理的单词的词汇表。词汇表中的每个单词都分配一个唯一的索引。</p>
+<h5>2. <strong>初始化词向量</strong></h5>
+<p>为每个单词初始化一个固定维度的向量（通常是随机初始化的），这些向量称为嵌入向量。初始向量的维度可以是50、100、300等，根据具体应用和计算资源来选择。</p>
+<h5>3. <strong>模型训练</strong></h5>
+<p>通过训练模型来调整这些初始向量，使它们能够捕捉单词之间的语义关系。常用的模型包括：</p>
+<ul>
+<li><strong>Word2Vec</strong>：
+<ul>
+<li><strong>Skip-Gram</strong>：目标是预测给定单词的上下文单词。</li>
+<li><strong>CBOW（Continuous Bag of Words）</strong>：目标是根据上下文预测中心词。</li>
+</ul>
+</li>
+<li><strong>GloVe（Global Vectors for Word Representation）</strong>：通过统计全局词共现矩阵来训练词向量。</li>
+<li><strong>FastText</strong>：考虑单词的字符n-gram信息，有助于处理未见过的单词和拼写错误。</li>
+</ul>
+<h5>4. <strong>损失函数</strong></h5>
+<p>使用适当的损失函数来衡量模型的预测效果，并通过反向传播算法不断调整词向量以最小化损失。</p>
+<h5>5. <strong>词向量生成</strong></h5>
+<p>在训练过程中，模型不断调整词向量，使得语义相似的单词在向量空间中的距离更近。训练完成后，每个单词都对应一个固定的向量表示。</p>
+<h5>具体例子</h5>
+<h6>Word2Vec Skip-Gram模型</h6>
+<ol>
+<li><strong>输入</strong>：中心词（target word）</li>
+<li><strong>目标</strong>：预测上下文词（context words）</li>
+</ol>
+<p>例如，给定句子“the quick brown fox jumps over the lazy dog”，假设中心词是“quick”，上下文窗口大小为2，则上下文词是“the”和“brown”。</p>
+<p>训练过程中模型会更新“quick”的向量，使其能够更好地预测“the”和“brown”。</p>
+<h6>GloVe模型</h6>
+<ol>
+<li><strong>输入</strong>：词对共现矩阵</li>
+<li><strong>目标</strong>：最小化每个词对共现概率的误差</li>
+</ol>
+<p>通过统计每对词在全局语料库中的共现次数，GloVe模型能够捕捉全局的词汇信息，并将这些信息转化为词向量。</p>
+<h5>词向量应用</h5>
+<p>训练好的词向量可以用于各种NLP任务，例如文本分类、情感分析、命名实体识别等。此外，词向量还可以进行向量运算，例如：</p>
+<ul>
+<li>向量(king) - 向量(man) + 向量(woman) ≈ 向量(queen)</li>
+</ul>
+<p>这种运算反映了词向量捕捉到的词语之间的语义关系。</p>
+<hr>
+<h3>2. 编码器层(注意力机制)：</h3>
+<h4>1. Multi-Head Attention</h4>
+<pre class="notranslate"><code class="notranslate">&gt; 注意力函数可以描述为将查询和一组键值对映射到输出，其中查询、键、值和输出都是向量。输出计算为值的加权总和，其中分配给每个值的权重由查询与相应键的兼容性函数计算。
+    为了方便理解，先解释单头注意力：
+</code></pre>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/8401675295ae1fd6e1bb276d823367f3f94f257cf3516cb289a3bd54b7392fd1/68747470733a2f2f706963312e7a68696d672e636f6d2f38302f76322d36663939656239393335653034383130366438363264383830633066393131635f31343430772e77656270"><img src="https://camo.githubusercontent.com/8401675295ae1fd6e1bb276d823367f3f94f257cf3516cb289a3bd54b7392fd1/68747470733a2f2f706963312e7a68696d672e636f6d2f38302f76322d36663939656239393335653034383130366438363264383830633066393131635f31343430772e77656270" width="600" height="300" data-canonical-src="https://pic1.zhimg.com/80/v2-6f99eb9935e048106d862d880c0f911c_1440w.webp" style="max-width: 100%;"></a>
+    <p>Self Attention Mechanism_b_0</p>
+</div>
+<p>输入部分输入含有位置信息的字向量 $a^i$，作为Self Attention Mechanism的输入。$a^i$ 可以理解成一句话中第 $i$ 个字的字向量。$a^i$ 会分别乘以 $W^Q, W^K, W^V$ 三个矩阵（矩阵乘法），得到 $q^i, k^i, v^i$。$q$ 可以理解成词的“查询”向量；$k$ 可以理解成词的“被查”向量；$v$ 可以理解成词的“内容”向量。下面就是计算每一个字的注意力信息。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/d7d47b4f6fd1fa6ba0bd898a70d3746ef11bb3721c9358056ff93b8ca3b56c95/68747470733a2f2f61723569762e6c6162732e61727869762e6f72672f68746d6c2f313730362e30333736322f6173736574732f466967757265732f4d6f64616c4e65742d31392e706e67"><img src="https://camo.githubusercontent.com/d7d47b4f6fd1fa6ba0bd898a70d3746ef11bb3721c9358056ff93b8ca3b56c95/68747470733a2f2f61723569762e6c6162732e61727869762e6f72672f68746d6c2f313730362e30333736322f6173736574732f466967757265732f4d6f64616c4e65742d31392e706e67" width="200" height="400" data-canonical-src="https://ar5iv.labs.arxiv.org/html/1706.03762/assets/Figures/ModalNet-19.png" style="max-width: 100%;"></a>
+    <p>Scaled Dot-Product Attention</p>
+</div>
+<p>例如，上图，我们在计算第0个字与句子中所有字的注意力信息。用 $q^0$ 分别乘以 $k^0, k^1, k^2, k^3$（对应坐标相乘相加），得到4个常数 $a_{00}, a_{01}, a_{02}, a_{03}$ 注意力值，再把4个数经过Softmax，得到第0个字与句子中所有字的注意力分数 $\hat{a}<em>{00}, \hat{a}</em>{01}, \hat{a}<em>{02}, \hat{a}</em>{03}$，它们和为1，最后再用注意力分数乘以对应的字信息 $v_0, v_1, v_2, v_3$，得到第0个字句子加权信息<br>
+$$b^0 = \hat{a}<em>{00} * v_0 + \hat{a}</em>{01} * v_1 + \hat{a}<em>{02} * v_2 + \hat{a}</em>{03} * v_3$$<br>
+实际就是矩阵相乘（下文）。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/17d08ff56a6c81badb0f45c2bfd89f755fb98dc9ef8fd55cfe445ba9aad820da/68747470733a2f2f706963312e7a68696d672e636f6d2f38302f76322d35373631633834626663626534346164323465383063373932616430313336385f31343430772e77656270"><img src="https://camo.githubusercontent.com/17d08ff56a6c81badb0f45c2bfd89f755fb98dc9ef8fd55cfe445ba9aad820da/68747470733a2f2f706963312e7a68696d672e636f6d2f38302f76322d35373631633834626663626534346164323465383063373932616430313336385f31343430772e77656270" width="600" height="300" data-canonical-src="https://pic1.zhimg.com/80/v2-5761c84bfcbe44ad24e80c792ad01368_1440w.webp" style="max-width: 100%;"></a>
+    <p>Self Attention Mechanism_b_1</p>
+</div>
+<p>如此进行，将第1、2……n个字的加权信息得出。</p>
+<hr>
+<p>关于Q，K，V的解释：</p>
+<ol>
+<li>查询（Query，Q）<br>
+作用：查询向量用来表示我们要“查找”的信息。</li>
+</ol>
+<p>举例：假设我们正在处理一个句子，并且我们希望了解当前词与句子中其他词的相关性。那么当前词的查询向量Q就是用来表示这个词的特定需求或视角。</p>
+<ol start="2">
+<li>键（Key，K）<br>
+作用：键向量表示所有可能匹配的内容。</li>
+</ol>
+<p>举例：在处理一个句子时，每个词都会有一个键向量K。这个向量表示这个词在句子中的某种特征或位置，类似于数据库中的索引，用于匹配查询向量。</p>
+<ol start="3">
+<li>值（Value，V）<br>
+作用：值向量是与键向量对应的具体内容，它表示实际的信息。</li>
+</ol>
+<p>举例：在句子中，每个词也会有一个值向量V。这个向量包含了这个词的实际内容信息，当查询匹配到键时，我们提取相应的值。</p>
+<p>即：</p>
+<ul>
+<li>查询向量Q：表示我们希望查找的内容或视角。</li>
+<li>键向量K：表示所有可能的匹配特征，用于与查询向量进行匹配。</li>
+<li>值向量V：表示实际的信息内容，在匹配后提取相关的信息。<br>
+通过这种机制，注意力机制能够有效地捕捉到序列中各部分之间的关系，并在需要时将注意力集中到相关部分，从而提高模型的表现。</li>
+</ul>
+<hr>
+<p><strong>自注意力机制在计算机中的实现：</strong></p>
+<p>上述自注意力计算过程是朴素过程，在计算机实现中由于计算机对矩阵处理的天然敏感性，可以将上述计算过程打包为矩阵计算的一系列过程，这里我直接将'引用文章'中的过程贴出来，详细过程可以去'引用一'中查看。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/84ec4f68904d195b6e04fc98235d2a82a49be78f2a88228e5a40d3e584f5f5eb/68747470733a2f2f706963342e7a68696d672e636f6d2f38302f76322d61616666356333653435633061663839653266343636373361653266393663665f31343430772e77656270"><img src="https://camo.githubusercontent.com/84ec4f68904d195b6e04fc98235d2a82a49be78f2a88228e5a40d3e584f5f5eb/68747470733a2f2f706963342e7a68696d672e636f6d2f38302f76322d61616666356333653435633061663839653266343636373361653266393663665f31343430772e77656270" width="600" height="300" data-canonical-src="https://pic4.zhimg.com/80/v2-aaff5c3e45c0af89e2f46673ae2f96cf_1440w.webp" style="max-width: 100%;"></a>
+    <p>矩阵思想计算q，k，v</p>
+</div>
+<p>如上图，我们直接用字向量 $a^i$ 矩阵，分布乘以 $W^Q, W^K, W^V$ 三个矩阵（矩阵乘法）形状[字向量长度，字向量长度]，得到 $q^i, k^i, v^i$ 三个矩阵。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/15ba24cc43106950b1d79c66145f47894d8d8148493ced30dd7787ac7fc3da49/68747470733a2f2f706963322e7a68696d672e636f6d2f38302f76322d36653433373862323131373561616561353735383564366530393239653237645f31343430772e77656270"><img src="https://camo.githubusercontent.com/15ba24cc43106950b1d79c66145f47894d8d8148493ced30dd7787ac7fc3da49/68747470733a2f2f706963322e7a68696d672e636f6d2f38302f76322d36653433373862323131373561616561353735383564366530393239653237645f31343430772e77656270" width="600" height="150" data-canonical-src="https://pic2.zhimg.com/80/v2-6e4378b21175aaea57585d6e0929e27d_1440w.webp" style="max-width: 100%;"></a>
+    <p>计算注意力值</p>
+</div>
+<p>再用 $q$ 矩阵成以 $k$ 矩阵得到注意力值 $a$ 矩阵。计算公式：$\alpha_{(i,j)} = \frac{qk^T}{\sqrt{d}}$。$k^T$: $k$ 的转置。$d$ 是输入的维度，上图矩阵 $d$ 等于4，下面代码 $d=512$。</p>
+<blockquote>
+<p>[!TIMPORTANT]<br>
+关于计算公式的思考：通过对维度 $\sqrt{d_k}$ 进行缩放，将点积值 $QK^T$ 缩放到一个合适的范围，使得Softmax 函数在计算时的输入值以及输出的梯度更合适，避免数值过大导致的数值不稳定性。</p>
+</blockquote>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/3d35bb79d81b117aef5d958632a6bba47e7d7b7c336d9865ee83be01a0f0198f/68747470733a2f2f706963312e7a68696d672e636f6d2f38302f76322d38623139316230356666346532393135333666353631343461623162306365385f31343430772e77656270"><img src="https://camo.githubusercontent.com/3d35bb79d81b117aef5d958632a6bba47e7d7b7c336d9865ee83be01a0f0198f/68747470733a2f2f706963312e7a68696d672e636f6d2f38302f76322d38623139316230356666346532393135333666353631343461623162306365385f31343430772e77656270" width="450" height="150" data-canonical-src="https://pic1.zhimg.com/80/v2-8b191b05ff4e291536f56144ab1b0ce8_1440w.webp" style="max-width: 100%;"></a>
+    <p>注意力分数</p>
+</div>
+<p>矩阵 $a$ 再以每一行，经过Softmax计算出注意力分数矩阵 $\hat{a}<em>{ij}$（每一行的值加起来等于1）。公式：<br>
+$$\hat{a}</em>{(i,j)} = \frac{\alpha_{(i,j)}}{\sum_{j=0}^{s} \alpha_{(i,j)}}, \quad s = 3.$$</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/246ab81b4fa56720d3b6c983e51c097519bcc888bdcee9b4adc28fdcdfb45f87/68747470733a2f2f706963342e7a68696d672e636f6d2f38302f76322d34656265353932356665613465646434653563663366393538313433306433375f31343430772e77656270"><img src="https://camo.githubusercontent.com/246ab81b4fa56720d3b6c983e51c097519bcc888bdcee9b4adc28fdcdfb45f87/68747470733a2f2f706963342e7a68696d672e636f6d2f38302f76322d34656265353932356665613465646434653563663366393538313433306433375f31343430772e77656270" width="650" height="150" data-canonical-src="https://pic4.zhimg.com/80/v2-4ebe5925fea4edd4e5cf3f9581430d37_1440w.webp" style="max-width: 100%;"></a>
+    <p>注意力分数乘以V向量信息</p>
+</div>
+<p>用注意力分数 $\hat{a}<em>{ij}$ 矩阵乘以 $v^j$ 矩阵得到输出 $b^i$ 矩阵，<br>
+$$b^0 = \hat{a}</em>{00} * v_0 + \hat{a}<em>{01} * v_1 + \hat{a}</em>{02} * v_2 + \hat{a}_{03} * v_3,$$<br>
+实际上就是注意力分数矩阵相乘和 $V$ 矩阵实际求加权和（这里有点绕）。以上就是完整计算注意力机制过程。</p>
+<p>综合公式为： $$Attention(Q,K,V) = softmax(\frac{QK^T}{\sqrt{d_k}})V $$</p>
+<hr>
+<p><strong>多头注意力机制：</strong></p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/58b450451a3f3d4f2e71bd070457f09a577fad96e47eea5afd5981eff624f62e/68747470733a2f2f706963322e7a68696d672e636f6d2f38302f76322d37656238653133613239306634326163656362303062636532646230303931645f31343430772e77656270"><img src="https://camo.githubusercontent.com/58b450451a3f3d4f2e71bd070457f09a577fad96e47eea5afd5981eff624f62e/68747470733a2f2f706963322e7a68696d672e636f6d2f38302f76322d37656238653133613239306634326163656362303062636532646230303931645f31343430772e77656270" width="700" height="320" data-canonical-src="https://pic2.zhimg.com/80/v2-7eb8e13a290f42acecb00bce2db0091d_1440w.webp" style="max-width: 100%;"></a>
+    <p>Multi-Head Attention</p>
+</div>
+<blockquote>
+<p>论文中使用的是Multi-Head Attention，它与单头注意力不同的就是把原来的 $Q, K, V$ 三个大矩阵拆分成8个形状相同的小矩阵（在特征维度上拆分），也就是8头注意力。</p>
+<p>每一个小矩阵的形状 [句子字符的个数，子向量维度/8]，在下面代码中句子长度为5，子向量维度512，小矩阵是 [5, 64=512/8]。用上面3.2节相同的方式计算8个 $b$ 矩阵，然后把每一个head-Attention计算出来的 $b$ 拼在一起，作为输出。输入 $a$ 和输出 $b$ 的形状是相同的。为了方便画图，上图以2头注意力机制为例。整个流程从左到右。$X$ 表示矩阵相乘。$a$ 矩阵的shape：[句子长度，句子长度] 表示每两句话之间都有一个注意力分数，Concat：矩阵拼接。由于每个头的尺寸都缩小了，总计算成本与全维的单头注意力相似。</p>
+</blockquote>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/a24c4e1a4e9b457c178d11fbc805ec13f54cb50f221dff6def490368298891a5/68747470733a2f2f61723569762e6c6162732e61727869762e6f72672f68746d6c2f313730362e30333736322f6173736574732f466967757265732f4d6f64616c4e65742d32302e706e67"><img src="https://camo.githubusercontent.com/a24c4e1a4e9b457c178d11fbc805ec13f54cb50f221dff6def490368298891a5/68747470733a2f2f61723569762e6c6162732e61727869762e6f72672f68746d6c2f313730362e30333736322f6173736574732f466967757265732f4d6f64616c4e65742d32302e706e67" width="280" height="420" data-canonical-src="https://ar5iv.labs.arxiv.org/html/1706.03762/assets/Figures/ModalNet-20.png" style="max-width: 100%;"></a>
+    <p>Multi-Head Attention 多头注意力</p>
+</div>
+<p>多头注意力机制通过引入多个“头”来扩展单头注意力机制，每个头独立地进行注意力计算，然后将结果合并。具体步骤如下：</p>
+<ol>
+<li>
+<strong>线性变换</strong>：对输入的Q、K、V进行线性变换，生成多个查询、键和值。通常情况下，这些线性变换的参数是不同的，从而产生不同的Q、K、V。<br>
+对于第i个头：$$ Q_i = QW_i^Q, \quad K_i = KW_i^K, \quad V_i = VW_i^V $$<br>
+其中，(W_i^Q)、(W_i^K)、(W_i^V) 是线性变换的权重矩阵。</li>
+<li>
+<strong>计算注意力</strong>：每个头独立地计算注意力：<br>
+$$ \text{head}_i = \text{Attention}(Q_i, K_i, V_i) = \text{softmax}\left(\frac{Q_i K_i^T}{\sqrt{d_k}}\right)V_i $$</li>
+<li>
+<strong>合并头</strong>：将所有头的输出拼接在一起：<br>
+$$ \text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h)W^O $$<br>
+其中，$ W^O $ 是输出的线性变换矩阵。</li>
+</ol>
+<hr>
+<h4>2. <strong>Add &amp; Layer Normalization</strong></h4>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/6944fc9e8e529b9ba117e18500d5f1327b8261e2e21c6043d06fe3717223fced/68747470733a2f2f706963342e7a68696d672e636f6d2f38302f76322d31326461313934353264376239623762653262613866346633666136656535625f31343430772e77656270"><img src="https://camo.githubusercontent.com/6944fc9e8e529b9ba117e18500d5f1327b8261e2e21c6043d06fe3717223fced/68747470733a2f2f706963342e7a68696d672e636f6d2f38302f76322d31326461313934353264376239623762653262613866346633666136656535625f31343430772e77656270" width="420" height="300" data-canonical-src="https://pic4.zhimg.com/80/v2-12da19452d7b9b7be2ba8f4f3fa6ee5b_1440w.webp" style="max-width: 100%;"></a>
+    <p>残差链接_层归一化</p>
+</div>
+<p>现在解释蓝色圈起来的部分，Add是用了残差神经网络的思想，也就是把Multi-Head Attention的输入的 $a$ 矩阵直接加上Multi-Head Attention的输出 $b$ 矩阵（好处是可以让网络训练的更深）得到的和 $\bar{b}$ 矩阵，再在经过Layer normalization（归一化，作用加快训练速度，加速收敛）把 $\bar{b}$ 每一行（也就是每个句子）做归一为标准正态分布，最后得到 $\hat{b}$。均值和方差如下公式：</p>
+<p>均值公式：$\mu_i = \frac{1}{s} \sum_{j=1}^{s} b_{ij}, s \text{ 为 } \bar{b}<em>i \text{ 的长度。}$<br>
+方差公式：$\sigma_i^2 = \frac{1}{s} \sum</em>{j=0}^{s} (b_{ij} - \mu_i)^2$<br>
+归一化公式：$\text{Layer Norm}(x) = \frac{b_{ij} - \mu_i}{\sqrt{\sigma_i^2 + \epsilon}} \cdot \gamma + \beta$</p>
+<p>这里的层归一化指的是将句子中所有字的同一维度进行归一；</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/719409108d8491092db8694b960d568237d6456d503b5422e4fcb39a8463b518/68747470733a2f2f706963342e7a68696d672e636f6d2f38302f76322d64356564366634346439333466353235636231623064363338666262366665335f31343430772e77656270"><img src="https://camo.githubusercontent.com/719409108d8491092db8694b960d568237d6456d503b5422e4fcb39a8463b518/68747470733a2f2f706963342e7a68696d672e636f6d2f38302f76322d64356564366634346439333466353235636231623064363338666262366665335f31343430772e77656270" width="620" height="200" data-canonical-src="https://pic4.zhimg.com/80/v2-d5ed6f44d934f525cb1b0d638fbb6fe3_1440w.webp" style="max-width: 100%;"></a>
+    <p>归一化</p>
+</div>
+<blockquote>
+<p>在Transformer模型中，经过多头注意力机制得到的输出矩阵 ( b ) 会进一步通过残差连接（Residual Connection）和层归一化（Layer Normalization），以增强模型的训练效果和稳定性。下面详细解释这一过程。</p>
+</blockquote>
+<p><strong>1. 残差连接（Residual Connection）</strong></p>
+<p>残差连接是指将输入直接加到输出上，形成一个“跳跃连接”（skip connection）。对于多头注意力机制的输出矩阵 ( b )，残差连接的公式为：<br>
+$$ \text{Output}_\text{residual} = \text{Input} + b $$</p>
+<p>其中，$\text{Input}$是多头注意力机制的输入，即初始的词向量表示。</p>
+<p><strong>2. 层归一化（Layer Normalization）</strong></p>
+<p>层归一化是对输入的每一层进行标准化处理，以提高训练的稳定性和效率。与批归一化（Batch Normalization）不同，层归一化是在每一个时间步上进行归一化，而不是在整个批次上。</p>
+<p>层归一化的公式为：<br>
+$$ \text{Output}<em>\text{layernorm} = \frac{\text{Output}</em>\text{residual} - \mu}{\sigma + \epsilon} \gamma + \beta $$</p>
+<p>其中：</p>
+<ul>
+<li>
+$\mu$ 是输入的均值： $\mu = \frac{1}{d_{model}} \sum_{i=1}^{d_{model}} \text{Output}_\text{residual}^i $
+</li>
+<li>
+$\sigma$ 是输入的标准差： $\sigma = \sqrt{\frac{1}{d_{model}} \sum_{i=1}^{d_{model}} (\text{Output}_\text{residual}^i - \mu)^2}$
+</li>
+<li>
+$\epsilon$ 是一个很小的常数，用于防止除零。</li>
+<li>
+$\gamma$ 和 $\beta$ 是可学习的参数，用于对标准化后的值进行缩放和平移。</li>
+</ul>
+<hr>
+<h4>3. <strong>前馈神经网络（Feed Forward Neural Network, FFN）</strong></h4>
+<p>在Transformer编码器的结构中，每一个编码器层（Encoder Layer）由两个主要子层组成：多头注意力机制（Multi-Head Attention）和前馈神经网络（Feed Forward Neural Network, FFN）。在经过多头注意力机制和层归一化（Layer Normalization）后，编码器层会通过前馈神经网络来进一步处理特征。前馈神经网络的输出是经过多头注意力机制处理和层归一化后的词向量的进一步非线性变换。</p>
+<h3>前馈神经网络（FFN）</h3>
+<p>前馈神经网络通常包括两个线性变换和一个ReLU激活函数。公式如下：</p>
+<p>$$ \text{FFN}(x) = \max(0, xW_1 + b_1)W_2 + b_2 $$</p>
+<p>其中：</p>
+<ul>
+<li>
+$x$ 是输入的词向量。</li>
+<li>
+$W_1$ 和 $W_2$ 是可学习的权重矩阵。</li>
+<li>
+$b_1$ 和 $b_2$ 是偏置向量。</li>
+<li>
+$\max(0, \cdot)$ 表示ReLU激活函数。</li>
+</ul>
+<h6>具体过程</h6>
+<ol>
+<li>
+<p><strong>输入变换</strong>：</p>
+<ul>
+<li>输入 ( x ) 经过第一个线性变换和ReLU激活函数：<br>
+$$h = \max(0, xW_1 + b_1)$$
+</li>
+<li>这一步引入了非线性，允许模型学习到更复杂的特征表示。</li>
+</ul>
+</li>
+<li>
+<p><strong>输出变换</strong>：</p>
+<ul>
+<li>中间表示 ( h ) 经过第二个线性变换，得到最终输出：<br>
+$$\text{FFN}(x) = hW_2 + b_2$$
+</li>
+</ul>
+</li>
+</ol>
+<h6>残差连接和层归一化</h6>
+<p>前馈神经网络的输出也会经过残差连接和层归一化：</p>
+<ol>
+<li>
+<p><strong>残差连接</strong>：</p>
+<ul>
+<li>将前馈神经网络的输出与输入相加：<br>
+$$y = x + \text{FFN}(x)$$
+</li>
+</ul>
+</li>
+<li>
+<p><strong>层归一化</strong>：</p>
+<ul>
+<li>对相加后的结果进行层归一化：<br>
+$$\text{Output} = \text{LayerNorm}(y)$$
+</li>
+</ul>
+</li>
+</ol>
+<h6>输出结果的形式</h6>
+<p>最终的输出依然是词向量的表示，形状保持为 $[n, d_{model}]$，其中 $n$ 是序列长度，$d_{model}$ 是词向量的维度。这个输出可以被输入到下一个编码器层或者解码器中，作为进一步处理的输入。</p>
+<hr>
+<h3>2. 解码器层</h3>
+<hr>
+<p>REFERENCE：</p>
+<p><a href="https://zhuanlan.zhihu.com/p/403433120" rel="nofollow">1. 【Transformer】10分钟学会Transformer | Pytorch代码讲解 | 代码可运行</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/403433120" rel="nofollow">2. </a></p>
+<p><a href="https://arxiv.org/pdf/1706.03762" rel="nofollow">3. Attention Is All You Need.</a></p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+</div>
+    <div id="footer">Copyright © <span id="year"></span><a href="https://jibinghu.github.io"> ZOMBIE_ </a>
+<p>
+<span id="runday"></span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a>
+</p>
+
+<script>
+if("05/28/2024"!=""){
+    var now=new Date();
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("year").innerHTML=now.getFullYear();
+    if(""!=""){document.getElementById("runday").innerHTML=" • "+"网站运行"+diffDay+"天"+" • ";}
+    else{document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";}
+}
+</script>
+</div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n\n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+</script>
+<script>MathJax = {tex: {inlineMath: [["$", "$"]]}};</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</html>
