@@ -9,14 +9,12 @@
         let theme = localStorage.getItem("meek_theme") || "light";
         document.documentElement.setAttribute("data-color-mode", theme);
     </script>
-<meta name="description" content="# 大话 Transformer(零基础看懂论文)
-
+<meta name="description" content="
 ---
 
 ###### 由于课程实验要求以及专业学习关系，之前学过Transformer但仅局限于会用，这次深入探讨一下Transformer以便为大模型推理加速打个基础。">
 <meta property="og:title" content="大话 Transformer(零基础看懂论文)">
-<meta property="og:description" content="# 大话 Transformer(零基础看懂论文)
-
+<meta property="og:description" content="
 ---
 
 ###### 由于课程实验要求以及专业学习关系，之前学过Transformer但仅局限于会用，这次深入探讨一下Transformer以便为大模型推理加速打个基础。">
@@ -24,7 +22,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/da-hua-%20Transformer%28-ling-ji-chu-kan-dong-lun-wen-%29.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>大话 Transformer(零基础看懂论文)</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 </head>
 <style>
@@ -78,8 +76,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
 </div>
     <div id="content">
-<div class="markdown-body" id="postBody"><h1>大话 Transformer(零基础看懂论文)</h1>
-<hr>
+<div class="markdown-body" id="postBody"><hr>
 <h6>由于课程实验要求以及专业学习关系，之前学过Transformer但仅局限于会用，这次深入探讨一下Transformer以便为大模型推理加速打个基础。</h6>
 <p><strong>Transformer 简介：</strong></p>
 <p>Transformer模型的核心特点包括：</p>
@@ -98,7 +95,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <h2>一、Transformer 原文解析</h2>
 <h3>整体架构：</h3>
 <div>
-    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/cc4ce2c72e1414d609b5ee89e679a2dd96120aa0823f9a3efd3c3126cca3ef56/68747470733a2f2f6d696e696f2e63766d6172742e6e65742f63766d6172742d636f6d6d756e6974792f696d616765732f3230323230362f33302f302f303036433346674567793167756b7466733778766d6a36307530306c616a737330322e6a7067"><img src="https://camo.githubusercontent.com/cc4ce2c72e1414d609b5ee89e679a2dd96120aa0823f9a3efd3c3126cca3ef56/68747470733a2f2f6d696e696f2e63766d6172742e6e65742f63766d6172742d636f6d6d756e6974792f696d616765732f3230323230362f33302f302f303036433346674567793167756b7466733778766d6a36307530306c616a737330322e6a7067" width="390" height="350" data-canonical-src="https://minio.cvmart.net/cvmart-community/images/202206/30/0/006C3FgEgy1guktfs7xvmj60u00lajss02.jpg" style="max-width: 100%;"></a>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/9b23a718ed4c97ceb2b81b909738e1044d9076e4c73a97f455be88cb04bc0d3b/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303631363138353034323234342d313534363832383430362e6a7067"><img src="https://camo.githubusercontent.com/9b23a718ed4c97ceb2b81b909738e1044d9076e4c73a97f455be88cb04bc0d3b/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303631363138353034323234342d313534363832383430362e6a7067" width="390" height="350" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240616185042244-1546828406.jpg" style="max-width: 100%;"></a>
     <p>The Transformer 整体架构</p>
 </div>
 <blockquote>
@@ -188,6 +185,9 @@ $d_{model}$：字向量一共有多少维。上图每个字Embedding_size等于4
 <p>这种运算反映了词向量捕捉到的词语之间的语义关系。</p>
 <hr>
 <h3>2. 编码器层(注意力机制)：</h3>
+<blockquote>
+<p>Transformer通过编码器对输入序列进行处理，最终得到了每个词的上下文敏感表示（contextualized representation）。这些表示不仅包含了每个词本身的信息，还包含了序列中其他词的信息，以及它们之间的依赖关系。具体来说，编码器的输出是一个与输入序列长度相同的序列，但每个位置的向量表示都已经综合了整个输入序列中的信息。</p>
+</blockquote>
 <h4>1. Multi-Head Attention</h4>
 <pre class="notranslate"><code class="notranslate">&gt; 注意力函数可以描述为将查询和一组键值对映射到输出，其中查询、键、值和输出都是向量。输出计算为值的加权总和，其中分配给每个值的权重由查询与相应键的兼容性函数计算。
     为了方便理解，先解释单头注意力：
@@ -391,12 +391,399 @@ $$\text{Output} = \text{LayerNorm}(y)$$
 <h6>输出结果的形式</h6>
 <p>最终的输出依然是词向量的表示，形状保持为 $[n, d_{model}]$，其中 $n$ 是序列长度，$d_{model}$ 是词向量的维度。这个输出可以被输入到下一个编码器层或者解码器中，作为进一步处理的输入。</p>
 <hr>
-<h3>2. 解码器层</h3>
+<h3>3. 解码器层</h3>
+<blockquote>
+<p>在Transformer解码器的实现中，每个解码器由6个相同的层组成。除了每个编码器层中的两个子层外，解码器还插入了第三个子层，该子层对编码器堆栈的输出执行多头注意力机制。与编码器类似，每个子层都采用残差连接，然后进行层归一化。此外，解码器堆栈中的自注意力子层进行了修改，以防止关注后续位置。这种掩码机制，加上输出嵌入偏移一个位置的事实，确保了对位置 (i) 的预测只能依赖于小于 (i) 的已知输出。</p>
+</blockquote>
+<h5>结构和流程</h5>
+<ol>
+<li>
+<p><strong>自注意力机制（带掩码）</strong>：</p>
+<ul>
+<li>解码器的第一个子层是多头自注意力机制，但增加了掩码，以确保模型在预测位置 (i) 的词时，只能看到位置 (i) 之前的词。掩码是一个上三角矩阵，使得注意力权重在计算时被限制在当前位置及其之前的词。</li>
+</ul>
+</li>
+<li>
+<p><strong>编码器-解码器注意力机制</strong>：</p>
+<ul>
+<li>解码器的第三个子层是<strong>多头注意力机制，这个子层将解码器的当前输出作为查询（Q），编码器的输出作为键（K）和值（V）</strong>，从而在解码过程中结合编码器的上下文信息。</li>
+</ul>
+</li>
+<li>
+<p><strong>前馈网络</strong>：</p>
+<ul>
+<li>解码器的第二个子层与编码器的第二个子层相同，是一个位置全连接的前馈网络，包含两个线性变换层和一个非线性激活函数。</li>
+</ul>
+</li>
+<li>
+<p><strong>残差连接和层归一化</strong>：</p>
+<ul>
+<li>每个子层都使用残差连接，将输入直接跳过子层并与子层的输出相加，然后进行层归一化。具体公式为：<br>
+$$\text{LayerNorm}(x + \text{Sublayer}(x))$$
+</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h5>1. 掩码自注意力机制</h5>
+<p>Masked Multi-Head Attention 是 Transformer 解码器中的一个关键组件，它与普通的多头自注意力机制类似，但增加了掩码机制（masking），以确保模型只能关注当前时间步之前的词，从而避免模型在训练时看到未来的信息。</p>
+<p>以下是 Masked Multi-Head Attention 的具体实现步骤以及与普通多头自注意力机制的区别：</p>
+<h5>Multi-Head Attention 实现步骤</h5>
+<ol>
+<li>
+<p><strong>输入嵌入与线性变换</strong>：</p>
+<ul>
+<li>输入序列首先被嵌入为向量表示，然后通过三个不同的线性变换层，分别生成查询（Q）、键（K）和值（V）向量。假设输入序列长度为 $L$，每个词的嵌入维度为 $d_{model}$，则这一步生成的 Q、K、V 矩阵的维度均为 $L \times d_{model} $。</li>
+</ul>
+</li>
+<li>
+<p><strong>计算注意力权重</strong>：</p>
+<ul>
+<li>使用查询和键向量计算注意力权重矩阵。注意力权重矩阵的计算公式为：<br>
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$<br>
+其中 $d_k$ 是键向量的维度，通常与查询向量的维度相同。</li>
+</ul>
+</li>
+<li>
+<p><strong>应用掩码（仅限 Masked Multi-Head Attention）</strong>：</p>
+<ul>
+<li>在计算注意力权重之前，对权重矩阵应用掩码（mask），确保模型只能关注当前时间步之前的词。掩码矩阵通常是一个上三角矩阵，其中上三角部分的值为负无穷（或大负数），其余部分为零，这样在 softmax 计算时，被掩盖的部分权重接近于零。<br>
+$$ \text{MaskedAttention}(Q, K, V) = \text{softmax}\left(\frac{QK^T + \text{mask}}{\sqrt{d_k}}\right)V$$</li>
+</ul>
+</li>
+<li>
+<p><strong>计算多头注意力</strong>：</p>
+<ul>
+<li>将 Q、K、V 矩阵分为多个头（head），每个头分别计算注意力，然后将所有头的输出拼接在一起，通过一个线性变换层生成最终的多头注意力输出。假设有 ( h ) 个头，每个头的维度为 ( d_{head} = \frac{d_{model}}{h} )，则各个头的计算过程为：<br>
+$$\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h)W^O$$<br>
+其中 ( \text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V) )。</li>
+</ul>
+</li>
+<li>
+<p><strong>输出处理</strong>：</p>
+<ul>
+<li>将多头注意力的输出进行线性变换，并加入残差连接和层规范化。</li>
+</ul>
+</li>
+</ol>
+<h5>Masked Multi-Head Attention 与 Multi-Head Attention 的区别</h5>
+<ul>
+<li>
+<p><strong>掩码机制</strong>：</p>
+<ul>
+<li>Masked Multi-Head Attention 在计算注意力权重之前应用了掩码矩阵，确保模型在预测下一个词时只能关注当前时间步之前的词。这在训练语言模型时非常重要，因为模型在预测序列中的每个词时不应该看到未来的词。</li>
+<li>普通的 Multi-Head Attention 没有这种限制，可以直接计算所有词之间的注意力权重。</li>
+</ul>
+</li>
+<li>
+<p><strong>使用场景</strong>：</p>
+<ul>
+<li>Masked Multi-Head Attention 主要用于解码器部分，用于生成序列时确保因果关系。</li>
+<li>普通的 Multi-Head Attention 可以用于编码器部分或解码器的编码-解码注意力部分，没有时间步的限制。</li>
+</ul>
+</li>
+</ul>
+<h5>代码示例</h5>
+<p>以下是一个简化版的 PyTorch 代码示例，展示了 Masked Multi-Head Attention 的实现：</p>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span>.<span class="pl-s1">functional</span> <span class="pl-k">as</span> <span class="pl-v">F</span>
+<span class="pl-k">from</span> <span class="pl-s1">torch</span> <span class="pl-k">import</span> <span class="pl-s1">nn</span>
+
+<span class="pl-k">class</span> <span class="pl-v">MultiHeadAttention</span>(<span class="pl-s1">nn</span>.<span class="pl-v">Module</span>):
+    <span class="pl-k">def</span> <span class="pl-en">__init__</span>(<span class="pl-s1">self</span>, <span class="pl-s1">d_model</span>, <span class="pl-s1">num_heads</span>):
+        <span class="pl-en">super</span>(<span class="pl-v">MultiHeadAttention</span>, <span class="pl-s1">self</span>).<span class="pl-en">__init__</span>()
+        <span class="pl-s1">self</span>.<span class="pl-s1">num_heads</span> <span class="pl-c1">=</span> <span class="pl-s1">num_heads</span>
+        <span class="pl-s1">self</span>.<span class="pl-s1">d_model</span> <span class="pl-c1">=</span> <span class="pl-s1">d_model</span>
+
+        <span class="pl-k">assert</span> <span class="pl-s1">d_model</span> <span class="pl-c1">%</span> <span class="pl-s1">num_heads</span> <span class="pl-c1">==</span> <span class="pl-c1">0</span>
+        <span class="pl-s1">self</span>.<span class="pl-s1">depth</span> <span class="pl-c1">=</span> <span class="pl-s1">d_model</span> <span class="pl-c1">//</span> <span class="pl-s1">num_heads</span>
+
+        <span class="pl-s1">self</span>.<span class="pl-s1">wq</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-v">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
+        <span class="pl-s1">self</span>.<span class="pl-s1">wk</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-v">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
+        <span class="pl-s1">self</span>.<span class="pl-s1">wv</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-v">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
+
+        <span class="pl-s1">self</span>.<span class="pl-s1">dense</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-v">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
+
+    <span class="pl-k">def</span> <span class="pl-en">split_heads</span>(<span class="pl-s1">self</span>, <span class="pl-s1">x</span>, <span class="pl-s1">batch_size</span>):
+        <span class="pl-s1">x</span> <span class="pl-c1">=</span> <span class="pl-s1">x</span>.<span class="pl-en">view</span>(<span class="pl-s1">batch_size</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>, <span class="pl-s1">self</span>.<span class="pl-s1">num_heads</span>, <span class="pl-s1">self</span>.<span class="pl-s1">depth</span>)
+        <span class="pl-k">return</span> <span class="pl-s1">x</span>.<span class="pl-en">permute</span>(<span class="pl-c1">0</span>, <span class="pl-c1">2</span>, <span class="pl-c1">1</span>, <span class="pl-c1">3</span>)
+
+    <span class="pl-k">def</span> <span class="pl-en">forward</span>(<span class="pl-s1">self</span>, <span class="pl-s1">v</span>, <span class="pl-s1">k</span>, <span class="pl-s1">q</span>, <span class="pl-s1">mask</span>):
+        <span class="pl-s1">batch_size</span> <span class="pl-c1">=</span> <span class="pl-s1">q</span>.<span class="pl-en">size</span>(<span class="pl-c1">0</span>)
+
+        <span class="pl-s1">q</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-en">split_heads</span>(<span class="pl-s1">self</span>.<span class="pl-en">wq</span>(<span class="pl-s1">q</span>), <span class="pl-s1">batch_size</span>)
+        <span class="pl-s1">k</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-en">split_heads</span>(<span class="pl-s1">self</span>.<span class="pl-en">wk</span>(<span class="pl-s1">k</span>), <span class="pl-s1">batch_size</span>)
+        <span class="pl-s1">v</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-en">split_heads</span>(<span class="pl-s1">self</span>.<span class="pl-en">wv</span>(<span class="pl-s1">v</span>), <span class="pl-s1">batch_size</span>)
+
+        <span class="pl-s1">scaled_attention</span>, <span class="pl-s1">attention_weights</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-en">scaled_dot_product_attention</span>(<span class="pl-s1">q</span>, <span class="pl-s1">k</span>, <span class="pl-s1">v</span>, <span class="pl-s1">mask</span>)
+
+        <span class="pl-s1">scaled_attention</span> <span class="pl-c1">=</span> <span class="pl-s1">scaled_attention</span>.<span class="pl-en">permute</span>(<span class="pl-c1">0</span>, <span class="pl-c1">2</span>, <span class="pl-c1">1</span>, <span class="pl-c1">3</span>).<span class="pl-en">contiguous</span>()
+        <span class="pl-s1">original_size_attention</span> <span class="pl-c1">=</span> <span class="pl-s1">scaled_attention</span>.<span class="pl-en">view</span>(<span class="pl-s1">batch_size</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>, <span class="pl-s1">self</span>.<span class="pl-s1">d_model</span>)
+        <span class="pl-s1">output</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-en">dense</span>(<span class="pl-s1">original_size_attention</span>)
+
+        <span class="pl-k">return</span> <span class="pl-s1">output</span>, <span class="pl-s1">attention_weights</span>
+
+    <span class="pl-k">def</span> <span class="pl-en">scaled_dot_product_attention</span>(<span class="pl-s1">self</span>, <span class="pl-s1">q</span>, <span class="pl-s1">k</span>, <span class="pl-s1">v</span>, <span class="pl-s1">mask</span>):
+        <span class="pl-s1">matmul_qk</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">matmul</span>(<span class="pl-s1">q</span>, <span class="pl-s1">k</span>.<span class="pl-en">transpose</span>(<span class="pl-c1">-</span><span class="pl-c1">2</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>))
+        <span class="pl-s1">dk</span> <span class="pl-c1">=</span> <span class="pl-s1">k</span>.<span class="pl-en">size</span>()[<span class="pl-c1">-</span><span class="pl-c1">1</span>]
+        <span class="pl-s1">scaled_attention_logits</span> <span class="pl-c1">=</span> <span class="pl-s1">matmul_qk</span> <span class="pl-c1">/</span> <span class="pl-s1">torch</span>.<span class="pl-en">sqrt</span>(<span class="pl-s1">torch</span>.<span class="pl-en">tensor</span>(<span class="pl-s1">dk</span>, <span class="pl-s1">dtype</span><span class="pl-c1">=</span><span class="pl-s1">torch</span>.<span class="pl-s1">float32</span>))
+
+        <span class="pl-k">if</span> <span class="pl-s1">mask</span> <span class="pl-c1">is</span> <span class="pl-c1">not</span> <span class="pl-c1">None</span>:
+            <span class="pl-s1">scaled_attention_logits</span> <span class="pl-c1">+=</span> (<span class="pl-s1">mask</span> <span class="pl-c1">*</span> <span class="pl-c1">-</span><span class="pl-c1">1e9</span>)
+
+        <span class="pl-s1">attention_weights</span> <span class="pl-c1">=</span> <span class="pl-v">F</span>.<span class="pl-en">softmax</span>(<span class="pl-s1">scaled_attention_logits</span>, <span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">-</span><span class="pl-c1">1</span>)
+        <span class="pl-s1">output</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">matmul</span>(<span class="pl-s1">attention_weights</span>, <span class="pl-s1">v</span>)
+
+        <span class="pl-k">return</span> <span class="pl-s1">output</span>, <span class="pl-s1">attention_weights</span>
+
+<span class="pl-c"># Usage example</span>
+<span class="pl-s1">d_model</span> <span class="pl-c1">=</span> <span class="pl-c1">512</span>
+<span class="pl-s1">num_heads</span> <span class="pl-c1">=</span> <span class="pl-c1">8</span>
+<span class="pl-s1">batch_size</span> <span class="pl-c1">=</span> <span class="pl-c1">64</span>
+<span class="pl-s1">seq_length</span> <span class="pl-c1">=</span> <span class="pl-c1">50</span>
+
+<span class="pl-c"># Dummy input</span>
+<span class="pl-s1">q</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">batch_size</span>, <span class="pl-s1">seq_length</span>, <span class="pl-s1">d_model</span>)
+<span class="pl-s1">k</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">batch_size</span>, <span class="pl-s1">seq_length</span>, <span class="pl-s1">d_model</span>)
+<span class="pl-s1">v</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">batch_size</span>, <span class="pl-s1">seq_length</span>, <span class="pl-s1">d_model</span>)
+<span class="pl-s1">mask</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">tril</span>(<span class="pl-s1">torch</span>.<span class="pl-en">ones</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>))  <span class="pl-c"># Lower triangular matrix</span>
+
+<span class="pl-s1">mha</span> <span class="pl-c1">=</span> <span class="pl-v">MultiHeadAttention</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">num_heads</span>)
+<span class="pl-s1">output</span>, <span class="pl-s1">attn_weights</span> <span class="pl-c1">=</span> <span class="pl-en">mha</span>(<span class="pl-s1">v</span>, <span class="pl-s1">k</span>, <span class="pl-s1">q</span>, <span class="pl-s1">mask</span>)</pre></div>
+<p>在这个实现中，掩码 <code class="notranslate">mask</code> 用于确保在计算注意力权重时只关注当前时间步之前的词。这使得模型在训练时能够正确地学习序列中的因果关系。</p>
+<hr>
+<p>关于掩码矩阵 Mask Matrix：</p>
+<p>掩码矩阵的构成是理解Masked Multi-Head Attention的关键。掩码矩阵用于屏蔽解码器自注意力机制中的未来位置，确保模型在预测下一个词时只能看到当前及之前的词。</p>
+<h5>掩码矩阵的构成</h5>
+<p>掩码矩阵通常是一个上三角矩阵，其形状与注意力权重矩阵相同，为 $L \times L$，其中 $L$ 是输入序列的长度。具体构成如下：</p>
+<ol>
+<li>
+<p><strong>生成上三角矩阵</strong>：</p>
+<ul>
+<li>该矩阵的对角线和下三角部分元素为0，上三角部分元素为1。表示形式如下：<br>
+$$\text{mask}[i, j] = \begin{cases}<br>
+0 &amp; \text{if } i \geq j \<br>
+1 &amp; \text{if } i &lt; j<br>
+\end{cases}$$<br>
+例如，对于一个长度为4的序列，其掩码矩阵为：<br>
+$$\text{mask} = \begin{bmatrix}<br>
+0 &amp; 1 &amp; 1 &amp; 1 \<br>
+0 &amp; 0 &amp; 1 &amp; 1 \<br>
+0 &amp; 0 &amp; 0 &amp; 1 \<br>
+0 &amp; 0 &amp; 0 &amp; 0<br>
+\end{bmatrix}$$</li>
+</ul>
+</li>
+<li>
+<p><strong>掩码应用</strong>：</p>
+<ul>
+<li>在计算注意力权重时，将掩码矩阵添加到未归一化的注意力权重矩阵上。由于注意力权重矩阵中的值通常在对数空间中，为了有效地屏蔽未来的位置，掩码矩阵中的1会被转换成一个非常大的负数（通常是负无穷大 $-\infty$），以确保在softmax计算中这些位置的权重接近于0。</li>
+</ul>
+</li>
+</ol>
+<h5>掩码矩阵影响时间步的机制</h5>
+<ol>
+<li>
+<p><strong>计算未归一化的注意力权重</strong>：</p>
+<ul>
+<li>使用查询 $Q$ 和键 $K$ 计算未归一化的注意力权重：<br>
+$$\text{scores} = \frac{QK^T}{\sqrt{d_k}}$$
+</li>
+<li>这个矩阵的形状为 $L \times L$。</li>
+</ul>
+</li>
+<li>
+<p><strong>应用掩码</strong>：</p>
+<ul>
+<li>将掩码矩阵添加到注意力权重矩阵上：<br>
+$$\text{masked_scores} = \text{scores} + \text{mask} \times (-\infty)$$
+</li>
+<li>由于掩码矩阵的上三角部分是1，因此这些位置的权重在加上一个非常大的负数后，变得非常小，在softmax计算时几乎等于0。</li>
+</ul>
+</li>
+<li>
+<p><strong>计算归一化的注意力权重</strong>：</p>
+<ul>
+<li>应用softmax函数得到归一化的注意力权重：<br>
+$$\text{attention_weights} = \text{softmax}(\text{masked_scores})$$
+</li>
+<li>由于掩码的作用，模型只能关注当前及之前的时间步，未来的时间步被有效地屏蔽了。</li>
+</ul>
+</li>
+</ol>
+<h5>代码示例</h5>
+<p>以下是一个简化的代码示例，展示了如何构建和应用掩码矩阵：</p>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span>.<span class="pl-s1">functional</span> <span class="pl-k">as</span> <span class="pl-v">F</span>
+
+<span class="pl-k">def</span> <span class="pl-en">create_mask</span>(<span class="pl-s1">seq_length</span>):
+    <span class="pl-s1">mask</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">triu</span>(<span class="pl-s1">torch</span>.<span class="pl-en">ones</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>), <span class="pl-s1">diagonal</span><span class="pl-c1">=</span><span class="pl-c1">1</span>)
+    <span class="pl-k">return</span> <span class="pl-s1">mask</span>
+
+<span class="pl-k">def</span> <span class="pl-en">masked_attention</span>(<span class="pl-v">Q</span>, <span class="pl-v">K</span>, <span class="pl-v">V</span>, <span class="pl-s1">mask</span>):
+    <span class="pl-s1">d_k</span> <span class="pl-c1">=</span> <span class="pl-v">Q</span>.<span class="pl-en">size</span>(<span class="pl-c1">-</span><span class="pl-c1">1</span>)
+    <span class="pl-s1">scores</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">matmul</span>(<span class="pl-v">Q</span>, <span class="pl-v">K</span>.<span class="pl-en">transpose</span>(<span class="pl-c1">-</span><span class="pl-c1">2</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>)) <span class="pl-c1">/</span> <span class="pl-s1">torch</span>.<span class="pl-en">sqrt</span>(<span class="pl-s1">torch</span>.<span class="pl-en">tensor</span>(<span class="pl-s1">d_k</span>, <span class="pl-s1">dtype</span><span class="pl-c1">=</span><span class="pl-s1">torch</span>.<span class="pl-s1">float32</span>))
+    <span class="pl-k">if</span> <span class="pl-s1">mask</span> <span class="pl-c1">is</span> <span class="pl-c1">not</span> <span class="pl-c1">None</span>:
+        <span class="pl-s1">scores</span> <span class="pl-c1">=</span> <span class="pl-s1">scores</span>.<span class="pl-en">masked_fill</span>(<span class="pl-s1">mask</span> <span class="pl-c1">==</span> <span class="pl-c1">1</span>, <span class="pl-en">float</span>(<span class="pl-s">'-inf'</span>))
+    <span class="pl-s1">attention_weights</span> <span class="pl-c1">=</span> <span class="pl-v">F</span>.<span class="pl-en">softmax</span>(<span class="pl-s1">scores</span>, <span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">-</span><span class="pl-c1">1</span>)
+    <span class="pl-s1">output</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">matmul</span>(<span class="pl-s1">attention_weights</span>, <span class="pl-v">V</span>)
+    <span class="pl-k">return</span> <span class="pl-s1">output</span>, <span class="pl-s1">attention_weights</span>
+
+<span class="pl-c"># Example usage</span>
+<span class="pl-s1">seq_length</span> <span class="pl-c1">=</span> <span class="pl-c1">4</span>
+<span class="pl-v">Q</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>)
+<span class="pl-v">K</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>)
+<span class="pl-v">V</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>)
+<span class="pl-s1">mask</span> <span class="pl-c1">=</span> <span class="pl-en">create_mask</span>(<span class="pl-s1">seq_length</span>)
+
+<span class="pl-s1">output</span>, <span class="pl-s1">attn_weights</span> <span class="pl-c1">=</span> <span class="pl-en">masked_attention</span>(<span class="pl-v">Q</span>, <span class="pl-v">K</span>, <span class="pl-v">V</span>, <span class="pl-s1">mask</span>)</pre></div>
+<p>在这个示例中，<code class="notranslate">create_mask</code> 函数生成了一个上三角掩码矩阵，<code class="notranslate">masked_attention</code> 函数在计算注意力权重时应用了该掩码矩阵，确保未来的时间步不会影响当前的预测。</p>
+<h5>总结</h5>
+<p>掩码矩阵通过屏蔽未来位置，确保模型在预测当前位置时只能利用当前及之前的位置信息。这种机制在序列生成任务中至关重要，确保了模型的因果性。掩码矩阵与未归一化的注意力权重矩阵相加，使得未来位置的权重在softmax归一化后接近于0，从而有效地实现时间步的控制。</p>
+<hr>
+<div class="markdown-alert markdown-alert-important"><p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p><p>关于词向量的思考：<br>
+单纯的词向量训练（如Word2Vec、GloVe）能够在一定程度上捕捉语义和上下文信息，但在表达复杂的语言特性如文化背景、隐喻和情感等方面有其局限性。以下是详细的分析：</p>
+</div>
+<h5>词向量的优点和局限性</h5>
+<ol>
+<li>
+<p><strong>优点</strong>：</p>
+<ul>
+<li><strong>语义相似性</strong>：词向量通过在大规模语料上训练，可以捕捉到词与词之间的语义相似性。相似意义的词在向量空间中通常会靠近，例如“king”和“queen”之间的向量关系与“man”和“woman”之间的关系类似。</li>
+<li><strong>上下文信息</strong>：词向量能够捕捉到一定的上下文信息，特别是在基于上下文窗口的训练方法（如Word2Vec的Skip-gram和CBOW模型）中。词在相似上下文中出现的频率越高，其向量表示越相似。</li>
+</ul>
+</li>
+<li>
+<p><strong>局限性</strong>：</p>
+<ul>
+<li><strong>缺乏上下文动态性</strong>：传统的词向量方法无法动态地根据上下文改变词的表示。一个词在不同的上下文中可能有不同的含义，但其词向量是固定的。例如，“bank”在“金融机构”和“河岸”的不同语境中应该有不同的表示，但词向量模型无法区分这一点。</li>
+<li><strong>文化背景和隐喻</strong>：词向量难以捕捉深层次的文化背景和隐喻表达。这类信息通常依赖于更复杂的句法结构和语义关系，传统的词向量方法在这方面能力有限。</li>
+<li><strong>情感和语气</strong>：词向量对情感和语气的捕捉能力也有限。虽然某些情感词可能在向量空间中有所体现，但对整体句子的情感理解需要考虑更多的上下文和词间关系。</li>
+</ul>
+</li>
+</ol>
+<h5>进阶方法和模型</h5>
+<p>为了解决这些局限性，近年来发展了许多进阶方法和模型：</p>
+<ol>
+<li>
+<p><strong>上下文嵌入（Contextual Embeddings）</strong>：</p>
+<ul>
+<li><strong>ELMo</strong>：通过双向LSTM在大规模语料上训练，生成的词向量能够根据上下文动态变化。一个词在不同句子中的表示会不同，能够更好地捕捉上下文信息。</li>
+<li><strong>BERT</strong>：基于Transformer的双向编码器表示，通过掩蔽语言模型（Masked Language Model）训练，能够更好地理解句子结构和上下文关系。BERT的词向量在不同的上下文中是动态变化的，极大地提升了对语义和上下文的理解能力。</li>
+</ul>
+</li>
+<li>
+<p><strong>预训练语言模型</strong>：</p>
+<ul>
+<li><strong>GPT</strong>：基于Transformer的生成预训练模型，通过大量文本的自回归训练，能够生成符合上下文的连贯文本，并捕捉复杂的语义和情感信息。</li>
+<li><strong>T5</strong>：将所有任务转换为文本生成任务，统一的模型架构使得其在多种NLP任务中表现出色。</li>
+</ul>
+</li>
+<li>
+<p><strong>情感分析和情感词典</strong>：</p>
+<ul>
+<li>使用专门的情感分析模型和情感词典，可以更精确地捕捉文本中的情感和语气。这些方法结合上下文嵌入技术，能够更好地理解句子的情感含义。</li>
+</ul>
+</li>
+<li>
+<p><strong>跨文化语料和多语言模型</strong>：</p>
+<ul>
+<li>通过多语言预训练模型（如mBERT、XLM-R），能够在跨语言和文化背景下训练模型，捕捉更广泛的文化背景和语义差异。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h5>2. Multi-Head Attention</h5>
+<p>Encoder 的 Multi-Head Attention 的结构和 Decoder 的 Multi-Head Attention 的结构也是一样的，只是 Decoder 的 Multi-Head Attention 的输入来自两部分，K，V 矩阵来自Encoder的输出，Q 矩阵来自 Masked Multi-Head Attention 的输出。</p>
+<h5>3. Decoder 的输出预测结果</h5>
+<p>Decoder 的输出的形状[句子字的个数，字向量维度]。可以把最后的输出看成多分类任务，也就是预测字的概率。经过一个nn.Linear(字向量维度, 字典中字的个数)全连接层，再通过Softmax输出每一个字的概率。</p>
+<hr>
+<p>对 BERT 的扩展：</p>
+<p>BERT（Bidirectional Encoder Representations from Transformers）是一个基于Transformer的双向编码器表示模型，由Google的研究团队在2018年提出。它通过掩蔽语言模型（Masked Language Model，MLM）进行训练，从而能够更好地理解句子结构和上下文关系。以下是对BERT的具体解释：</p>
+<h5>BERT的核心思想</h5>
+<ol>
+<li>
+<p><strong>双向编码器表示</strong>：</p>
+<ul>
+<li>与传统的单向语言模型不同，BERT是双向的，它在处理每个词时，能够同时考虑其左侧和右侧的上下文。这种双向性使得BERT在理解词的意义时，可以参考整个句子的上下文，而不仅仅是词的前面或后面的部分。</li>
+</ul>
+</li>
+<li>
+<p><strong>掩蔽语言模型（Masked Language Model，MLM）</strong>：</p>
+<ul>
+<li>在训练过程中，BERT使用了一种称为掩蔽语言模型的方法。具体来说，它随机地掩盖（mask）句子中的一些词，然后要求模型根据上下文预测这些被掩盖的词。</li>
+<li>例如，对于句子“我爱[MASK]编程”，模型需要根据上下文预测出被掩盖的词“学习”。</li>
+</ul>
+</li>
+<li>
+<p><strong>下一句预测（Next Sentence Prediction，NSP）</strong>：</p>
+<ul>
+<li>除了MLM，BERT还使用了下一句预测任务来训练模型。这个任务是给定一对句子，模型需要判断第二个句子是否是第一个句子的自然后续句。</li>
+<li>这种任务帮助模型理解句子之间的关系，从而提升在句子级别的理解能力。</li>
+</ul>
+</li>
+</ol>
+<h5>BERT的训练和结构</h5>
+<ol>
+<li>
+<p><strong>训练数据</strong>：</p>
+<ul>
+<li>BERT在大规模的语料库（如Wikipedia和BooksCorpus）上进行预训练。这些语料库包含了大量的文本数据，为模型提供了丰富的上下文信息。</li>
+</ul>
+</li>
+<li>
+<p><strong>模型结构</strong>：</p>
+<ul>
+<li>BERT的基础结构是一个多层的Transformer编码器。常见的BERT模型有两种尺寸：BERT-Base和BERT-Large。
+<ul>
+<li><strong>BERT-Base</strong>：12层Transformer编码器，隐藏层大小为768，共有110M参数。</li>
+<li><strong>BERT-Large</strong>：24层Transformer编码器，隐藏层大小为1024，共有340M参数。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>输入表示</strong>：</p>
+<ul>
+<li>BERT的输入包括词嵌入、位置嵌入和段落嵌入。
+<ul>
+<li><strong>词嵌入</strong>：将每个词转换为固定大小的向量表示。</li>
+<li><strong>位置嵌入</strong>：为每个词的位置添加位置信息，保留序列中的顺序信息。</li>
+<li><strong>段落嵌入</strong>：区分输入中的不同句子，特别是在NSP任务中，用于区分第一个句子和第二个句子。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h5>BERT的应用与优点</h5>
+<ol>
+<li>
+<p><strong>动态词向量</strong>：</p>
+<ul>
+<li>由于BERT是双向的，并且在不同上下文中对词进行编码，它生成的词向量是动态的。这意味着同一个词在不同的句子中会有不同的向量表示，能够更准确地捕捉词的多义性和上下文依赖性。</li>
+</ul>
+</li>
+<li>
+<p><strong>下游任务的微调</strong>：</p>
+<ul>
+<li>BERT在预训练之后，可以通过在特定任务上的微调来应用于各种NLP任务。只需在预训练模型的基础上添加一个简单的输出层，然后在任务数据上进行微调，就能取得很好的效果。</li>
+<li>常见的下游任务包括问答系统（如SQuAD）、文本分类（如情感分析）、命名实体识别和文本生成等。</li>
+</ul>
+</li>
+<li>
+<p><strong>语义理解能力提升</strong>：</p>
+<ul>
+<li>由于BERT能够同时考虑词的左右上下文，并且通过MLM和NSP任务进行预训练，它在理解句子的语义和上下文关系方面表现优异。</li>
+<li>在多种NLP基准测试中，BERT都取得了领先的成绩，显著提升了自然语言理解的效果。</li>
+</ul>
+</li>
+</ol>
+<h5>总结</h5>
+<p>BERT通过双向Transformer编码器和掩蔽语言模型训练，能够在不同上下文中动态生成词向量，极大地提升了模型对语义和上下文的理解能力。其预训练加微调的方式，使得BERT在各种NLP任务中都表现出色，成为了自然语言处理领域的一个重要里程碑。</p>
 <hr>
 <p>REFERENCE：</p>
 <p><a href="https://zhuanlan.zhihu.com/p/403433120" rel="nofollow">1. 【Transformer】10分钟学会Transformer | Pytorch代码讲解 | 代码可运行</a></p>
-<p><a href="https://zhuanlan.zhihu.com/p/403433120" rel="nofollow">2. </a></p>
-<p><a href="https://arxiv.org/pdf/1706.03762" rel="nofollow">3. Attention Is All You Need.</a></p></div>
+<p><a href="https://arxiv.org/pdf/1706.03762" rel="nofollow">2. Attention Is All You Need.</a></p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
 <div class="comments" id="comments"></div>

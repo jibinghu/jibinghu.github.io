@@ -1,4 +1,3 @@
-# 大话 Transformer(零基础看懂论文)
 
 ---
 
@@ -25,7 +24,7 @@ Transformer模型的工作流程如下：
 ### 整体架构：
 
 <div style="text-align: center;">
-    <img src="https://minio.cvmart.net/cvmart-community/images/202206/30/0/006C3FgEgy1guktfs7xvmj60u00lajss02.jpg" width="390" height="350">
+    <img src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240616185042244-1546828406.jpg" width="390" height="350">
     <p>The Transformer 整体架构</p>
 </div>
 
@@ -127,6 +126,8 @@ $d_{model}$：字向量一共有多少维。上图每个字Embedding\_size等于
 ---        
 
 ### 2. 编码器层(注意力机制)：
+
+> Transformer通过编码器对输入序列进行处理，最终得到了每个词的上下文敏感表示（contextualized representation）。这些表示不仅包含了每个词本身的信息，还包含了序列中其他词的信息，以及它们之间的依赖关系。具体来说，编码器的输出是一个与输入序列长度相同的序列，但每个位置的向量表示都已经综合了整个输入序列中的信息。
 
 #### 1. Multi-Head Attention
     > 注意力函数可以描述为将查询和一组键值对映射到输出，其中查询、键、值和输出都是向量。输出计算为值的加权总和，其中分配给每个值的权重由查询与相应键的兼容性函数计算。
@@ -342,11 +343,314 @@ $$ \text{FFN}(x) = \max(0, xW_1 + b_1)W_2 + b_2 $$
 
 ---
 
-### 2. 解码器层
+### 3. 解码器层
+
+> 在Transformer解码器的实现中，每个解码器由6个相同的层组成。除了每个编码器层中的两个子层外，解码器还插入了第三个子层，该子层对编码器堆栈的输出执行多头注意力机制。与编码器类似，每个子层都采用残差连接，然后进行层归一化。此外，解码器堆栈中的自注意力子层进行了修改，以防止关注后续位置。这种掩码机制，加上输出嵌入偏移一个位置的事实，确保了对位置 \(i\) 的预测只能依赖于小于 \(i\) 的已知输出。
+
+##### 结构和流程
+
+1. **自注意力机制（带掩码）**：
+   - 解码器的第一个子层是多头自注意力机制，但增加了掩码，以确保模型在预测位置 \(i\) 的词时，只能看到位置 \(i\) 之前的词。掩码是一个上三角矩阵，使得注意力权重在计算时被限制在当前位置及其之前的词。
+
+2. **编码器-解码器注意力机制**：
+   - 解码器的第三个子层是**多头注意力机制，这个子层将解码器的当前输出作为查询（Q），编码器的输出作为键（K）和值（V）**，从而在解码过程中结合编码器的上下文信息。
+
+3. **前馈网络**：
+   - 解码器的第二个子层与编码器的第二个子层相同，是一个位置全连接的前馈网络，包含两个线性变换层和一个非线性激活函数。
+
+4. **残差连接和层归一化**：
+   - 每个子层都使用残差连接，将输入直接跳过子层并与子层的输出相加，然后进行层归一化。具体公式为：
+     $$\text{LayerNorm}(x + \text{Sublayer}(x))$$
+---
+##### 1. 掩码自注意力机制
+
+Masked Multi-Head Attention 是 Transformer 解码器中的一个关键组件，它与普通的多头自注意力机制类似，但增加了掩码机制（masking），以确保模型只能关注当前时间步之前的词，从而避免模型在训练时看到未来的信息。
+
+以下是 Masked Multi-Head Attention 的具体实现步骤以及与普通多头自注意力机制的区别：
+
+##### Multi-Head Attention 实现步骤
+
+1. **输入嵌入与线性变换**：
+   - 输入序列首先被嵌入为向量表示，然后通过三个不同的线性变换层，分别生成查询（Q）、键（K）和值（V）向量。假设输入序列长度为 $L$，每个词的嵌入维度为 $d_{model}$，则这一步生成的 Q、K、V 矩阵的维度均为 $L \times d_{model} $。
+
+2. **计算注意力权重**：
+   - 使用查询和键向量计算注意力权重矩阵。注意力权重矩阵的计算公式为：
+     $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
+     其中 $d_k$ 是键向量的维度，通常与查询向量的维度相同。
+
+3. **应用掩码（仅限 Masked Multi-Head Attention）**：
+   - 在计算注意力权重之前，对权重矩阵应用掩码（mask），确保模型只能关注当前时间步之前的词。掩码矩阵通常是一个上三角矩阵，其中上三角部分的值为负无穷（或大负数），其余部分为零，这样在 softmax 计算时，被掩盖的部分权重接近于零。
+     $$ \text{MaskedAttention}(Q, K, V) = \text{softmax}\left(\frac{QK^T + \text{mask}}{\sqrt{d_k}}\right)V$$
+
+4. **计算多头注意力**：
+   - 将 Q、K、V 矩阵分为多个头（head），每个头分别计算注意力，然后将所有头的输出拼接在一起，通过一个线性变换层生成最终的多头注意力输出。假设有 \( h \) 个头，每个头的维度为 \( d_{head} = \frac{d_{model}}{h} \)，则各个头的计算过程为：
+     $$\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h)W^O$$
+     其中 \( \text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V) \)。
+
+5. **输出处理**：
+   - 将多头注意力的输出进行线性变换，并加入残差连接和层规范化。
+
+##### Masked Multi-Head Attention 与 Multi-Head Attention 的区别
+
+- **掩码机制**：
+  - Masked Multi-Head Attention 在计算注意力权重之前应用了掩码矩阵，确保模型在预测下一个词时只能关注当前时间步之前的词。这在训练语言模型时非常重要，因为模型在预测序列中的每个词时不应该看到未来的词。
+  - 普通的 Multi-Head Attention 没有这种限制，可以直接计算所有词之间的注意力权重。
+
+- **使用场景**：
+  - Masked Multi-Head Attention 主要用于解码器部分，用于生成序列时确保因果关系。
+  - 普通的 Multi-Head Attention 可以用于编码器部分或解码器的编码-解码注意力部分，没有时间步的限制。
+
+##### 代码示例
+
+以下是一个简化版的 PyTorch 代码示例，展示了 Masked Multi-Head Attention 的实现：
+
+```python
+import torch
+import torch.nn.functional as F
+from torch import nn
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, d_model, num_heads):
+        super(MultiHeadAttention, self).__init__()
+        self.num_heads = num_heads
+        self.d_model = d_model
+
+        assert d_model % num_heads == 0
+        self.depth = d_model // num_heads
+
+        self.wq = nn.Linear(d_model, d_model)
+        self.wk = nn.Linear(d_model, d_model)
+        self.wv = nn.Linear(d_model, d_model)
+
+        self.dense = nn.Linear(d_model, d_model)
+
+    def split_heads(self, x, batch_size):
+        x = x.view(batch_size, -1, self.num_heads, self.depth)
+        return x.permute(0, 2, 1, 3)
+
+    def forward(self, v, k, q, mask):
+        batch_size = q.size(0)
+
+        q = self.split_heads(self.wq(q), batch_size)
+        k = self.split_heads(self.wk(k), batch_size)
+        v = self.split_heads(self.wv(v), batch_size)
+
+        scaled_attention, attention_weights = self.scaled_dot_product_attention(q, k, v, mask)
+
+        scaled_attention = scaled_attention.permute(0, 2, 1, 3).contiguous()
+        original_size_attention = scaled_attention.view(batch_size, -1, self.d_model)
+        output = self.dense(original_size_attention)
+
+        return output, attention_weights
+
+    def scaled_dot_product_attention(self, q, k, v, mask):
+        matmul_qk = torch.matmul(q, k.transpose(-2, -1))
+        dk = k.size()[-1]
+        scaled_attention_logits = matmul_qk / torch.sqrt(torch.tensor(dk, dtype=torch.float32))
+
+        if mask is not None:
+            scaled_attention_logits += (mask * -1e9)
+
+        attention_weights = F.softmax(scaled_attention_logits, dim=-1)
+        output = torch.matmul(attention_weights, v)
+
+        return output, attention_weights
+
+# Usage example
+d_model = 512
+num_heads = 8
+batch_size = 64
+seq_length = 50
+
+# Dummy input
+q = torch.rand(batch_size, seq_length, d_model)
+k = torch.rand(batch_size, seq_length, d_model)
+v = torch.rand(batch_size, seq_length, d_model)
+mask = torch.tril(torch.ones(seq_length, seq_length))  # Lower triangular matrix
+
+mha = MultiHeadAttention(d_model, num_heads)
+output, attn_weights = mha(v, k, q, mask)
+```
+
+在这个实现中，掩码 `mask` 用于确保在计算注意力权重时只关注当前时间步之前的词。这使得模型在训练时能够正确地学习序列中的因果关系。
+
+---
+
+关于掩码矩阵 Mask Matrix：
+
+掩码矩阵的构成是理解Masked Multi-Head Attention的关键。掩码矩阵用于屏蔽解码器自注意力机制中的未来位置，确保模型在预测下一个词时只能看到当前及之前的词。
+
+##### 掩码矩阵的构成
+
+掩码矩阵通常是一个上三角矩阵，其形状与注意力权重矩阵相同，为 $L \times L$，其中 $L$ 是输入序列的长度。具体构成如下：
+
+1. **生成上三角矩阵**：
+   - 该矩阵的对角线和下三角部分元素为0，上三角部分元素为1。表示形式如下：
+     $$\text{mask}[i, j] = \begin{cases} 
+     0 & \text{if } i \geq j \\
+     1 & \text{if } i < j 
+     \end{cases}$$
+     例如，对于一个长度为4的序列，其掩码矩阵为：
+     $$\text{mask} = \begin{bmatrix}
+     0 & 1 & 1 & 1 \\
+     0 & 0 & 1 & 1 \\
+     0 & 0 & 0 & 1 \\
+     0 & 0 & 0 & 0 
+     \end{bmatrix}$$
+
+2. **掩码应用**：
+   - 在计算注意力权重时，将掩码矩阵添加到未归一化的注意力权重矩阵上。由于注意力权重矩阵中的值通常在对数空间中，为了有效地屏蔽未来的位置，掩码矩阵中的1会被转换成一个非常大的负数（通常是负无穷大 $-\infty$），以确保在softmax计算中这些位置的权重接近于0。
+
+##### 掩码矩阵影响时间步的机制
+
+1. **计算未归一化的注意力权重**：
+   - 使用查询 $Q$ 和键 $K$ 计算未归一化的注意力权重：
+     $$\text{scores} = \frac{QK^T}{\sqrt{d_k}}$$
+   - 这个矩阵的形状为 $L \times L$。
+
+2. **应用掩码**：
+   - 将掩码矩阵添加到注意力权重矩阵上：
+     $$\text{masked\_scores} = \text{scores} + \text{mask} \times (-\infty)$$
+   - 由于掩码矩阵的上三角部分是1，因此这些位置的权重在加上一个非常大的负数后，变得非常小，在softmax计算时几乎等于0。
+
+3. **计算归一化的注意力权重**：
+   - 应用softmax函数得到归一化的注意力权重：
+     $$\text{attention\_weights} = \text{softmax}(\text{masked\_scores})$$
+   - 由于掩码的作用，模型只能关注当前及之前的时间步，未来的时间步被有效地屏蔽了。
+
+##### 代码示例
+
+以下是一个简化的代码示例，展示了如何构建和应用掩码矩阵：
+
+```python
+import torch
+import torch.nn.functional as F
+
+def create_mask(seq_length):
+    mask = torch.triu(torch.ones(seq_length, seq_length), diagonal=1)
+    return mask
+
+def masked_attention(Q, K, V, mask):
+    d_k = Q.size(-1)
+    scores = torch.matmul(Q, K.transpose(-2, -1)) / torch.sqrt(torch.tensor(d_k, dtype=torch.float32))
+    if mask is not None:
+        scores = scores.masked_fill(mask == 1, float('-inf'))
+    attention_weights = F.softmax(scores, dim=-1)
+    output = torch.matmul(attention_weights, V)
+    return output, attention_weights
+
+# Example usage
+seq_length = 4
+Q = torch.rand(seq_length, seq_length)
+K = torch.rand(seq_length, seq_length)
+V = torch.rand(seq_length, seq_length)
+mask = create_mask(seq_length)
+
+output, attn_weights = masked_attention(Q, K, V, mask)
+```
+
+在这个示例中，`create_mask` 函数生成了一个上三角掩码矩阵，`masked_attention` 函数在计算注意力权重时应用了该掩码矩阵，确保未来的时间步不会影响当前的预测。
+
+##### 总结
+
+掩码矩阵通过屏蔽未来位置，确保模型在预测当前位置时只能利用当前及之前的位置信息。这种机制在序列生成任务中至关重要，确保了模型的因果性。掩码矩阵与未归一化的注意力权重矩阵相加，使得未来位置的权重在softmax归一化后接近于0，从而有效地实现时间步的控制。
+
+---
+> [!IMPORTANT]
+> 关于词向量的思考：
+单纯的词向量训练（如Word2Vec、GloVe）能够在一定程度上捕捉语义和上下文信息，但在表达复杂的语言特性如文化背景、隐喻和情感等方面有其局限性。以下是详细的分析：
+
+##### 词向量的优点和局限性
+
+1. **优点**：
+   - **语义相似性**：词向量通过在大规模语料上训练，可以捕捉到词与词之间的语义相似性。相似意义的词在向量空间中通常会靠近，例如“king”和“queen”之间的向量关系与“man”和“woman”之间的关系类似。
+   - **上下文信息**：词向量能够捕捉到一定的上下文信息，特别是在基于上下文窗口的训练方法（如Word2Vec的Skip-gram和CBOW模型）中。词在相似上下文中出现的频率越高，其向量表示越相似。
+
+2. **局限性**：
+   - **缺乏上下文动态性**：传统的词向量方法无法动态地根据上下文改变词的表示。一个词在不同的上下文中可能有不同的含义，但其词向量是固定的。例如，“bank”在“金融机构”和“河岸”的不同语境中应该有不同的表示，但词向量模型无法区分这一点。
+   - **文化背景和隐喻**：词向量难以捕捉深层次的文化背景和隐喻表达。这类信息通常依赖于更复杂的句法结构和语义关系，传统的词向量方法在这方面能力有限。
+   - **情感和语气**：词向量对情感和语气的捕捉能力也有限。虽然某些情感词可能在向量空间中有所体现，但对整体句子的情感理解需要考虑更多的上下文和词间关系。
+
+##### 进阶方法和模型
+
+为了解决这些局限性，近年来发展了许多进阶方法和模型：
+
+1. **上下文嵌入（Contextual Embeddings）**：
+   - **ELMo**：通过双向LSTM在大规模语料上训练，生成的词向量能够根据上下文动态变化。一个词在不同句子中的表示会不同，能够更好地捕捉上下文信息。
+   - **BERT**：基于Transformer的双向编码器表示，通过掩蔽语言模型（Masked Language Model）训练，能够更好地理解句子结构和上下文关系。BERT的词向量在不同的上下文中是动态变化的，极大地提升了对语义和上下文的理解能力。
+
+2. **预训练语言模型**：
+   - **GPT**：基于Transformer的生成预训练模型，通过大量文本的自回归训练，能够生成符合上下文的连贯文本，并捕捉复杂的语义和情感信息。
+   - **T5**：将所有任务转换为文本生成任务，统一的模型架构使得其在多种NLP任务中表现出色。
+
+3. **情感分析和情感词典**：
+   - 使用专门的情感分析模型和情感词典，可以更精确地捕捉文本中的情感和语气。这些方法结合上下文嵌入技术，能够更好地理解句子的情感含义。
+
+4. **跨文化语料和多语言模型**：
+   - 通过多语言预训练模型（如mBERT、XLM-R），能够在跨语言和文化背景下训练模型，捕捉更广泛的文化背景和语义差异。
+
+---
+
+##### 2. Multi-Head Attention
+
+Encoder 的 Multi-Head Attention 的结构和 Decoder 的 Multi-Head Attention 的结构也是一样的，只是 Decoder 的 Multi-Head Attention 的输入来自两部分，K，V 矩阵来自Encoder的输出，Q 矩阵来自 Masked Multi-Head Attention 的输出。
 
 
+##### 3. Decoder 的输出预测结果
 
+Decoder 的输出的形状[句子字的个数，字向量维度]。可以把最后的输出看成多分类任务，也就是预测字的概率。经过一个nn.Linear(字向量维度, 字典中字的个数)全连接层，再通过Softmax输出每一个字的概率。
 
+---
+
+对 BERT 的扩展：
+
+BERT（Bidirectional Encoder Representations from Transformers）是一个基于Transformer的双向编码器表示模型，由Google的研究团队在2018年提出。它通过掩蔽语言模型（Masked Language Model，MLM）进行训练，从而能够更好地理解句子结构和上下文关系。以下是对BERT的具体解释：
+
+##### BERT的核心思想
+
+1. **双向编码器表示**：
+   - 与传统的单向语言模型不同，BERT是双向的，它在处理每个词时，能够同时考虑其左侧和右侧的上下文。这种双向性使得BERT在理解词的意义时，可以参考整个句子的上下文，而不仅仅是词的前面或后面的部分。
+
+2. **掩蔽语言模型（Masked Language Model，MLM）**：
+   - 在训练过程中，BERT使用了一种称为掩蔽语言模型的方法。具体来说，它随机地掩盖（mask）句子中的一些词，然后要求模型根据上下文预测这些被掩盖的词。
+   - 例如，对于句子“我爱[MASK]编程”，模型需要根据上下文预测出被掩盖的词“学习”。
+
+3. **下一句预测（Next Sentence Prediction，NSP）**：
+   - 除了MLM，BERT还使用了下一句预测任务来训练模型。这个任务是给定一对句子，模型需要判断第二个句子是否是第一个句子的自然后续句。
+   - 这种任务帮助模型理解句子之间的关系，从而提升在句子级别的理解能力。
+
+##### BERT的训练和结构
+
+1. **训练数据**：
+   - BERT在大规模的语料库（如Wikipedia和BooksCorpus）上进行预训练。这些语料库包含了大量的文本数据，为模型提供了丰富的上下文信息。
+
+2. **模型结构**：
+   - BERT的基础结构是一个多层的Transformer编码器。常见的BERT模型有两种尺寸：BERT-Base和BERT-Large。
+     - **BERT-Base**：12层Transformer编码器，隐藏层大小为768，共有110M参数。
+     - **BERT-Large**：24层Transformer编码器，隐藏层大小为1024，共有340M参数。
+
+3. **输入表示**：
+   - BERT的输入包括词嵌入、位置嵌入和段落嵌入。
+     - **词嵌入**：将每个词转换为固定大小的向量表示。
+     - **位置嵌入**：为每个词的位置添加位置信息，保留序列中的顺序信息。
+     - **段落嵌入**：区分输入中的不同句子，特别是在NSP任务中，用于区分第一个句子和第二个句子。
+
+##### BERT的应用与优点
+
+1. **动态词向量**：
+   - 由于BERT是双向的，并且在不同上下文中对词进行编码，它生成的词向量是动态的。这意味着同一个词在不同的句子中会有不同的向量表示，能够更准确地捕捉词的多义性和上下文依赖性。
+
+2. **下游任务的微调**：
+   - BERT在预训练之后，可以通过在特定任务上的微调来应用于各种NLP任务。只需在预训练模型的基础上添加一个简单的输出层，然后在任务数据上进行微调，就能取得很好的效果。
+   - 常见的下游任务包括问答系统（如SQuAD）、文本分类（如情感分析）、命名实体识别和文本生成等。
+
+3. **语义理解能力提升**：
+   - 由于BERT能够同时考虑词的左右上下文，并且通过MLM和NSP任务进行预训练，它在理解句子的语义和上下文关系方面表现优异。
+   - 在多种NLP基准测试中，BERT都取得了领先的成绩，显著提升了自然语言理解的效果。
+
+##### 总结
+
+BERT通过双向Transformer编码器和掩蔽语言模型训练，能够在不同上下文中动态生成词向量，极大地提升了模型对语义和上下文的理解能力。其预训练加微调的方式，使得BERT在各种NLP任务中都表现出色，成为了自然语言处理领域的一个重要里程碑。
 
 ---
    
@@ -354,6 +658,4 @@ REFERENCE：
 
 <a href="https://zhuanlan.zhihu.com/p/403433120">1. 【Transformer】10分钟学会Transformer | Pytorch代码讲解 | 代码可运行</a>
 
-<a href="https://zhuanlan.zhihu.com/p/403433120">2. </a>
-
-<a href="https://arxiv.org/pdf/1706.03762">3. Attention Is All You Need.</a>
+<a href="https://arxiv.org/pdf/1706.03762">2. Attention Is All You Need.</a>
