@@ -11,15 +11,19 @@
         document.documentElement.setAttribute("data-color-mode", theme);
     </script>
 <meta name="description" content="<a href='https://github.com/Liu-xiandong/How_to_optimize_in_GPU'> How_to_optimize_in_GPU_GEMM_(二)_评论分析</a>
-。">
+---
+你好想问一下看起来并没有用异步的指令为什么可以实现数据预取呢
+> pipeline 双缓冲 pingpong操作，一个事情，都是为了实现计算和访存错开。">
 <meta property="og:title" content=" How_to_optimize_in_GPU_GEMM_(二)">
 <meta property="og:description" content="<a href='https://github.com/Liu-xiandong/How_to_optimize_in_GPU'> How_to_optimize_in_GPU_GEMM_(二)_评论分析</a>
-。">
+---
+你好想问一下看起来并没有用异步的指令为什么可以实现数据预取呢
+> pipeline 双缓冲 pingpong操作，一个事情，都是为了实现计算和访存错开。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://jibinghu.github.io/post/%20How_to_optimize_in_GPU_GEMM_%28-er-%29.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title> How_to_optimize_in_GPU_GEMM_(二)</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -43,7 +47,17 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     body {padding: 8px;}
     .postTitle{font-size:24px;}
 }
-
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
 </style>
 
 
@@ -75,7 +89,123 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
 </div>
     <div id="content">
-<div class="markdown-body" id="postBody"><p><a href="https://github.com/Liu-xiandong/How_to_optimize_in_GPU"> How_to_optimize_in_GPU_GEMM_(二)_评论分析</a></p></div>
+<div class="markdown-body" id="postBody"><h2><a href="https://github.com/Liu-xiandong/How_to_optimize_in_GPU"> How_to_optimize_in_GPU_GEMM_(二)_评论分析</a></h2>
+<p>你好想问一下看起来并没有用异步的指令为什么可以实现数据预取呢</p>
+<blockquote>
+<p>pipeline 双缓冲 pingpong操作，一个事情，都是为了实现计算和访存错开。在计算当前迭代的数据时，启动DMA 数据搬运操作，将下一次迭代的数据搬运过来。这样的话，每次启动计算的时候，数据是ready的，理论上就可以让计算单元被打满。<br>
+可以再体会一下，尤其是看看sass码，明显地可以看到对于同一个寄存器，FFMA指令和load指令中间间隔的指令多了。-&gt; 也就是对于一个寄存器来说，FFMA指令之后就被线程调度去取共享内存中的数据了</p>
+</blockquote>
+<hr>
+<p>大佬您好，希望百忙之中稍微在回复下。就是文中所说的“最后完成寄存器的预取，并将最后一个小迭代完成”。这里为什么会出现“最后一个小迭代？”是不是为了处理前七次迭代没有处理过的最后的一部分矩阵想乘？ 如果是这样的话，为什么在此之前还需要“最后完成寄存器的预取”？我觉得没有必要预取了啊，因为第七次小迭代结束后不是已经预取好了数据嘛，最后一次直接拿寄存器中的数来算不就好了吗？</p>
+<blockquote>
+<p>最后一个小迭代”是为了处理前七次迭代没有处理过的最后的一部分矩阵相乘。“最后完成寄存器的预取”这一部分是为下一次大迭代的第一次小迭代进行预取，不是为了本次大迭代的最后一次小迭代预取。</p>
+</blockquote>
+<hr>
+<p>想问一下在代码块// load A from global memory to shared memory 部分，计算A的偏移量OFFSET的时候，为什么col是A_TILE_COL 而不是THREAD_PER_BLOCK_X * bx + TILE_COL_A</p>
+<blockquote>
+<p>因为在上边的for循环中也指明了，当前的预取是在block块里边发生的，同时有N个block块中的线程同时进行处理。</p>
+</blockquote>
+<hr>
+<p>大佬您好，我想请问下，这里每个线程都是先load下一个tile，再计算现在的tile，加载和计算之间看起来并没有并行关系。但我理解的double buffer是一些线程加载的同时另一些线程计算，最后能够pipeline起来。请问这是如何做到的？或者是我对double buffer的理解有问题吗？感谢！</p>
+<blockquote>
+<p>因为SIMT架构的原因<br>
+我的理解是硬件资源的并行？线程只是用来调度加载和计算的寄存器处理，当然SIMT架构的原因是必然的。</p>
+</blockquote>
+<hr>
+<p>不懂为什么要转置的同学可以看看这个<a href="https://zhuanlan.zhihu.com/p/441146275" rel="nofollow">zhuanlan.zhihu.com/p/44</a></p>
+<blockquote>
+<p>随后看，目前我认为转置的原因是之后计算时索引计算更方便？期待看完打脸。待做＋1</p>
+</blockquote>
+<hr>
+<p>请问题主有没有写过双精度版本，我按照同样的思路但是只能达到80%左右的峰值效率，有点困惑？</p>
+<blockquote>
+<p>双精度的话，我还没有测试过，不是太清楚。有兴趣的话可以基于我的代码改一改，看看单精度和双精度的性能差距？<br>
+双精度提上日程</p>
+</blockquote>
+<hr>
+<p>请问一下，你在代码里是一次性读写4个float，这种是不是要求一些参数比如K，或者是THREAD_SIZD_X这些是4的倍数</p>
+<blockquote>
+<p>边界需要单独处理一下<br>
+主要是在大矩阵的边界，小矩阵已经按4倍数取了</p>
+</blockquote>
+<hr>
+<p>感谢大佬的分享，有个问题想请教一下：基于现在新的安培架构，是不是不再需要ldg_a_reg和ldg_b_reg这个两个寄存器了呢，是不是直接从global mem搬到shared mem就可以了</p>
+<blockquote>
+<p>是的呢<br>
+比较重要的点，也就是从全局内存到共享内存不需要指明寄存器了，但是需要转置A的话我认为还是需要指明的。</p>
+</blockquote>
+<hr>
+<p>想请教一下双缓冲的方案中frag_a和frag_b是同一个线程进行数据搬移和运算，和普通版的区别是double buffer在运算之前会将下一组数据提前搬运进来，然后对上一组数据进行运算。此处我有个疑问，我理解double buffer和普通版的差别就是在第一次运算r_c之前进行了两次数据搬运，剩下的运算和普通版好像没区别，请问double buffer这样做为啥会提升性能呢？我理解，double buffer是两个线程要相互协作，线程1搬运数据到缓存1的时候线程2取缓存0的数据运算，然后线程2从缓存1取数据的时候线程1向线程0搬运数据，然后就依此交错。 不知道是不是我理解的有误，麻烦大佬指点迷津</p>
+<blockquote>
+<p>主要是减少了数据依赖，指令发射更通畅。可以看看汇编代码的差别。load数据和ffma指令的间距可以看出来。<br>
+其实问题非常好，这是操作系统的生产者消费者模型，但是在这里我还是同意是SIMT架构的原因，同时减少了数据依赖，指令发射更通畅。</p>
+</blockquote>
+<hr>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">for</span> ( <span class="pl-k">int</span> i = <span class="pl-c1">0</span> ; i &lt; BLOCK_SIZE_K; i += B_TILE_ROW_STRIDE) {
+ <span class="pl-k">int</span> ldg_index = i / A_TILE_ROW_STRIDE * <span class="pl-c1">4</span>;
+   <span class="pl-c1">FETCH_FLOAT4</span>(ldg_b_reg[ldg_index]) = <span class="pl-c1">FETCH_FLOAT4</span>(B[<span class="pl-c1">OFFSET</span>(
+   tile_idx + B_TILE_ROW_START + i, <span class="pl-c"><span class="pl-c">//</span> row</span>
+   B_TILE_COL + BLOCK_SIZE_N * bx, <span class="pl-c"><span class="pl-c">//</span> col</span>
+    N )]);
+}
+
+<span class="pl-k">for</span> (<span class="pl-k">int</span> thread_x = <span class="pl-c1">0</span>; thread_x &lt; THREAD_SIZE_X; ++thread_x) {
+ accum[thread_y][thread_x] += frag_a[j%<span class="pl-c1">2</span>][thread_y] * frag_b[j%<span class="pl-c1">2</span>][thread_x];
+}</pre></div>
+<p>意思是编译后这两个for循环可以并行执行？同时下轮访存和本轮计算？</p>
+<blockquote>
+<p>我的理解应该是不可以的，理由同上。</p>
+</blockquote>
+<hr>
+<p>老哥您好，有个问题向请教一下：在（<a href="http://link.zhihu.com/?target=https%3A//github.com/Liu-xiandong/How_to_optimize_in_GPU/blob/master/sgemm/sgemm_v3.cu%23L163-L169" rel="nofollow">github.com/Liu-xiandong</a>）的第163~169行，这里总共从As、Bs中拿了8个元素，这似乎意味着核函数模板中的THREAD_SIZE_X和THREAD_SIZE_Y只能是8，而不能随意改变。请问核函数模板中的这两个参数是只能设置为8吗，谢谢老哥</p>
+<blockquote>
+<p>v3那个gemm版本是已经定好参数的，所以不能改的</p>
+</blockquote>
+<hr>
+<p>求教，为什么pre-fetch的时候，global mem要先放到寄存器中再挪到shared mem中呢[抱抱]</p>
+<blockquote>
+<p>因为硬件的限制，在安培架构之前，global mem和shared mem没有直连，所以搬运逻辑就是先搬寄存器，再搬共享内存。</p>
+</blockquote>
+<hr>
+<p>想请教一下A转置的目的是什么呢，可以提高性能吗？</p>
+<blockquote>
+<p>为了访存连续，提高带宽<br>
+在别的地方看到的。当同一个warp中的所有线程都执行同一条指令访问全局存储器中连续的单元时，就获得最有利的访问模式。硬件检测到同一个warp中的这些线程访问全局存储器中连续的存储单元，并将这些单元结合成一个合并的访问。这里是从global中取数据，应该也是为了迎合这条规律-&gt;就是合并访存了</p>
+</blockquote>
+<hr>
+<p>博主还想请教一个问题，请问最后的output写回global memory是在小迭代结束后还是在大迭代结束后呀？谢谢博主</p>
+<blockquote>
+<p>在大迭代结束之后再写回<br>
+因为每一个线程都有它的寄存器可以保留全部所负责的计算元素</p>
+</blockquote>
+<hr>
+<p>博主你好，从您的文章中学习到了很多。有一个问题想请教一下：像bm、bn、bk、rm、rn这些参数值是如何进行取值的呢？是针对不同硬件架构进行取值的吗？那对于同种硬件架构，这几个参数值就是固定的吗？谢谢博主~</p>
+<blockquote>
+<p>这些取值需要针对不同的硬件架构和不同的输入矩阵规模。对于同样的硬件架构，输入的矩阵shape不一样，最优的参数配置也可能不一样。而且这只是最简单的几个参数配置，往深了做，有很多参数都是需要调整的<br>
+也就是cutlass cublas这些库都在玄学的原因</p>
+</blockquote>
+<hr>
+<p>大佬，还有个问题打扰一下，就是咱现在的代码版本支持非2的整数次幂的尺寸的矩阵的运算吗</p>
+<blockquote>
+<p>现在需要满足是8的倍数，暂时不打算支持其他的了[捂脸]</p>
+</blockquote>
+<hr>
+<p>大佬，有个小问题一直想问一下，就是这个共享内存128<em>8是如何取得的？根据经验判断吗？还有寄存器8</em>8选取的依据是啥啊？</p>
+<blockquote>
+<p>这个问题涉及的东西非常多，主要考虑的有这么几个方面，一是让共享内存和寄存器资源分配合理，因为共享内存和寄存器数量的使用会限制活跃的warp数量，如果warp数量太少，会导致访存的latency难以被覆盖，二是让指令cache的使用更加合理，避免用了太多寄存器后需要更多的FFMA指令，有可能导致指令cache装不下。这个参数在不同的硬件架构不同的硬件型号里面都需要调整。</p>
+</blockquote>
+<hr>
+<p>感谢博主，写的很好！想问一个问题，工业界或者类似于cublas这种库在做gemm运算的时候，都是基本像你这样只维护一个支持整数倍大小矩阵运算的核，当遇到其他大小的矩阵先做padding再通往核做运算的么？还是说他们使用的是其他优化手段？</p>
+<blockquote>
+<p>官方库必须支持所有的可能情况，包括非整数倍大小。具体cublas怎么做的，不开源的也不太情况，但是一般而言，会在内部做padding处理。</p>
+</blockquote>
+<hr>
+<p>楼主好，我目前正在学习本科的并行计算课程，非常感谢你的介绍！有一个小问题想请教您，就是我课上学到线程私有的数组是会被编译器放到off-chip DRAM上的，您是怎么保证他们被分配到registers的呢？</p>
+<blockquote>
+<p>只要寄存器不超过使用的阈值，都是会放在片上的，这里每个线程用了200个左右的寄存器，是放得下的<br>
+学到了</p>
+</blockquote>
+<hr></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
@@ -100,7 +230,7 @@ if("05/28/2024"!=""){
 </script></div>
 </body>
 <script>
-var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
 var utterancesLoad=0;
 
 let themeSettings={
@@ -173,7 +303,70 @@ function iFrameLoading(){
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
 
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
 
 </script>
 
