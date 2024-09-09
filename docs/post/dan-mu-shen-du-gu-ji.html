@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="**单目深度估计**（Monocular Depth Estimation）是计算机视觉中的一个经典任务，目标是通过一张单目摄像头（即仅包含一个视角的二维图像）来估计场景中每个像素的深度信息。">
+<meta property="og:title" content="单目深度估计">
+<meta property="og:description" content="**单目深度估计**（Monocular Depth Estimation）是计算机视觉中的一个经典任务，目标是通过一张单目摄像头（即仅包含一个视角的二维图像）来估计场景中每个像素的深度信息。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/dan-mu-shen-du-gu-ji.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>单目深度估计</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">单目深度估计</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/23" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p><strong>单目深度估计</strong>（Monocular Depth Estimation）是计算机视觉中的一个经典任务，目标是通过一张单目摄像头（即仅包含一个视角的二维图像）来估计场景中每个像素的深度信息。这是一项具有挑战性的任务，因为缺少立体视觉信息（如双目视差）使得系统必须仅依赖图像中的线索来推断三维空间的深度。</p>
+<h3>1. <strong>单目深度估计任务的定义</strong>：</h3>
+<p>在 <strong>单目深度估计</strong> 中，输入是一张 <strong>单目图像</strong>（通常是 RGB 图片），输出是一张 <strong>深度图</strong>（Depth Map），即图像中每个像素的深度值。深度图的每个像素表示摄像机与场景中该像素对应的物体之间的距离。</p>
+<p>单目深度估计的应用场景广泛，如自动驾驶、机器人导航、增强现实（AR）等，这些任务中，理解场景的几何结构和物体的相对距离至关重要。</p>
+<h3>2. <strong>单目深度估计的挑战</strong>：</h3>
+<p>单目深度估计比其他深度估计任务（如双目、LIDAR等）更具挑战性，主要原因包括：</p>
+<ul>
+<li><strong>缺乏视差信息</strong>：由于单目摄像头没有立体视差，无法从不同视角直接估计深度。</li>
+<li><strong>尺度不确定性</strong>：图像中的物体大小没有明确的尺度参照（例如，一辆远处的小汽车可能看起来和近处的自行车一样大），这使得估计真实物体的深度更加困难。</li>
+<li><strong>遮挡和模糊</strong>：场景中的遮挡、光线变化、以及纹理模糊等问题会影响深度估计的准确性。</li>
+</ul>
+<h3>3. <strong>单目深度估计的发展现状</strong>：</h3>
+<h4>1. <strong>早期方法：基于传统计算机视觉的几何方法</strong></h4>
+<p>早期的单目深度估计任务主要依赖于传统的计算机视觉算法：</p>
+<ul>
+<li><strong>基于特征的深度估计</strong>：使用手工提取的特征，如边缘、纹理、透视、物体的几何特性来推测物体的深度。这些方法通常借助于场景中的特定几何线索（如平行线的透视收敛），但在复杂场景下性能受限。</li>
+<li><strong>形状与阴影推理</strong>：一些方法基于场景中的阴影信息或物体的形状进行深度估计，但通常对光照条件和物体的形状假设敏感。</li>
+</ul>
+<h4>2. <strong>深度学习方法：卷积神经网络 (CNN) 的引入</strong></h4>
+<p>随着深度学习的发展，<strong>卷积神经网络 (CNN)</strong> 被广泛应用于单目深度估计任务。CNN 能够自动学习从图像中提取复杂的特征，因此成为了这一领域的主流方法。</p>
+<ul>
+<li>
+<p><strong>监督学习</strong>：使用带有深度标注的数据集进行训练，如 KITTI 数据集，模型在每个像素上进行回归，学习从 RGB 图像预测深度值。这些方法表现出色，但依赖于大量带有真实深度标签的数据。</p>
+<ul>
+<li>代表性工作：Eigen et al. (2014) 提出的深度回归网络是最早使用深度学习进行单目深度估计的模型之一。</li>
+</ul>
+</li>
+<li>
+<p><strong>无监督或自监督学习</strong>：由于获取大规模带有深度标签的数据非常昂贵，<strong>无监督或自监督学习</strong>方法被提出。这些方法通常利用图像之间的几何关系来推断深度。比如，使用视频帧之间的运动（视差或光流）来推测深度。</p>
+<ul>
+<li>代表性工作：Godard et al. (2017) 提出的自监督单目深度估计方法，通过将左、右图像进行视差匹配，并利用重建损失来训练模型。</li>
+</ul>
+</li>
+</ul>
+<h4>3. <strong>Transformer 在深度估计中的应用</strong></h4>
+<p>最近，<strong>Transformer 架构</strong>由于其强大的全局上下文建模能力，开始被引入到单目深度估计任务中。与传统的 CNN 只能局部感知相比，Transformer 能够更好地捕捉全局信息，并通过注意力机制在场景中进行深度推理。</p>
+<ul>
+<li>代表性工作：Ranftl et al. (2021) 提出的 <strong>DPT（Vision Transformer for Depth Prediction）</strong> 是基于 Transformer 的深度估计模型，显著提高了深度估计的精度和泛化能力。</li>
+</ul>
+<h3>4. <strong>数据集和评估标准</strong>：</h3>
+<ul>
+<li>
+<p><strong>数据集</strong>：单目深度估计的标准数据集包括 <strong>KITTI</strong>（自动驾驶场景）、<strong>NYU Depth v2</strong>（室内场景）、<strong>Make3D</strong>（户外场景）等。这些数据集提供了 RGB 图像及其对应的深度图，便于模型训练和评估。</p>
+</li>
+<li>
+<p><strong>评估指标</strong>：常用的评估指标包括：</p>
+<ul>
+<li><strong>绝对误差（Abs Rel Error）</strong>：真实深度和预测深度的相对误差。</li>
+<li><strong>均方根误差（RMSE）</strong>：真实深度和预测深度之间的均方根误差。</li>
+<li><strong>精度（Accuracy）</strong>：评估预测深度与真实深度之间的相对准确性。</li>
+</ul>
+</li>
+</ul>
+<h3>5. <strong>最新进展与趋势</strong>：</h3>
+<ul>
+<li><strong>跨域泛化</strong>：模型在一个数据集上训练，在另一个数据集上进行测试。研究者们正在研究如何提高模型的泛化能力，使其在不同场景中表现一致。</li>
+<li><strong>多任务学习</strong>：结合其他视觉任务（如语义分割、物体检测）进行联合训练，利用额外的任务辅助深度估计。</li>
+<li><strong>高效计算</strong>：随着移动设备和嵌入式设备对深度估计的需求增加，研究者正在开发轻量化模型，能够在有限的计算资源下实现高效的深度估计。</li>
+</ul>
+<h3>总结：</h3>
+<p>单目深度估计是计算机视觉中的一个重要任务，尽管缺乏立体视觉信息，基于深度学习的方法，尤其是自监督学习和 Transformer 架构的引入，已经显著提升了单目深度估计的准确性和效率。未来的研究方向可能集中在更好的跨域泛化、高效计算以及与其他视觉任务的联合学习上。</p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+
+
+</script>
+
+
+</html>
