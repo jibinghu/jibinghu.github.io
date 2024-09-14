@@ -90,29 +90,29 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <ul>
 <li>示例一：</li>
 </ul>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iomanip<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>string.h<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>stdio.h<span class="pl-pds">&gt;</span></span>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#include &lt;iostream&gt;
+#include &lt;iomanip&gt;
+#include &lt;string.h&gt;
+#include &lt;stdio.h&gt;
  
-<span class="pl-k">using</span> <span class="pl-k">namespace</span> <span class="pl-en">std</span><span class="pl-k">;</span>
+<span class="pl-k">using</span> <span class="pl-k">namespace</span> std;
  
-<span class="pl-k">template </span>&lt;<span class="pl-k">class</span> <span class="pl-en">U</span>,<span class="pl-k">typename</span> V=<span class="pl-k">int</span>&gt;
-<span class="pl-k">void</span> <span class="pl-en">add</span>(U &amp;u,V &amp;v){
+<span class="pl-k">template</span> &lt;<span class="pl-k">class</span> U,<span class="pl-k">typename</span> V=int&gt;
+void add(U &amp;u,V &amp;v){
     cout &lt;&lt; u + v&lt;&lt; endl;
 }
  
-<span class="pl-k">int</span> <span class="pl-en">main</span>()
+int main()
 {
-    <span class="pl-k">int</span> a=<span class="pl-c1">1</span>,b=<span class="pl-c1">2</span>;
-    <span class="pl-c"><span class="pl-c">//</span> 调用函数时指定非默认参数类型</span>
-    add&lt;<span class="pl-k">int</span>&gt;(a,b);
-    <span class="pl-k">double</span> c = <span class="pl-c1">0.5</span>;
-    <span class="pl-c"><span class="pl-c">//</span> 覆盖默认参数类型 </span>
-    add&lt;<span class="pl-k">int</span>,<span class="pl-k">double</span>&gt;(a,c);
+    int a=1,b=2;
+    // 调用函数时指定非默认参数类型
+    <span class="pl-en">add</span>&lt;int&gt;(a,b);
+    double c = 0.5;
+    // 覆盖默认参数类型 
+    <span class="pl-en">add</span>&lt;int,double&gt;(a,c);
  
-    std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>--end--<span class="pl-pds">"</span></span> &lt;&lt; endl;
-    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+    std::cout &lt;&lt; "--end--" &lt;&lt; endl;
+    return 0;
 }</pre></div>
 <p>输出：</p>
 <div class="highlight highlight-source-shell"><pre class="notranslate">3
@@ -121,34 +121,34 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <ul>
 <li>示例二：</li>
 </ul>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iomanip<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>string.h<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>stdio.h<span class="pl-pds">&gt;</span></span>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#include &lt;iostream&gt;
+#include &lt;iomanip&gt;
+#include &lt;string.h&gt;
+#include &lt;stdio.h&gt;
  
-<span class="pl-k">using</span> <span class="pl-k">namespace</span> <span class="pl-en">std</span><span class="pl-k">;</span>
+<span class="pl-k">using</span> <span class="pl-k">namespace</span> std;
  
-<span class="pl-k">template </span>&lt;<span class="pl-k">class</span> <span class="pl-en">U</span>,<span class="pl-k">typename</span> V=<span class="pl-k">int</span>&gt;
-<span class="pl-k">class</span> <span class="pl-en">myclass</span>{
-<span class="pl-k">public:</span>
-    <span class="pl-k">void</span> <span class="pl-en">add</span>(U &amp;u,V &amp;v){
+<span class="pl-k">template</span> &lt;<span class="pl-k">class</span> U,<span class="pl-k">typename</span> V=int&gt;
+<span class="pl-k">class</span> myclass{
+<span class="pl-k">public</span>:
+    void <span class="pl-en">add</span>(U &amp;u,V &amp;v){
         cout &lt;&lt; u + v&lt;&lt; endl;
     }
 };
  
-<span class="pl-k">int</span> <span class="pl-en">main</span>()
+int main()
 {
-    <span class="pl-c"><span class="pl-c">//</span> 在实例化类时指定参数类型</span>
-    myclass&lt;<span class="pl-k">int</span>&gt; m;
-    <span class="pl-k">int</span> a = <span class="pl-c1">5</span>,b = <span class="pl-c1">2</span>;
-    m.<span class="pl-c1">add</span>(a,b);
-    <span class="pl-c"><span class="pl-c">//</span> 覆盖默认参数类型 </span>
-    myclass&lt;<span class="pl-k">int</span>,<span class="pl-k">double</span>&gt; m2;
-    <span class="pl-k">double</span> d = <span class="pl-c1">0.5</span>;
-    m2.<span class="pl-c1">add</span>(a,d);
+    // 在实例化类时指定参数类型
+    myclass&lt;int&gt; m;
+    int a = 5,b = 2;
+    m.add(a,b);
+    // 覆盖默认参数类型 
+    myclass&lt;int,double&gt; m2;
+    double d = 0.5;
+    m2.add(a,d);
  
-    std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>--end--<span class="pl-pds">"</span></span> &lt;&lt; endl;
-    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+    std::cout &lt;&lt; "--end--" &lt;&lt; endl;
+    return 0;
 }</pre></div>
 <p>输出：</p>
 <div class="highlight highlight-source-shell"><pre class="notranslate">7
@@ -157,49 +157,49 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <h2>非类型参数</h2>
 <p>非类型参数是指内置类型参数。<br>
 定义：</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template</span>&lt;<span class="pl-k">typename</span> T, <span class="pl-k">int</span> a&gt; 
-<span class="pl-k">class</span> <span class="pl-en">A</span> 
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template</span>&lt;<span class="pl-k">typename</span> T, int a&gt; 
+<span class="pl-k">class</span> A 
 { 
 }; </pre></div>
 <blockquote>
 <p>上述代码中，int a就是非类型的模板参数，非类型模板参数为函数模板或类模板预定义一些常量，在模板实例化时，也要求实参必须是常量，即确切的数据值。需要注意的是，非类型参数只能是整型、字符型或枚举、指针、引用类型。非类型参数在所有实例中都具有相同的值，而类型参数在不同的实例中具有不同的值。<br>
 示例一：</p>
 </blockquote>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iomanip<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>string.h<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>stdio.h<span class="pl-pds">&gt;</span></span>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#include &lt;iostream&gt;
+#include &lt;iomanip&gt;
+#include &lt;string.h&gt;
+#include &lt;stdio.h&gt;
  
-<span class="pl-k">using</span> <span class="pl-k">namespace</span> <span class="pl-en">std</span><span class="pl-k">;</span>
-<span class="pl-k">template </span>&lt;<span class="pl-k">typename</span> T,<span class="pl-k">unsigned</span> <span class="pl-k">int</span> len&gt;
-<span class="pl-k">class</span> <span class="pl-en">MyString</span>
+<span class="pl-k">using</span> <span class="pl-k">namespace</span> std;
+<span class="pl-k">template</span> &lt;<span class="pl-k">typename</span> T,unsigned int len&gt;
+<span class="pl-k">class</span> MyString
 {
-<span class="pl-k">private:</span>
+<span class="pl-k">private</span>:
     T array[len];
-<span class="pl-k">public:</span>
-    <span class="pl-c"><span class="pl-c">//</span> 构造函数</span>
-    <span class="pl-en">MyString</span>(){
-        <span class="pl-k">for</span>(<span class="pl-k">unsigned</span> <span class="pl-k">int</span> i = <span class="pl-c1">0</span>;i &lt; len;i++){
-            <span class="pl-c1">this</span>-&gt;<span class="pl-smi">array</span>[i] = i + <span class="pl-c1">1</span>;
+<span class="pl-k">public</span>:
+    // 构造函数
+    MyString(){
+        for(unsigned int i = 0;i &lt; len;i++){
+            <span class="pl-smi">this</span>-&gt;array[i] = i + 1;
         }
     }
-    <span class="pl-c"><span class="pl-c">//</span> 对操作符 [ ] 重载</span>
-    T&amp; <span class="pl-k">operator</span>[](<span class="pl-k">unsigned</span> <span class="pl-k">int</span> i){
-        <span class="pl-k">if</span>(i &gt;= len)<span class="pl-k">return</span> array[<span class="pl-c1">0</span>];
-        <span class="pl-k">return</span> <span class="pl-c1">this</span>-&gt;<span class="pl-smi">array</span>[i];
+    // 对操作符 [ ] 重载
+    T&amp; operator[](unsigned int i){
+        if(i &gt;= len)return array[0];
+        return <span class="pl-smi">this</span>-&gt;array[i];
     }
 };
  
-<span class="pl-k">int</span> <span class="pl-en">main</span>()
+int main()
 {
-    <span class="pl-c"><span class="pl-c">//</span> 即类型模板参数需要指定参数类型，而非类型模板参数则需要指定具体数值</span>
-    MyString&lt;<span class="pl-k">unsigned</span> <span class="pl-k">int</span>,<span class="pl-c1">5</span>&gt; ms1;
-    cout &lt;&lt; ms1[<span class="pl-c1">2</span>] &lt;&lt; endl;
+    // 即类型模板参数需要指定参数类型，而非类型模板参数则需要指定具体数值
+    MyString&lt;unsigned int,5&gt; ms1;
+    cout &lt;&lt; ms1[2] &lt;&lt; endl;
  
-    MyString&lt;<span class="pl-k">double</span>,<span class="pl-c1">5</span>&gt; ms2;
-    cout &lt;&lt; ms1[<span class="pl-c1">3</span>] &lt;&lt; endl;
-    std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>--end--<span class="pl-pds">"</span></span> &lt;&lt; endl;
-    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+    MyString&lt;double,5&gt; ms2;
+    cout &lt;&lt; ms1[3] &lt;&lt; endl;
+    std::cout &lt;&lt; "--end--" &lt;&lt; endl;
+    return 0;
 }</pre></div>
 <blockquote>
 <p>使用非类型参数时，有以下几点需要注意。<br>
@@ -213,60 +213,60 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <p>模板类型参数就是模板的参数为另一个模板。<br>
 定义：</p>
 </blockquote>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template</span>&lt;<span class="pl-k">typename</span> T, <span class="pl-k">template</span>&lt;<span class="pl-k">typename</span> U, <span class="pl-k">typename</span> Z&gt; <span class="pl-k">class</span> <span class="pl-en">A</span>&gt; 
-<span class="pl-k">class</span> <span class="pl-en">Parameter</span> 
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template</span>&lt;<span class="pl-k">typename</span> T, <span class="pl-k">template</span>&lt;<span class="pl-k">typename</span> U, <span class="pl-k">typename</span> Z&gt; <span class="pl-k">class</span> A&gt; 
+<span class="pl-k">class</span> Parameter 
 { 
     A&lt;T,T&gt; a; 
 };</pre></div>
 <p>上述代码中，类模板Param eter的第二个模板参数就是一个类模板。需要注意的是，只有类模板可以作为模板参数，参数声明中必须要有关键字class。</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> 例子确实写的比较绕，知道怎么回事就可以了</span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iomanip<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>string.h<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>stdio.h<span class="pl-pds">&gt;</span></span>
-<span class="pl-k">using</span> <span class="pl-k">namespace</span> <span class="pl-en">std</span><span class="pl-k">;</span>
+<div class="highlight highlight-source-c++"><pre class="notranslate">// 例子确实写的比较绕，知道怎么回事就可以了
+#include &lt;iostream&gt;
+#include &lt;iomanip&gt;
+#include &lt;string.h&gt;
+#include &lt;stdio.h&gt;
+<span class="pl-k">using</span> <span class="pl-k">namespace</span> std;
  
-<span class="pl-k">template </span>&lt;<span class="pl-k">class</span> <span class="pl-en">T</span>,<span class="pl-k">class</span> <span class="pl-en">U</span>&gt;
-<span class="pl-k">class</span> <span class="pl-en">myclass</span>
+<span class="pl-k">template</span> &lt;<span class="pl-k">class</span> T,<span class="pl-k">class</span> U&gt;
+<span class="pl-k">class</span> myclass
 {
-<span class="pl-k">public:</span>
+<span class="pl-k">public</span>:
     T _t;
     U _u;
-    <span class="pl-en">myclass</span>(){
-        cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>myclass init 1<span class="pl-pds">"</span></span> &lt;&lt; endl;
+    myclass(){
+        cout &lt;&lt; "myclass init 1" &lt;&lt; endl;
     }
-    <span class="pl-en">myclass</span>(T &amp;t,U &amp;u):_t(t),_u(u){
-        cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>myclass init 2<span class="pl-pds">"</span></span> &lt;&lt; endl;
+    myclass(T &amp;t,U &amp;u):_t(t),_u(u){
+        cout &lt;&lt; "myclass init 2" &lt;&lt; endl;
     }
-    <span class="pl-en">~myclass</span>(){
-        cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>myclass delete<span class="pl-pds">"</span></span> &lt;&lt; endl;
+    ~myclass(){
+        cout &lt;&lt; "myclass delete" &lt;&lt; endl;
     }
 };
-<span class="pl-k">template </span>&lt;<span class="pl-k">typename</span> T,<span class="pl-k">template</span>&lt;<span class="pl-k">typename</span> U,<span class="pl-k">typename</span> Z&gt; <span class="pl-k">class</span> <span class="pl-en">myclass</span>&gt;
-<span class="pl-k">class</span> <span class="pl-en">OtherClass</span>{
-<span class="pl-k">public:</span>
-    <span class="pl-c"><span class="pl-c">//</span> 引用构造实例化 _m 对象</span>
+<span class="pl-k">template</span> &lt;<span class="pl-k">typename</span> T,<span class="pl-k">template</span>&lt;<span class="pl-k">typename</span> U,<span class="pl-k">typename</span> Z&gt; <span class="pl-k">class</span> myclass&gt;
+<span class="pl-k">class</span> OtherClass{
+<span class="pl-k">public</span>:
+    // 引用构造实例化 _m 对象
     myclass&lt;T,T&gt; _m;
-    <span class="pl-en">OtherClass</span>(myclass&lt;T,T&gt; &amp;m):_m(m){
+    OtherClass(myclass&lt;T,T&gt; &amp;m):_m(m){
     }
-    <span class="pl-k">void</span> <span class="pl-en">show</span>(){
-        cout &lt;&lt; _m.<span class="pl-smi">_t</span> &lt;&lt; endl;
-        cout &lt;&lt; _m.<span class="pl-smi">_u</span> &lt;&lt; endl;
+    void <span class="pl-en">show</span>(){
+        cout &lt;&lt; _m._t &lt;&lt; endl;
+        cout &lt;&lt; _m._u &lt;&lt; endl;
     }
 };
  
-<span class="pl-k">int</span> <span class="pl-en">main</span>()
+int main()
 {
-    <span class="pl-k">int</span> a = <span class="pl-c1">5</span>;
-    <span class="pl-k">int</span> b = <span class="pl-c1">6</span>;
-    myclass&lt;<span class="pl-k">int</span>,<span class="pl-k">int</span>&gt; <span class="pl-c1">m</span>(a,b);
-    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>after myclass!<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
-    OtherClass&lt;<span class="pl-k">int</span>,myclass&gt; <span class="pl-c1">o</span>(m);
-    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>after otherclass!<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
-    o.<span class="pl-c1">show</span>();
+    int a = 5;
+    int b = 6;
+    myclass&lt;int,int&gt; m(a,b);
+    printf("after myclass!\n");
+    OtherClass&lt;int,myclass&gt; o(m);
+    printf("after otherclass!\n");
+    o.show();
  
-    std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>--end--<span class="pl-pds">"</span></span> &lt;&lt; endl;
-    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+    std::cout &lt;&lt; "--end--" &lt;&lt; endl;
+    return 0;
 }</pre></div>
 <p>输出：</p>
 <div class="highlight highlight-source-shell"><pre class="notranslate">myclass init 2

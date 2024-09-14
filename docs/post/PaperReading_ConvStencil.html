@@ -253,123 +253,123 @@ ConvStencil 提供了一种创新的方法，通过将 Stencil 计算转换为�
 <pre class="notranslate"><code class="notranslate">化矩阵向量乘为矩阵矩阵乘，
 </code></pre>
 <p>谱元，谱变换，傅立叶谱方法，高阶有限元，</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cuda_runtime.h<span class="pl-pds">&gt;</span></span>
-#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cusparse_v2.h<span class="pl-pds">&gt;</span></span>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#include &lt;iostream&gt;
+#include &lt;cuda_runtime.h&gt;
+#include &lt;cusparse_v2.h&gt;
 
-<span class="pl-c"><span class="pl-c">//</span> 定义矩阵和向量大小</span>
-<span class="pl-k">const</span> <span class="pl-k">int</span> N = <span class="pl-c1">100</span>;  <span class="pl-c"><span class="pl-c">//</span> 网格大小</span>
-<span class="pl-k">const</span> <span class="pl-k">int</span> NNZ = <span class="pl-c1">300</span>;  <span class="pl-c"><span class="pl-c">//</span> 非零元素数量</span>
+// 定义矩阵和向量大小
+const int N = 100;  // 网格大小
+const int NNZ = 300;  // 非零元素数量
 
-<span class="pl-c"><span class="pl-c">//</span> 检查CUDA错误的宏</span>
-#<span class="pl-k">define</span> <span class="pl-en">CHECK_CUDA</span>(<span class="pl-v">call</span>) \
-<span class="pl-k">do</span> { \
+// 检查CUDA错误的宏
+#define CHECK_CUDA(call) \
+do { \
     cudaError_t err = call; \
-    <span class="pl-k">if</span> (err != cudaSuccess) { \
-        std::cerr &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>CUDA error in <span class="pl-pds">"</span></span> &lt;&lt; __FILE__ &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span> at line <span class="pl-pds">"</span></span> &lt;&lt; __LINE__ &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>: <span class="pl-pds">"</span></span> \
-                  &lt;&lt; <span class="pl-c1">cudaGetErrorString</span>(err) &lt;&lt; std::endl; \
-        <span class="pl-c1">exit</span>(err); \
+    if (err != cudaSuccess) { \
+        std::cerr &lt;&lt; "CUDA error in " &lt;&lt; __FILE__ &lt;&lt; " at line " &lt;&lt; __LINE__ &lt;&lt; ": " \
+                  &lt;&lt; cudaGetErrorString(err) &lt;&lt; std::endl; \
+        exit(err); \
     } \
-} <span class="pl-k">while</span> (<span class="pl-c1">0</span>)
+} while (0)
 
-<span class="pl-k">void</span> <span class="pl-en">initialize_matrices</span>(<span class="pl-k">double</span>* h_D, <span class="pl-k">double</span>* h_G, <span class="pl-k">double</span>* h_u) {
-    <span class="pl-c"><span class="pl-c">//</span> 初始化矩阵和向量（用户自定义）</span>
-    <span class="pl-c"><span class="pl-c">//</span> 这里只是简单示例，用户可以根据需要填充实际值</span>
-    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; N * N; ++i) {
-        h_D[i] = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">double</span>&gt;(<span class="pl-c1">rand</span>()) / RAND_MAX;
-        h_G[i] = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">double</span>&gt;(<span class="pl-c1">rand</span>()) / RAND_MAX;
+void initialize_matrices(double* h_D, double* h_G, double* h_u) {
+    // 初始化矩阵和向量（用户自定义）
+    // 这里只是简单示例，用户可以根据需要填充实际值
+    for (int i = 0; i &lt; N * N; ++i) {
+        h_D[i] = <span class="pl-en">static_cast</span>&lt;double&gt;(rand()) / RAND_MAX;
+        h_G[i] = <span class="pl-en">static_cast</span>&lt;double&gt;(rand()) / RAND_MAX;
     }
-    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; N; ++i) {
-        h_u[i] = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">double</span>&gt;(<span class="pl-c1">rand</span>()) / RAND_MAX;
+    for (int i = 0; i &lt; N; ++i) {
+        h_u[i] = <span class="pl-en">static_cast</span>&lt;double&gt;(rand()) / RAND_MAX;
     }
 }
 
-<span class="pl-k">void</span> <span class="pl-en">sum_factorization</span>(<span class="pl-k">double</span>* h_D, <span class="pl-k">double</span>* h_G, <span class="pl-k">double</span>* h_u, <span class="pl-k">double</span>* h_result) {
-    <span class="pl-k">double</span> *d_D, *d_G, *d_u, *d_intermediate, *d_result;
-    <span class="pl-c1">size_t</span> size_DG = N * N * <span class="pl-k">sizeof</span>(<span class="pl-k">double</span>);
-    <span class="pl-c1">size_t</span> size_u = N * <span class="pl-k">sizeof</span>(<span class="pl-k">double</span>);
+void sum_factorization(double* h_D, double* h_G, double* h_u, double* h_result) {
+    double *d_D, *d_G, *d_u, *d_intermediate, *d_result;
+    size_t size_DG = N * N * sizeof(double);
+    size_t size_u = N * sizeof(double);
 
-    <span class="pl-c"><span class="pl-c">//</span> 分配设备内存</span>
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_D, size_DG));
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_G, size_DG));
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_u, size_u));
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_intermediate, size_u));
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_result, size_u));
+    // 分配设备内存
+    CHECK_CUDA(cudaMalloc((void**)&amp;d_D, size_DG));
+    CHECK_CUDA(cudaMalloc((void**)&amp;d_G, size_DG));
+    CHECK_CUDA(cudaMalloc((void**)&amp;d_u, size_u));
+    CHECK_CUDA(cudaMalloc((void**)&amp;d_intermediate, size_u));
+    CHECK_CUDA(cudaMalloc((void**)&amp;d_result, size_u));
 
-    <span class="pl-c"><span class="pl-c">//</span> 将数据从主机内存传输到设备内存</span>
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMemcpy</span>(d_D, h_D, size_DG, cudaMemcpyHostToDevice));
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMemcpy</span>(d_G, h_G, size_DG, cudaMemcpyHostToDevice));
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMemcpy</span>(d_u, h_u, size_u, cudaMemcpyHostToDevice));
+    // 将数据从主机内存传输到设备内存
+    CHECK_CUDA(cudaMemcpy(d_D, h_D, size_DG, cudaMemcpyHostToDevice));
+    CHECK_CUDA(cudaMemcpy(d_G, h_G, size_DG, cudaMemcpyHostToDevice));
+    CHECK_CUDA(cudaMemcpy(d_u, h_u, size_u, cudaMemcpyHostToDevice));
 
-    <span class="pl-c"><span class="pl-c">//</span> 创建cuSPARSE句柄</span>
+    // 创建cuSPARSE句柄
     cusparseHandle_t handle;
-    <span class="pl-c1">cusparseCreate</span>(&amp;handle);
+    cusparseCreate(&amp;handle);
 
-    <span class="pl-c"><span class="pl-c">//</span> 计算D * u</span>
-    <span class="pl-k">const</span> <span class="pl-k">double</span> alpha = <span class="pl-c1">1.0</span>;
-    <span class="pl-k">const</span> <span class="pl-k">double</span> beta = <span class="pl-c1">0.0</span>;
+    // 计算D * u
+    const double alpha = 1.0;
+    const double beta = 0.0;
     cusparseDnMatDescr_t matD, matG;
     cusparseDnVecDescr_t vecU, vecIntermediate, vecResult;
 
-    <span class="pl-c"><span class="pl-c">//</span> 创建cuSPARSE描述符</span>
-    <span class="pl-c1">cusparseCreateDnMat</span>(&amp;matD, N, N, N, d_D, CUDA_R_64F, CUSPARSE_ORDER_ROW);
-    <span class="pl-c1">cusparseCreateDnMat</span>(&amp;matG, N, N, N, d_G, CUDA_R_64F, CUSPARSE_ORDER_ROW);
-    <span class="pl-c1">cusparseCreateDnVec</span>(&amp;vecU, N, d_u, CUDA_R_64F);
-    <span class="pl-c1">cusparseCreateDnVec</span>(&amp;vecIntermediate, N, d_intermediate, CUDA_R_64F);
-    <span class="pl-c1">cusparseCreateDnVec</span>(&amp;vecResult, N, d_result, CUDA_R_64F);
+    // 创建cuSPARSE描述符
+    cusparseCreateDnMat(&amp;matD, N, N, N, d_D, CUDA_R_64F, CUSPARSE_ORDER_ROW);
+    cusparseCreateDnMat(&amp;matG, N, N, N, d_G, CUDA_R_64F, CUSPARSE_ORDER_ROW);
+    cusparseCreateDnVec(&amp;vecU, N, d_u, CUDA_R_64F);
+    cusparseCreateDnVec(&amp;vecIntermediate, N, d_intermediate, CUDA_R_64F);
+    cusparseCreateDnVec(&amp;vecResult, N, d_result, CUDA_R_64F);
 
-    <span class="pl-c"><span class="pl-c">//</span> 进行矩阵向量乘法D * u</span>
-    <span class="pl-c1">cusparseDnMatVec</span>(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &amp;alpha, matD, vecU, &amp;beta, vecIntermediate, CUDA_R_64F);
+    // 进行矩阵向量乘法D * u
+    cusparseDnMatVec(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &amp;alpha, matD, vecU, &amp;beta, vecIntermediate, CUDA_R_64F);
 
-    <span class="pl-c"><span class="pl-c">//</span> 进行矩阵向量乘法G * (D * u)</span>
-    <span class="pl-c1">cusparseDnMatVec</span>(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &amp;alpha, matG, vecIntermediate, &amp;beta, vecResult, CUDA_R_64F);
+    // 进行矩阵向量乘法G * (D * u)
+    cusparseDnMatVec(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &amp;alpha, matG, vecIntermediate, &amp;beta, vecResult, CUDA_R_64F);
 
-    <span class="pl-c"><span class="pl-c">//</span> 进行矩阵向量乘法D^T * (G * (D * u))</span>
-    <span class="pl-c1">cusparseDnMatVec</span>(handle, CUSPARSE_OPERATION_TRANSPOSE, &amp;alpha, matD, vecResult, &amp;beta, vecIntermediate, CUDA_R_64F);
+    // 进行矩阵向量乘法D^T * (G * (D * u))
+    cusparseDnMatVec(handle, CUSPARSE_OPERATION_TRANSPOSE, &amp;alpha, matD, vecResult, &amp;beta, vecIntermediate, CUDA_R_64F);
 
-    <span class="pl-c"><span class="pl-c">//</span> 将结果从设备内存传输到主机内存</span>
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaMemcpy</span>(h_result, d_intermediate, size_u, cudaMemcpyDeviceToHost));
+    // 将结果从设备内存传输到主机内存
+    CHECK_CUDA(cudaMemcpy(h_result, d_intermediate, size_u, cudaMemcpyDeviceToHost));
 
-    <span class="pl-c"><span class="pl-c">//</span> 释放设备内存</span>
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaFree</span>(d_D));
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaFree</span>(d_G));
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaFree</span>(d_u));
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaFree</span>(d_intermediate));
-    <span class="pl-c1">CHECK_CUDA</span>(<span class="pl-c1">cudaFree</span>(d_result));
+    // 释放设备内存
+    CHECK_CUDA(cudaFree(d_D));
+    CHECK_CUDA(cudaFree(d_G));
+    CHECK_CUDA(cudaFree(d_u));
+    CHECK_CUDA(cudaFree(d_intermediate));
+    CHECK_CUDA(cudaFree(d_result));
 
-    <span class="pl-c"><span class="pl-c">//</span> 销毁cuSPARSE描述符和句柄</span>
-    <span class="pl-c1">cusparseDestroyDnMat</span>(matD);
-    <span class="pl-c1">cusparseDestroyDnMat</span>(matG);
-    <span class="pl-c1">cusparseDestroyDnVec</span>(vecU);
-    <span class="pl-c1">cusparseDestroyDnVec</span>(vecIntermediate);
-    <span class="pl-c1">cusparseDestroyDnVec</span>(vecResult);
-    <span class="pl-c1">cusparseDestroy</span>(handle);
+    // 销毁cuSPARSE描述符和句柄
+    cusparseDestroyDnMat(matD);
+    cusparseDestroyDnMat(matG);
+    cusparseDestroyDnVec(vecU);
+    cusparseDestroyDnVec(vecIntermediate);
+    cusparseDestroyDnVec(vecResult);
+    cusparseDestroy(handle);
 }
 
-<span class="pl-k">int</span> <span class="pl-en">main</span>() {
-    <span class="pl-k">double</span> *h_D = <span class="pl-k">new</span> <span class="pl-k">double</span>[N * N];
-    <span class="pl-k">double</span> *h_G = <span class="pl-k">new</span> <span class="pl-k">double</span>[N * N];
-    <span class="pl-k">double</span> *h_u = <span class="pl-k">new</span> <span class="pl-k">double</span>[N];
-    <span class="pl-k">double</span> *h_result = <span class="pl-k">new</span> <span class="pl-k">double</span>[N];
+int main() {
+    double *h_D = <span class="pl-k">new</span> double[N * N];
+    double *h_G = <span class="pl-k">new</span> double[N * N];
+    double *h_u = <span class="pl-k">new</span> double[N];
+    double *h_result = <span class="pl-k">new</span> double[N];
 
-    <span class="pl-c"><span class="pl-c">//</span> 初始化矩阵和向量</span>
-    <span class="pl-c1">initialize_matrices</span>(h_D, h_G, h_u);
+    // 初始化矩阵和向量
+    initialize_matrices(h_D, h_G, h_u);
 
-    <span class="pl-c"><span class="pl-c">//</span> 进行和分解计算</span>
-    <span class="pl-c1">sum_factorization</span>(h_D, h_G, h_u, h_result);
+    // 进行和分解计算
+    sum_factorization(h_D, h_G, h_u, h_result);
 
-    <span class="pl-c"><span class="pl-c">//</span> 输出结果</span>
-    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; N; ++i) {
-        std::cout &lt;&lt; h_result[i] &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span> <span class="pl-pds">"</span></span>;
+    // 输出结果
+    for (int i = 0; i &lt; N; ++i) {
+        std::cout &lt;&lt; h_result[i] &lt;&lt; " ";
     }
     std::cout &lt;&lt; std::endl;
 
-    <span class="pl-k">delete[]</span> h_D;
-    <span class="pl-k">delete[]</span> h_G;
-    <span class="pl-k">delete[]</span> h_u;
-    <span class="pl-k">delete[]</span> h_result;
+    <span class="pl-k">delete</span>[] h_D;
+    <span class="pl-k">delete</span>[] h_G;
+    <span class="pl-k">delete</span>[] h_u;
+    <span class="pl-k">delete</span>[] h_result;
 
-    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+    return 0;
 }</pre></div></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 

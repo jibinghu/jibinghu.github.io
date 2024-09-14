@@ -109,51 +109,51 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <h4>64位数据矩阵乘优化访存分析 {#sector_1}</h4>
 <p>通过分析下面的代码，回答对应的两个问题(答案在文章结尾给出)。</p>
 <p>🌰：</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">define</span> <span class="pl-en">BLOCK_SIZE</span> <span class="pl-c1">16</span>          <span class="pl-c"><span class="pl-c">//</span> 定义块大小为16</span>
-#<span class="pl-k">define</span> <span class="pl-en">MATRIX_DIM</span> <span class="pl-c1">256</span>         <span class="pl-c"><span class="pl-c">//</span> 定义矩阵维度为256</span>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#define BLOCK_SIZE 16          // 定义块大小为16
+#define MATRIX_DIM 256         // 定义矩阵维度为256
 
-<span class="pl-c"><span class="pl-c">//</span> 定义线程块和网格的尺寸</span>
-dim3 <span class="pl-en">Block_dim</span>(BLOCK_SIZE, BLOCK_SIZE);
-dim3 <span class="pl-en">Grid_dim</span>(MATRIX_DIM / BLOCK_SIZE, MATRIX_DIM / BLOCK_SIZE);
+// 定义线程块和网格的尺寸
+dim3 Block_dim(BLOCK_SIZE, BLOCK_SIZE);
+dim3 Grid_dim(MATRIX_DIM / BLOCK_SIZE, MATRIX_DIM / BLOCK_SIZE);
 
-<span class="pl-c"><span class="pl-c">//</span> 启动核函数进行矩阵乘法运算</span>
-multiply &lt;&lt;&lt; Grid_dim, Block_dim &gt;&gt;&gt; (A_mat_d, B_mat_d, C_mat_d);
+// 启动核函数进行矩阵乘法运算
+multiply &lt;&lt;<span class="pl-en"></span>&lt; Grid_dim, Block_dim &gt;&gt;&gt; (A_mat_d, B_mat_d, C_mat_d);
 
-<span class="pl-c"><span class="pl-c">//</span> 核函数，用于执行矩阵乘法</span>
-__global__ <span class="pl-k">void</span> <span class="pl-en">multiply</span>(<span class="pl-k">const</span> <span class="pl-k">double</span> * __restrict__ A_mat, <span class="pl-k">const</span> <span class="pl-k">double</span> * __restrict__ B_mat, <span class="pl-k">double</span> * __restrict__ C_mat)
+// 核函数，用于执行矩阵乘法
+__global__ void multiply(const double * __restrict__ A_mat, const double * __restrict__ B_mat, double * __restrict__ C_mat)
 {
-    <span class="pl-k">int</span> i, j;
-    <span class="pl-k">double</span> temp = <span class="pl-c1">0</span>;
+    int i, j;
+    double temp = 0;
 
-    <span class="pl-c"><span class="pl-c">//</span> 定义共享内存，用于存储块内的子矩阵</span>
-    __shared__ <span class="pl-k">double</span> A_shared[BLOCK_SIZE][BLOCK_SIZE];
-    __shared__ <span class="pl-k">double</span> B_shared[BLOCK_SIZE][BLOCK_SIZE];
+    // 定义共享内存，用于存储块内的子矩阵
+    __shared__ double A_shared[BLOCK_SIZE][BLOCK_SIZE];
+    __shared__ double B_shared[BLOCK_SIZE][BLOCK_SIZE];
 
-    <span class="pl-c"><span class="pl-c">//</span> 计算当前线程对应的全局行和列索引</span>
-    <span class="pl-k">int</span> row = blockIdx.<span class="pl-smi">y</span> * blockDim.<span class="pl-smi">y</span> + threadIdx.<span class="pl-smi">y</span>;
-    <span class="pl-k">int</span> col = blockIdx.<span class="pl-smi">x</span> * blockDim.<span class="pl-smi">x</span> + threadIdx.<span class="pl-smi">x</span>;
+    // 计算当前线程对应的全局行和列索引
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
 
-    <span class="pl-c"><span class="pl-c">//</span> 循环遍历每个子矩阵块</span>
-    <span class="pl-k">for</span> (<span class="pl-k">int</span> tileNUM = <span class="pl-c1">0</span>; tileNUM &lt; MATRIX_DIM / BLOCK_SIZE; tileNUM++)
+    // 循环遍历每个子矩阵块
+    for (int tileNUM = 0; tileNUM &lt; MATRIX_DIM / BLOCK_SIZE; tileNUM++)
     {
-        <span class="pl-c"><span class="pl-c">//</span> 计算子矩阵块内的索引</span>
-        j = tileNUM * BLOCK_SIZE + threadIdx.<span class="pl-smi">x</span>;
-        i = tileNUM * BLOCK_SIZE + threadIdx.<span class="pl-smi">y</span>;
+        // 计算子矩阵块内的索引
+        j = tileNUM * BLOCK_SIZE + threadIdx.x;
+        i = tileNUM * BLOCK_SIZE + threadIdx.y;
 
-        <span class="pl-c"><span class="pl-c">//</span> 将子矩阵块的数据加载到共享内存中</span>
-        A_shared[threadIdx.<span class="pl-smi">y</span>][threadIdx.<span class="pl-smi">x</span>] = A_mat[row * MATRIX_DIM + j];
-        B_shared[threadIdx.<span class="pl-smi">y</span>][threadIdx.<span class="pl-smi">x</span>] = B_mat[i * MATRIX_DIM + col];
-        <span class="pl-c1">__syncthreads</span>();  <span class="pl-c"><span class="pl-c">//</span> 同步，确保所有线程都完成加载</span>
+        // 将子矩阵块的数据加载到共享内存中
+        A_shared[threadIdx.y][threadIdx.x] = A_mat[row * MATRIX_DIM + j];
+        B_shared[threadIdx.y][threadIdx.x] = B_mat[i * MATRIX_DIM + col];
+        __syncthreads();  // 同步，确保所有线程都完成加载
 
-        <span class="pl-c"><span class="pl-c">//</span> 进行子矩阵块的乘法运算</span>
-        <span class="pl-k">for</span> (<span class="pl-k">int</span> k = <span class="pl-c1">0</span>; k &lt; BLOCK_SIZE; k++)
+        // 进行子矩阵块的乘法运算
+        for (int k = 0; k &lt; BLOCK_SIZE; k++)
         {
-            temp += A_shared[threadIdx.<span class="pl-smi">y</span>][k] * B_shared[k][threadIdx.<span class="pl-smi">x</span>];
+            temp += A_shared[threadIdx.y][k] * B_shared[k][threadIdx.x];
         }
-        <span class="pl-c1">__syncthreads</span>();  <span class="pl-c"><span class="pl-c">//</span> 再次同步，确保所有线程都完成计算</span>
+        __syncthreads();  // 再次同步，确保所有线程都完成计算
     }
 
-    <span class="pl-c"><span class="pl-c">//</span> 将计算结果写入全局内存</span>
+    // 将计算结果写入全局内存
     C_mat[row * MATRIX_DIM + col] = temp;
 }</pre></div>
 <p>根据代码提示分析描述，请说明</p>
@@ -220,32 +220,32 @@ float4：表示包含四个 32 位浮点数的向量。例如，一个四维向�
 </div>
 <h5>CPU 下的矩阵乘：</h5>
 <p>$A_{m \times k} \cdot B_{k \times n} = C_{m \times n}$</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">void</span> <span class="pl-en">matrixMulCpu</span>(<span class="pl-k">float</span>* fpMatrixA, <span class="pl-k">float</span>* fpMatrixB, <span class="pl-k">float</span>* fpMatrixC,
-<span class="pl-k">int</span> m, <span class="pl-k">int</span> n, <span class="pl-k">int</span> k)
+<div class="highlight highlight-source-c++"><pre class="notranslate">void matrixMulCpu(float* fpMatrixA, float* fpMatrixB, float* fpMatrixC,
+int m, int n, int k)
 {
-    <span class="pl-k">float</span> sum = <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>;
-    <span class="pl-k">for</span>(<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; m; i++)
+    float sum = 0.0f;
+    for(int i = 0; i &lt; m; i++)
     {
-        <span class="pl-k">for</span>(<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; n; j++)
+        for(int j = 0; j &lt; n; j++)
         {
-            <span class="pl-k">for</span>(<span class="pl-k">int</span> l = <span class="pl-c1">0</span>; l &lt; k; l++)
+            for(int l = 0; l &lt; k; l++)
             {
                 sum += fpMatrixA[i * k + l] * fpMatrixB[l * n + j];
             }
             fpMatrixC[i * n + j] = sum;
-            sum = <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>;
+            sum = 0.0f;
         }
     }
 }</pre></div>
 <p>上述 CPU 实现的代码中使用三层循环进行矩阵乘的计算，实际计算数达到了 $m \times n \times k$， 时间复杂度为 $O(N^3)$.</p>
 <h5>GPU Native GEMM:</h5>
-<div class="highlight highlight-source-c++"><pre class="notranslate">__global__ <span class="pl-k">void</span> <span class="pl-en">matrixMul</span>(<span class="pl-k">const</span> <span class="pl-k">float</span> *A, <span class="pl-k">const</span> <span class="pl-k">float</span> *B, <span class="pl-k">float</span> *C, 
-                          <span class="pl-k">int</span> M, <span class="pl-k">int</span> N, <span class="pl-k">int</span> K) {
-    <span class="pl-k">int</span> tx = blockIdx.<span class="pl-smi">x</span> * blockDim.<span class="pl-smi">x</span> + threadIdx.<span class="pl-smi">x</span>;
-    <span class="pl-k">int</span> ty = blockIdx.<span class="pl-smi">y</span> * blockDim.<span class="pl-smi">y</span> + threadIdx.<span class="pl-smi">y</span>;
-    <span class="pl-k">if</span>(ty &lt; M &amp;&amp; tx &lt; N) {
-        <span class="pl-k">float</span> c = <span class="pl-c1">0</span>;
-        <span class="pl-k">for</span>(<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; K; ++i){
+<div class="highlight highlight-source-c++"><pre class="notranslate">__global__ void matrixMul(const float *A, const float *B, float *C, 
+                          int M, int N, int K) {
+    int tx = blockIdx.x * blockDim.x + threadIdx.x;
+    int ty = blockIdx.y * blockDim.y + threadIdx.y;
+    if(ty &lt; M &amp;&amp; tx &lt; N) {
+        float c = 0;
+        for(int i = 0; i &lt; K; ++i){
             c += A[ty * K + i] * B[i * N + tx];
         }
         C[ty * N + tx] = c;
@@ -257,101 +257,101 @@ float4：表示包含四个 32 位浮点数的向量。例如，一个四维向�
     <a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/chiemon/chiemon.github.io/master/img/cuda/5.png"><img src="https://raw.githubusercontent.com/chiemon/chiemon.github.io/master/img/cuda/5.png" width="550" height="500" style="max-width: 100%;"></a>
     <p>矩阵分块乘</p>
 </div>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> 矩阵分块乘</span>
-__global__ <span class="pl-k">void</span> <span class="pl-en">matrixMultiplySharedKernel</span>(<span class="pl-k">float</span>* matrixA, <span class="pl-k">float</span>* matrixB, <span class="pl-k">float</span>* matrixC, <span class="pl-k">int</span> rowsA, <span class="pl-k">int</span> colsB, <span class="pl-k">int</span> commonDim) {
-    <span class="pl-k">int</span> row = blockIdx.<span class="pl-smi">y</span> * blockDim.<span class="pl-smi">y</span> + threadIdx.<span class="pl-smi">y</span>;
-    <span class="pl-k">int</span> col = blockIdx.<span class="pl-smi">x</span> * blockDim.<span class="pl-smi">x</span> + threadIdx.<span class="pl-smi">x</span>;
-    <span class="pl-k">float</span> value = <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>;
-    <span class="pl-c"><span class="pl-c">//</span> 矩阵A和B的共享内存块</span>
-    __shared__ <span class="pl-k">float</span> tileA[TILE_SIZE][TILE_SIZE];
-    __shared__ <span class="pl-k">float</span> tileB[TILE_SIZE][TILE_SIZE];
-    <span class="pl-c"><span class="pl-c">//</span> 矩阵分块的数量</span>
-    <span class="pl-k">int</span> numTiles = (commonDim + TILE_SIZE - <span class="pl-c1">1</span>) / TILE_SIZE;
+<div class="highlight highlight-source-c++"><pre class="notranslate">// 矩阵分块乘
+__global__ void matrixMultiplySharedKernel(float* matrixA, float* matrixB, float* matrixC, int rowsA, int colsB, int commonDim) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    float value = 0.0f;
+    // 矩阵A和B的共享内存块
+    __shared__ float tileA[TILE_SIZE][TILE_SIZE];
+    __shared__ float tileB[TILE_SIZE][TILE_SIZE];
+    // 矩阵分块的数量
+    int numTiles = (commonDim + TILE_SIZE - 1) / TILE_SIZE;
 
-    <span class="pl-k">for</span>(<span class="pl-k">int</span> t = <span class="pl-c1">0</span>; t &lt; numTiles; t++) {
-        <span class="pl-c"><span class="pl-c">//</span> 将全局内存中的矩阵分块至共享内存中</span>
-        <span class="pl-k">if</span>(row &lt; rowsA &amp;&amp; t * TILE_SIZE + threadIdx.<span class="pl-smi">x</span> &lt; commonDim)
-            tileA[threadIdx.<span class="pl-smi">y</span>][threadIdx.<span class="pl-smi">x</span>] = matrixA[row * commonDim + t * TILE_SIZE + threadIdx.<span class="pl-smi">x</span>];
-        <span class="pl-k">else</span>
-            tileA[threadIdx.<span class="pl-smi">y</span>][threadIdx.<span class="pl-smi">x</span>] = <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>;
+    for(int t = 0; t &lt; numTiles; t++) {
+        // 将全局内存中的矩阵分块至共享内存中
+        if(row &lt; rowsA &amp;&amp; t * TILE_SIZE + threadIdx.<span class="pl-en">x</span> &lt; commonDim)
+            tileA[threadIdx.y][threadIdx.x] = matrixA[row * commonDim + t * TILE_SIZE + threadIdx.x];
+        else
+            tileA[threadIdx.y][threadIdx.x] = 0.0f;
 
-        <span class="pl-k">if</span>(t * TILE_SIZE + threadIdx.<span class="pl-smi">y</span> &lt; commonDim &amp;&amp; col &lt; colsB)
-            tileB[threadIdx.<span class="pl-smi">y</span>][threadIdx.<span class="pl-smi">x</span>] = matrixB[(t * TILE_SIZE + threadIdx.<span class="pl-smi">y</span>) * colsB + col];
-        <span class="pl-k">else</span>
-            tileB[threadIdx.<span class="pl-smi">y</span>][threadIdx.<span class="pl-smi">x</span>] = <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>;
+        if(t * TILE_SIZE + threadIdx.y &lt; commonDim &amp;&amp; col &lt; colsB)
+            tileB[threadIdx.y][threadIdx.x] = matrixB[(t * TILE_SIZE + threadIdx.y) * colsB + col];
+        else
+            tileB[threadIdx.y][threadIdx.x] = 0.0f;
 
-        <span class="pl-c1">__syncthreads</span>();
-        <span class="pl-c"><span class="pl-c">//</span> 每个线程计算block块中的乘积并累加</span>
-        <span class="pl-k">for</span>(<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; TILE_SIZE; i++) {
-            value += tileA[threadIdx.<span class="pl-smi">y</span>][i] * tileB[i][threadIdx.<span class="pl-smi">x</span>];
+        __syncthreads();
+        // 每个线程计算block块中的乘积并累加
+        for(int i = 0; i &lt; TILE_SIZE; i++) {
+            value += tileA[threadIdx.y][i] * tileB[i][threadIdx.x];
         }
 
-        <span class="pl-c1">__syncthreads</span>();
+        __syncthreads();
     }
 
-    <span class="pl-k">if</span>(row &lt; rowsA &amp;&amp; col &lt; colsB) {
+    if(row &lt; rowsA &amp;&amp; col &lt; colsB) {
         matrixC[row * colsB + col] = value;
     }
 }</pre></div>
 <p>对矩阵乘进行分块处理，每个Block 计算一个子矩阵，通过对子矩阵向 numTiles 方向(矩阵A向行方向，矩阵B向列方向)进行迭代，计算矩阵C中每个元素的值。</p>
 <h5>寄存器优化矩阵乘(提高计算⬆️/访存比)</h5>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> 使用指令级并行（ILP）2来提高性能</span>
-__global__ <span class="pl-k">void</span> <span class="pl-en">matrixMultiplySharedILPkernel</span>(<span class="pl-k">float</span>* matrixA, <span class="pl-k">float</span>* matrixB,
-<span class="pl-k">float</span>* matrixC, <span class="pl-k">int</span> rowsA, <span class="pl-k">int</span> colsB, <span class="pl-k">int</span> commonDim)
+<div class="highlight highlight-source-c++"><pre class="notranslate">// 使用指令级并行（ILP）2来提高性能
+__global__ void matrixMultiplySharedILPkernel(float* matrixA, float* matrixB,
+float* matrixC, int rowsA, int colsB, int commonDim)
 {
-    <span class="pl-k">int</span> row = blockIdx.<span class="pl-smi">y</span> * blockDim.<span class="pl-smi">y</span> * <span class="pl-c1">2</span> + threadIdx.<span class="pl-smi">y</span>; <span class="pl-c"><span class="pl-c">//</span> 每个线程块处理两个块</span>
-    <span class="pl-k">int</span> col = blockIdx.<span class="pl-smi">x</span> * blockDim.<span class="pl-smi">x</span> + threadIdx.<span class="pl-smi">x</span>; <span class="pl-c"><span class="pl-c">//</span> 列索引</span>
-    <span class="pl-k">float</span> value[<span class="pl-c1">2</span>] = {<span class="pl-c1">0</span>.<span class="pl-c1">0f</span>}; <span class="pl-c"><span class="pl-c">//</span> 用于存储两个结果值</span>
+    int row = blockIdx.y * blockDim.y * 2 + threadIdx.y; // 每个线程块处理两个块
+    int col = blockIdx.x * blockDim.x + threadIdx.x; // 列索引
+    float value[2] = {0.0f}; // 用于存储两个结果值
 
-    __shared__ <span class="pl-k">float</span> tileA[BLOCK_SIZE][BLOCK_SIZE]; <span class="pl-c"><span class="pl-c">//</span> 共享内存中的子矩阵A</span>
-    __shared__ <span class="pl-k">float</span> tileB[BLOCK_SIZE][BLOCK_SIZE]; <span class="pl-c"><span class="pl-c">//</span> 共享内存中的子矩阵B</span>
+    __shared__ float tileA[BLOCK_SIZE][BLOCK_SIZE]; // 共享内存中的子矩阵A
+    __shared__ float tileB[BLOCK_SIZE][BLOCK_SIZE]; // 共享内存中的子矩阵B
 
-    <span class="pl-k">int</span> numTiles = (commonDim + BLOCK_SIZE - <span class="pl-c1">1</span>) / BLOCK_SIZE; <span class="pl-c"><span class="pl-c">//</span> 计算需要处理的子矩阵块数</span>
-    <span class="pl-k">for</span>(<span class="pl-k">int</span> t = <span class="pl-c1">0</span>; t &lt; numTiles; t++)
+    int numTiles = (commonDim + BLOCK_SIZE - 1) / BLOCK_SIZE; // 计算需要处理的子矩阵块数
+    for(int t = 0; t &lt; numTiles; t++)
     {
-        <span class="pl-c"><span class="pl-c">//</span> 从全局内存加载数据到共享内存</span>
-        tileA[threadIdx.<span class="pl-smi">y</span>][threadIdx.<span class="pl-smi">x</span>] = matrixA[row * commonDim + t * BLOCK_SIZE + threadIdx.<span class="pl-smi">x</span>];
-        tileA[threadIdx.<span class="pl-smi">y</span> + <span class="pl-c1">16</span>][threadIdx.<span class="pl-smi">x</span>] = matrixA[(row + <span class="pl-c1">16</span>) * commonDim + t * BLOCK_SIZE + threadIdx.<span class="pl-smi">x</span>];
+        // 从全局内存加载数据到共享内存
+        tileA[threadIdx.y][threadIdx.x] = matrixA[row * commonDim + t * BLOCK_SIZE + threadIdx.x];
+        tileA[threadIdx.y + 16][threadIdx.x] = matrixA[(row + 16) * commonDim + t * BLOCK_SIZE + threadIdx.x];
 
-        tileB[threadIdx.<span class="pl-smi">y</span>][threadIdx.<span class="pl-smi">x</span>] = matrixB[(t * BLOCK_SIZE + threadIdx.<span class="pl-smi">y</span>) * colsB + col];
-        tileB[threadIdx.<span class="pl-smi">y</span> + <span class="pl-c1">16</span>][threadIdx.<span class="pl-smi">x</span>] = matrixB[(t * BLOCK_SIZE + threadIdx.<span class="pl-smi">y</span> + <span class="pl-c1">16</span>) * colsB + col];
+        tileB[threadIdx.y][threadIdx.x] = matrixB[(t * BLOCK_SIZE + threadIdx.y) * colsB + col];
+        tileB[threadIdx.y + 16][threadIdx.x] = matrixB[(t * BLOCK_SIZE + threadIdx.y + 16) * colsB + col];
 
-        <span class="pl-c1">__syncthreads</span>(); <span class="pl-c"><span class="pl-c">//</span> 确保所有线程都完成加载</span>
+        __syncthreads(); // 确保所有线程都完成加载
 
-        <span class="pl-c"><span class="pl-c">//</span> 子矩阵乘法</span>
-        <span class="pl-k">for</span>(<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; BLOCK_SIZE; j++)
+        // 子矩阵乘法
+        for(int j = 0; j &lt; BLOCK_SIZE; j++)
         {
-            value[<span class="pl-c1">0</span>] += tileA[threadIdx.<span class="pl-smi">y</span>][j] * tileB[j][threadIdx.<span class="pl-smi">x</span>];
-            value[<span class="pl-c1">1</span>] += tileA[threadIdx.<span class="pl-smi">y</span> + <span class="pl-c1">16</span>][j] * tileB[j][threadIdx.<span class="pl-smi">x</span>];
+            value[0] += tileA[threadIdx.y][j] * tileB[j][threadIdx.x];
+            value[1] += tileA[threadIdx.y + 16][j] * tileB[j][threadIdx.x];
         }
 
-        <span class="pl-c1">__syncthreads</span>(); <span class="pl-c"><span class="pl-c">//</span> 确保所有线程都完成计算</span>
+        __syncthreads(); // 确保所有线程都完成计算
     }
 
-    <span class="pl-c"><span class="pl-c">//</span> 将计算结果写入全局内存</span>
-    matrixC[row * colsB + col] = value[<span class="pl-c1">0</span>];
-    matrixC[(row + <span class="pl-c1">16</span>) * colsB + col] = value[<span class="pl-c1">1</span>];
+    // 将计算结果写入全局内存
+    matrixC[row * colsB + col] = value[0];
+    matrixC[(row + 16) * colsB + col] = value[1];
 }</pre></div>
 <blockquote>
 <p>注意, kernel launch 时的 blocksize 需要变化为: blockSize.y = BLOCK_SIZE / 2。而 gridSize 不变.</p>
 </blockquote>
 <p>事实上，上述程序对计算/访存比的提高并不明显，要显著提高程序运行效率可以采用向量化访存指令。</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">float</span> c[<span class="pl-c1">4</span>][<span class="pl-c1">4</span>] = {{<span class="pl-c1">0</span>}};
-    <span class="pl-k">float</span> a_reg[<span class="pl-c1">4</span>];
-    <span class="pl-k">float</span> b_reg[<span class="pl-c1">4</span>];
-    <span class="pl-k">for</span>(<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; K; i += TILE_K){
-        <span class="pl-c1">__syncthreads</span>();
-        <span class="pl-c"><span class="pl-c">//</span> transfer tile from global mem to shared mem</span>
-        <span class="pl-c1">load_gmem_tile_to_smem</span>(A, i, smemA);
-        <span class="pl-c1">load_gmem_tile_to_smem</span>(B, i, smemB);
-        <span class="pl-c1">__syncthreads</span>();
-    #<span class="pl-k">pragma</span> unroll
-        <span class="pl-k">for</span>(<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_K; ++j) {
-            <span class="pl-c"><span class="pl-c">//</span> load tile from shared mem to register </span>
-            <span class="pl-c1">load_smem_tile_to_reg</span>(smemA, j, a_reg);
-            <span class="pl-c1">load_smem_tile_to_reg</span>(smemB, j, b_reg);
-            <span class="pl-c"><span class="pl-c">//</span> compute matrix multiply accumulate 4x4</span>
-            <span class="pl-c1">mma4x4</span>(a_reg, b_reg, c)；
+<div class="highlight highlight-source-c++"><pre class="notranslate">float c[4][4] = {{0}};
+    float a_reg[4];
+    float b_reg[4];
+    for(int i = 0; i &lt; K; i += TILE_K){
+        __syncthreads();
+        // transfer tile from global mem to shared mem
+        load_gmem_tile_to_smem(A, i, smemA);
+        load_gmem_tile_to_smem(B, i, smemB);
+        __syncthreads();
+    #pragma unroll
+        for(int j = 0; j &lt; TILE_K; ++j) {
+            // load tile from shared mem to register 
+            load_smem_tile_to_reg(smemA, j, a_reg);
+            load_smem_tile_to_reg(smemB, j, b_reg);
+            // compute matrix multiply accumulate 4x4
+            mma4x4(a_reg, b_reg, c)；
         }
     }</pre></div>
 <p>上述伪代码程序中每次访存向量化达到提高计算/访存比的效果。</p>
@@ -362,63 +362,63 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">matrixMultiplyShar
 <blockquote>
 <p>考虑一个 block 计算 128x128 的分块，若每个线程计算 128 个结果，需要的 block size 为 128，单个线程需要 128 个寄存器储存计算结果，加上所需的 Gmem to Smem，Smem to Reg 等一些所需的寄存器，大概共需要至少 180 多个，计算 Occupany 可知此时的 Active Warp 数只有 8，Occupany 为 25%；若设置 block size 为 256，则每个线程仅需计算 64 个结果，调整寄存器和 Shared Memory 的使用量并观察 Occupany，可知若每个线程只使用 128 个寄存器，block 内的 Shared Memory 使用量限制在 32K，Active Warp 数可以达到 16，是一个更优的选择。</p>
 </blockquote>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">define</span> <span class="pl-en">TILE_K</span> <span class="pl-c1">16</span>
-    __shared__ float4 smemA[<span class="pl-c1">2</span>][TILE_K * <span class="pl-c1">128</span> / <span class="pl-c1">4</span>];
-    __shared__ float4 smemB[<span class="pl-c1">2</span>][TILE_K * <span class="pl-c1">128</span> / <span class="pl-c1">4</span>];
-    float4 c[<span class="pl-c1">8</span>][<span class="pl-c1">2</span>] = {{<span class="pl-c1">make_float4</span>(<span class="pl-c1">0</span>.<span class="pl-smi">f</span>, <span class="pl-c1">0</span>.<span class="pl-smi">f</span>, <span class="pl-c1">0</span>.<span class="pl-smi">f</span>, <span class="pl-c1">0</span>.<span class="pl-smi">f</span>)}};
-    float4 ldg_a_reg[<span class="pl-c1">2</span>];
-    float4 ldg_b_reg[<span class="pl-c1">2</span>];
-    float4 a_reg[<span class="pl-c1">2</span>][<span class="pl-c1">2</span>];
-    float4 b_reg[<span class="pl-c1">2</span>][<span class="pl-c1">2</span>];
+<div class="highlight highlight-source-c++"><pre class="notranslate">#define TILE_K 16
+    __shared__ float4 smemA[2][TILE_K * 128 / 4];
+    __shared__ float4 smemB[2][TILE_K * 128 / 4];
+    float4 c[8][2] = {{make_float4(0.f, 0.f, 0.f, 0.f)}};
+    float4 ldg_a_reg[2];
+    float4 ldg_b_reg[2];
+    float4 a_reg[2][2];
+    float4 b_reg[2][2];
 
-    <span class="pl-c"><span class="pl-c">//</span> transfer first tile from global mem to shared mem</span>
-    <span class="pl-en">load_gmem_tile_to_reg</span>(A, <span class="pl-c1">0</span>, ldg_a_reg);
-    <span class="pl-en">load_gmem_tile_to_reg</span>(B, <span class="pl-c1">0</span>, ldg_b_reg);
+    // transfer first tile from global mem to shared mem
+    load_gmem_tile_to_reg(A, 0, ldg_a_reg);
+    load_gmem_tile_to_reg(B, 0, ldg_b_reg);
 
-    <span class="pl-en">store_reg_to_smem_tile_transpose</span>(ldg_a_reg, <span class="pl-c1">0</span>, smemA[<span class="pl-c1">0</span>]);
-    <span class="pl-en">store_reg_to_smem_tile</span>(ldg_b_reg, <span class="pl-c1">0</span>, smemB[<span class="pl-c1">0</span>]);
-    <span class="pl-en">__syncthreads</span>();
+    store_reg_to_smem_tile_transpose(ldg_a_reg, 0, smemA[0]);
+    store_reg_to_smem_tile(ldg_b_reg, 0, smemB[0]);
+    __syncthreads();
 
-    <span class="pl-c"><span class="pl-c">//</span> load first tile from shared mem to register </span>
-    <span class="pl-en">load_smem_tile_to_reg</span>(smemA[<span class="pl-c1">0</span>], <span class="pl-c1">0</span>, a_reg[<span class="pl-c1">0</span>]);
-    <span class="pl-en">load_smem_tile_to_reg</span>(smemB[<span class="pl-c1">0</span>], <span class="pl-c1">0</span>, b_reg[<span class="pl-c1">0</span>]);
+    // load first tile from shared mem to register 
+    load_smem_tile_to_reg(smemA[0], 0, a_reg[0]);
+    load_smem_tile_to_reg(smemB[0], 0, b_reg[0]);
 
-    <span class="pl-k">int</span> write_stage_idx = <span class="pl-c1">1</span>; <span class="pl-c"><span class="pl-c">//</span>ping pong switch</span>
-    <span class="pl-k">do</span> {
+    int write_stage_idx = 1; //ping pong switch
+    do {
         i += TILE_K;
-        <span class="pl-c"><span class="pl-c">//</span> load next tile from global mem</span>
-        <span class="pl-c1">load_gmem_tile_to_reg</span>(A, i, ldg_a_reg);
-        <span class="pl-c1">load_gmem_tile_to_reg</span>(B, i, ldg_b_reg);
+        // load next tile from global mem
+        load_gmem_tile_to_reg(A, i, ldg_a_reg);
+        load_gmem_tile_to_reg(B, i, ldg_b_reg);
 
-        <span class="pl-k">int</span> load_stage_idx = write_stage_idx ^ <span class="pl-c1">1</span>;
+        int load_stage_idx = write_stage_idx ^ 1;
 
-    #<span class="pl-k">pragma</span> unroll
-        <span class="pl-k">for</span>(<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_K - <span class="pl-c1">1</span>; ++j) {
-            <span class="pl-c"><span class="pl-c">//</span> load next tile from shared mem to register </span>
-            <span class="pl-c1">load_smem_tile_to_reg</span>(smemA[load_stage_idx], j + <span class="pl-c1">1</span>, a_reg[(j + <span class="pl-c1">1</span>) % <span class="pl-c1">2</span>]);
-            <span class="pl-c1">load_smem_tile_to_reg</span>(smemB[load_stage_idx], j + <span class="pl-c1">1</span>, b_reg[(j + <span class="pl-c1">1</span>) % <span class="pl-c1">2</span>]);
-            <span class="pl-c"><span class="pl-c">//</span> compute matrix multiply accumulate 8x8</span>
-            <span class="pl-c1">mma8x8</span>(a_reg[j % <span class="pl-c1">2</span>], b_reg[j % <span class="pl-c1">2</span>], c)；
+    #pragma unroll
+        for(int j = 0; j &lt; TILE_K - 1; ++j) {
+            // load next tile from shared mem to register 
+            load_smem_tile_to_reg(smemA[load_stage_idx], j + 1, a_reg[(j + 1) % 2]);
+            load_smem_tile_to_reg(smemB[load_stage_idx], j + 1, b_reg[(j + 1) % 2]);
+            // compute matrix multiply accumulate 8x8
+            mma8x8(a_reg[j % 2], b_reg[j % 2], c)；
         }
 
-        <span class="pl-k">if</span>(i &lt; K) {
-            <span class="pl-c"><span class="pl-c">//</span> store next tile to shared mem</span>
-            <span class="pl-c1">store_reg_to_smem_tile_transpose</span>(ldg_a_reg, <span class="pl-c1">0</span>, smemA[write_stage_idx]);
-            <span class="pl-c1">store_reg_to_smem_tile</span>(ldg_b_reg, <span class="pl-c1">0</span>, smemB[write_stage_idx]);
-            <span class="pl-c"><span class="pl-c">//</span> use double buffer, only need one sync</span>
-            <span class="pl-c1">__syncthreads</span>();
-            <span class="pl-c"><span class="pl-c">//</span> switch</span>
-            write_stage_idx ^= <span class="pl-c1">1</span>;
+        if(i &lt; K) {
+            // store next tile to shared mem
+            store_reg_to_smem_tile_transpose(ldg_a_reg, 0, smemA[write_stage_idx]);
+            store_reg_to_smem_tile(ldg_b_reg, 0, smemB[write_stage_idx]);
+            // use double buffer, only need one sync
+            __syncthreads();
+            // switch
+            write_stage_idx ^= 1;
         }
 
-        <span class="pl-c"><span class="pl-c">//</span> load first tile from shared mem to register of next iter</span>
-        <span class="pl-c1">load_smem_tile_to_reg</span>(smemA[load_stage_idx ^ <span class="pl-c1">1</span>], <span class="pl-c1">0</span>, a_reg[<span class="pl-c1">0</span>]);
-        <span class="pl-c1">load_smem_tile_to_reg</span>(smemB[load_stage_idx ^ <span class="pl-c1">1</span>], <span class="pl-c1">0</span>, b_reg[<span class="pl-c1">0</span>]);
-        <span class="pl-c"><span class="pl-c">//</span> compute last tile mma 8x8</span>
-        <span class="pl-c1">mma8x8</span>(a_reg[<span class="pl-c1">1</span>], b_reg[<span class="pl-c1">1</span>], c)；
-    } <span class="pl-k">while</span> (i &lt; K);
+        // load first tile from shared mem to register of next iter
+        load_smem_tile_to_reg(smemA[load_stage_idx ^ 1], 0, a_reg[0]);
+        load_smem_tile_to_reg(smemB[load_stage_idx ^ 1], 0, b_reg[0]);
+        // compute last tile mma 8x8
+        mma8x8(a_reg[1], b_reg[1], c)；
+    } while (i &lt; K);
 
-    <span class="pl-en">store_c</span>(c, C)</pre></div>
+    store_c(c, C)</pre></div>
 <p>这段伪代码实现了一个矩阵乘法的CUDA核函数，其中使用了共享内存和寄存器来优化数据访问速度，采用双缓冲机制来提高计算效率。下面是对这段代码的逐步中文解析：</p>
 <h6>变量定义和初始化</h6>
 <ol>
@@ -514,39 +514,39 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">matrixMultiplyShar
 <hr>
 <p><strong>此外，还可以利用 CUDA 9 的warp-level指令以及Tensor Core进行 GEMM 的优化：</strong></p>
 <h5>利用Tensor Core进行GEMM优化</h5>
-<div class="highlight highlight-source-c++"><pre class="notranslate">__global__ <span class="pl-k">void</span> <span class="pl-en">tensorCoreMatrixMul</span>(<span class="pl-k">float</span>* A, <span class="pl-k">float</span>* B, <span class="pl-k">float</span>* C, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N, <span class="pl-k">int</span> K) {
-#<span class="pl-k">if</span> __CUDA_ARCH__ &gt;= 700
-    <span class="pl-c"><span class="pl-c">//</span> 适用于 Tensor Cores 的数据类型必须是 half</span>
-    half* A_half = <span class="pl-k">reinterpret_cast</span>&lt;half*&gt;(A);
-    half* B_half = <span class="pl-k">reinterpret_cast</span>&lt;half*&gt;(B);
-    half* C_half = <span class="pl-k">reinterpret_cast</span>&lt;half*&gt;(C);
+<div class="highlight highlight-source-c++"><pre class="notranslate">__global__ void tensorCoreMatrixMul(float* A, float* B, float* C, int M, int N, int K) {
+#if __CUDA_ARCH__ &gt;= 700
+    // 适用于 Tensor Cores 的数据类型必须是 half
+    half* A_half = <span class="pl-en">reinterpret_cast</span>&lt;half*&gt;(A);
+    half* B_half = <span class="pl-en">reinterpret_cast</span>&lt;half*&gt;(B);
+    half* C_half = <span class="pl-en">reinterpret_cast</span>&lt;half*&gt;(C);
 
-    <span class="pl-k">int</span> warpM = threadIdx.<span class="pl-smi">y</span> / <span class="pl-c1">8</span>;
-    <span class="pl-k">int</span> warpN = threadIdx.<span class="pl-smi">x</span> / <span class="pl-c1">8</span>;
-    <span class="pl-k">int</span> laneM = threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">8</span>;
-    <span class="pl-k">int</span> laneN = threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">8</span>;
+    int warpM = threadIdx.y / 8;
+    int warpN = threadIdx.x / 8;
+    int laneM = threadIdx.y % 8;
+    int laneN = threadIdx.x % 8;
 
-    wmma::fragment&lt;wmma::matrix_a, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, half, wmma::row_major&gt; a_frag;
-    wmma::fragment&lt;wmma::matrix_b, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, half, wmma::col_major&gt; b_frag;
-    wmma::fragment&lt;wmma::accumulator, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-k">float</span>&gt; c_frag;
+    wmma::fragment&lt;wmma::matrix_a, 16, 16, 16, half, wmma::row_major&gt; a_frag;
+    wmma::fragment&lt;wmma::matrix_b, 16, 16, 16, half, wmma::col_major&gt; b_frag;
+    wmma::fragment&lt;wmma::accumulator, 16, 16, 16, float&gt; c_frag;
 
-    <span class="pl-c1">wmma::fill_fragment</span>(c_frag, <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>);
+    wmma::<span class="pl-en">fill_fragment</span>(c_frag, 0.0f);
 
-    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; K; i += <span class="pl-c1">16</span>) {
-        <span class="pl-k">int</span> aRow = warpM * <span class="pl-c1">16</span>;
-        <span class="pl-k">int</span> bCol = warpN * <span class="pl-c1">16</span>;
+    for (int i = 0; i &lt; K; i += 16) {
+        int aRow = warpM * 16;
+        int bCol = warpN * 16;
 
-        <span class="pl-c1">wmma::load_matrix_sync</span>(a_frag, A_half + aRow * K + i, K);
-        <span class="pl-c1">wmma::load_matrix_sync</span>(b_frag, B_half + i * N + bCol, N);
+        wmma::<span class="pl-en">load_matrix_sync</span>(a_frag, A_half + aRow * K + i, K);
+        wmma::<span class="pl-en">load_matrix_sync</span>(b_frag, B_half + i * N + bCol, N);
 
-        <span class="pl-c1">wmma::mma_sync</span>(c_frag, a_frag, b_frag, c_frag);
+        wmma::<span class="pl-en">mma_sync</span>(c_frag, a_frag, b_frag, c_frag);
     }
 
-    <span class="pl-k">int</span> cRow = warpM * <span class="pl-c1">16</span>;
-    <span class="pl-k">int</span> cCol = warpN * <span class="pl-c1">16</span>;
+    int cRow = warpM * 16;
+    int cCol = warpN * 16;
 
-    <span class="pl-c1">wmma::store_matrix_sync</span>(C_half + cRow * N + cCol, c_frag, N, wmma::mem_row_major);
-#<span class="pl-k">endif</span>
+    wmma::<span class="pl-en">store_matrix_sync</span>(C_half + cRow * N + cCol, c_frag, N, wmma::mem_row_major);
+#endif
 }</pre></div>
 <hr>
 <p><strong>文章开头问题答案：</strong></p>
