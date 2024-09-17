@@ -99,32 +99,32 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <li><strong>序列化</strong>：通常使用协议如Protobuf、JSON、XML进行数据序列化和反序列化。</li>
 </ul>
 <p><strong>示例：</strong></p>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#include &lt;iostream&gt;
-#include &lt;grpcpp/grpcpp.h&gt;
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>grpcpp/grpcpp.h<span class="pl-pds">&gt;</span></span>
 
-// 假设已有服务定义和生成的代码
-#include "my_service.grpc.pb.h"
+<span class="pl-c"><span class="pl-c">//</span> 假设已有服务定义和生成的代码</span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">"</span>my_service.grpc.pb.h<span class="pl-pds">"</span></span>
 
-<span class="pl-k">class</span> MyServiceImpl <span class="pl-k">final</span> : <span class="pl-k">public</span> <span class="pl-smi">MyService</span>::Service {
-    grpc::Status <span class="pl-en">MyMethod</span>(grpc::ServerContext* context, const MyRequest* request, MyResponse* response) <span class="pl-k">override</span> {
-        // 实现服务逻辑
-        response-&gt;set_message("Hello, " + request-&gt;name());
-        return grpc::<span class="pl-smi">Status</span>::OK;
+<span class="pl-k">class</span> <span class="pl-en">MyServiceImpl</span> <span class="pl-k">final</span> : public MyService::Service {
+    grpc::Status <span class="pl-en">MyMethod</span>(grpc::ServerContext* context, <span class="pl-k">const</span> MyRequest* request, MyResponse* response) <span class="pl-k">override</span> {
+        <span class="pl-c"><span class="pl-c">//</span> 实现服务逻辑</span>
+        response-&gt;<span class="pl-c1">set_message</span>(<span class="pl-s"><span class="pl-pds">"</span>Hello, <span class="pl-pds">"</span></span> + request-&gt;<span class="pl-c1">name</span>());
+        <span class="pl-k">return</span> grpc::Status::OK;
     }
 };
 
-int main() {
-    std::string server_address("0.0.0.0:50051");
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    std::string <span class="pl-smi">server_address</span>(<span class="pl-s"><span class="pl-pds">"</span>0.0.0.0:50051<span class="pl-pds">"</span></span>);
     MyServiceImpl service;
 
     grpc::ServerBuilder builder;
-    builder.AddListeningPort(server_address, grpc::<span class="pl-en">InsecureServerCredentials</span>());
-    builder.RegisterService(&amp;service);
-    std::unique_ptr&lt;grpc::Server&gt; server(builder.BuildAndStart());
-    std::cout &lt;&lt; "Server listening on " &lt;&lt; server_address &lt;&lt; std::endl;
+    builder.<span class="pl-c1">AddListeningPort</span>(server_address, <span class="pl-c1">grpc::InsecureServerCredentials</span>());
+    builder.<span class="pl-c1">RegisterService</span>(&amp;service);
+    std::unique_ptr&lt;grpc::Server&gt; <span class="pl-c1">server</span>(builder.<span class="pl-c1">BuildAndStart</span>());
+    std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Server listening on <span class="pl-pds">"</span></span> &lt;&lt; server_address &lt;&lt; std::endl;
 
-    server-&gt;Wait();
-    return 0;
+    server-&gt;<span class="pl-c1">Wait</span>();
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
 }</pre></div>
 <h3>2. Nginx</h3>
 <p><strong>Nginx</strong>是一款高性能的HTTP和反向代理服务器，也是IMAP/POP3/SMTP代理服务器。它以高并发、高可靠性、低资源消耗著称。Nginx常用于负载均衡、静态内容服务和反向代理。</p>
@@ -155,29 +155,29 @@ int main() {
 <li><strong>高性能</strong>：支持二级索引、聚合框架等提高查询性能。</li>
 </ul>
 <p><strong>示例：</strong></p>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#include &lt;iostream&gt;
-#include &lt;mongocxx/client.hpp&gt;
-#include &lt;mongocxx/instance.hpp&gt;
-#include &lt;bsoncxx/json.hpp&gt;
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>mongocxx/client.hpp<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>mongocxx/instance.hpp<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>bsoncxx/json.hpp<span class="pl-pds">&gt;</span></span>
 
-int main() {
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
     mongocxx::instance instance{};
     mongocxx::client client{mongocxx::uri{}};
 
-    <span class="pl-smi">auto</span> db = client["testdb"];
-    <span class="pl-smi">auto</span> collection = db["testcollection"];
+    <span class="pl-k">auto</span> db = client[<span class="pl-s"><span class="pl-pds">"</span>testdb<span class="pl-pds">"</span></span>];
+    <span class="pl-k">auto</span> collection = db[<span class="pl-s"><span class="pl-pds">"</span>testcollection<span class="pl-pds">"</span></span>];
 
     bsoncxx::builder::stream::document document{};
-    document &lt;&lt; "name" &lt;&lt; "John Doe" &lt;&lt; "age" &lt;&lt; 30;
+    document &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>name<span class="pl-pds">"</span></span> &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>John Doe<span class="pl-pds">"</span></span> &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>age<span class="pl-pds">"</span></span> &lt;&lt; <span class="pl-c1">30</span>;
 
-    collection.insert_one(document.view());
+    collection.<span class="pl-c1">insert_one</span>(document.<span class="pl-c1">view</span>());
 
-    <span class="pl-smi">auto</span> cursor = collection.find({});
-    for (<span class="pl-smi">auto</span>&amp;&amp; doc : cursor) {
-        std::cout &lt;&lt; bsoncxx::<span class="pl-en">to_json</span>(doc) &lt;&lt; std::endl;
+    <span class="pl-k">auto</span> cursor = collection.<span class="pl-c1">find</span>({});
+    <span class="pl-k">for</span> (<span class="pl-k">auto</span>&amp;&amp; doc : cursor) {
+        std::cout &lt;&lt; <span class="pl-c1">bsoncxx::to_json</span>(doc) &lt;&lt; std::endl;
     }
 
-    return 0;
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
 }</pre></div>
 <h3>4. MQ（Message Queue）</h3>
 <p><strong>MQ</strong>，即消息队列，是一种通过消息传递进行通信的机制，常用于解耦、异步处理和提高系统的可扩展性。常见的MQ实现包括RabbitMQ、Apache Kafka和ActiveMQ。</p>
@@ -188,24 +188,24 @@ int main() {
 <li><strong>可扩展性</strong>：通过分布式架构支持高吞吐量和高可用性。</li>
 </ul>
 <p><strong>示例：RabbitMQ</strong></p>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#include &lt;iostream&gt;
-#include &lt;amqpcpp.h&gt;
-#include &lt;amqpcpp/libboostasio.h&gt;
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>amqpcpp.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>amqpcpp/libboostasio.h<span class="pl-pds">&gt;</span></span>
 
-int main() {
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
     boost::asio::io_service io_service;
-    <span class="pl-smi">AMQP</span>::LibBoostAsioHandler handler(io_service);
-    <span class="pl-smi">AMQP</span>::TcpConnection connection(&amp;handler, <span class="pl-smi">AMQP</span>::<span class="pl-en">Address</span>("amqp://guest:guest@localhost/"));
-    <span class="pl-smi">AMQP</span>::TcpChannel channel(&amp;connection);
+    AMQP::LibBoostAsioHandler <span class="pl-smi">handler</span>(io_service);
+    AMQP::TcpConnection <span class="pl-smi">connection</span>(&amp;handler, <span class="pl-c1">AMQP::Address</span>(<span class="pl-s"><span class="pl-pds">"</span>amqp://guest:guest@localhost/<span class="pl-pds">"</span></span>));
+    AMQP::TcpChannel <span class="pl-smi">channel</span>(&amp;connection);
 
-    channel.declareQueue("hello").onSuccess([&amp;]() {
-        channel.publish("", "hello", "Hello, RabbitMQ!");
-        std::cout &lt;&lt; "Message sent!" &lt;&lt; std::endl;
-        io_service.stop();
+    channel.<span class="pl-c1">declareQueue</span>(<span class="pl-s"><span class="pl-pds">"</span>hello<span class="pl-pds">"</span></span>).<span class="pl-c1">onSuccess</span>([&amp;]() {
+        channel.<span class="pl-c1">publish</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>hello<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Hello, RabbitMQ!<span class="pl-pds">"</span></span>);
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Message sent!<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+        io_service.<span class="pl-c1">stop</span>();
     });
 
-    io_service.run();
-    return 0;
+    io_service.<span class="pl-c1">run</span>();
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
 }</pre></div>
 <h3>5. HAProxy</h3>
 <p><strong>HAProxy</strong>是一款高性能的负载均衡器和代理服务器，支持TCP和HTTP协议。它常用于提升Web应用的性能和可用性。</p>

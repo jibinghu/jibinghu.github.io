@@ -141,16 +141,16 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 其实问题非常好，这是操作系统的生产者消费者模型，但是在这里我还是同意是SIMT架构的原因，同时减少了数据依赖，指令发射更通畅。</p>
 </blockquote>
 <hr>
-<div class="highlight highlight-source-c++"><pre class="notranslate">for ( int i = 0 ; i &lt; BLOCK_SIZE_K; i += B_TILE_ROW_STRIDE) {
- int ldg_index = i / A_TILE_ROW_STRIDE * 4;
-   FETCH_FLOAT4(ldg_b_reg[ldg_index]) = FETCH_FLOAT4(B[OFFSET(
-   tile_idx + B_TILE_ROW_START + i, // row
-   B_TILE_COL + BLOCK_SIZE_N * bx, // col
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">for</span> ( <span class="pl-k">int</span> i = <span class="pl-c1">0</span> ; i &lt; BLOCK_SIZE_K; i += B_TILE_ROW_STRIDE) {
+ <span class="pl-k">int</span> ldg_index = i / A_TILE_ROW_STRIDE * <span class="pl-c1">4</span>;
+   <span class="pl-c1">FETCH_FLOAT4</span>(ldg_b_reg[ldg_index]) = <span class="pl-c1">FETCH_FLOAT4</span>(B[<span class="pl-c1">OFFSET</span>(
+   tile_idx + B_TILE_ROW_START + i, <span class="pl-c"><span class="pl-c">//</span> row</span>
+   B_TILE_COL + BLOCK_SIZE_N * bx, <span class="pl-c"><span class="pl-c">//</span> col</span>
     N )]);
 }
 
-for (int thread_x = 0; thread_x &lt; THREAD_SIZE_X; ++thread_x) {
- accum[thread_y][thread_x] += frag_a[j%2][thread_y] * frag_b[j%2][thread_x];
+<span class="pl-k">for</span> (<span class="pl-k">int</span> thread_x = <span class="pl-c1">0</span>; thread_x &lt; THREAD_SIZE_X; ++thread_x) {
+ accum[thread_y][thread_x] += frag_a[j%<span class="pl-c1">2</span>][thread_y] * frag_b[j%<span class="pl-c1">2</span>][thread_x];
 }</pre></div>
 <p>意思是编译后这两个for循环可以并行执行？同时下轮访存和本轮计算？</p>
 <blockquote>

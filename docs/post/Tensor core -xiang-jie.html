@@ -158,29 +158,29 @@ Tensor Core 可以显著缩短深度学习模型的训练时间。在推理阶�
     <p>Tensor Core_编程</p>
 </div>
 <p>🌰：</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate">// 包含 NVIDIA CUDA 的矩阵乘法和累加（WMMA）库，并使用 nvcuda 命名空间，以便访问 WMMA 接口。
-#include &lt;mma.h&gt;
-<span class="pl-k">using</span> <span class="pl-k">namespace</span> nvcuda;
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> 包含 NVIDIA CUDA 的矩阵乘法和累加（WMMA）库，并使用 nvcuda 命名空间，以便访问 WMMA 接口。</span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>mma.h<span class="pl-pds">&gt;</span></span>
+<span class="pl-k">using</span> <span class="pl-k">namespace</span> <span class="pl-en">nvcuda</span><span class="pl-k">;</span>
 
-// 核函数定义，用于执行矩阵乘法
-__global__ void wmma_ker(half *a, half *b, float *c) {
-    // 声明片段，用于存储矩阵数据
-    wmma::fragment&lt;wmma::matrix_a, 16, 16, 16, half, wmma::col_major&gt; a_frag; // 矩阵A的片段，列主序
-    wmma::fragment&lt;wmma::matrix_b, 16, 16, 16, half, wmma::row_major&gt; b_frag; // 矩阵B的片段，行主序
-    wmma::fragment&lt;wmma::accumulator, 16, 16, 16, float&gt; c_frag; // 用于累加的片段
+<span class="pl-c"><span class="pl-c">//</span> 核函数定义，用于执行矩阵乘法</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">wmma_ker</span>(half *a, half *b, <span class="pl-k">float</span> *c) {
+    <span class="pl-c"><span class="pl-c">//</span> 声明片段，用于存储矩阵数据</span>
+    wmma::fragment&lt;wmma::matrix_a, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, half, wmma::col_major&gt; a_frag; <span class="pl-c"><span class="pl-c">//</span> 矩阵A的片段，列主序</span>
+    wmma::fragment&lt;wmma::matrix_b, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, half, wmma::row_major&gt; b_frag; <span class="pl-c"><span class="pl-c">//</span> 矩阵B的片段，行主序</span>
+    wmma::fragment&lt;wmma::accumulator, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-k">float</span>&gt; c_frag; <span class="pl-c"><span class="pl-c">//</span> 用于累加的片段</span>
 
-    // 初始化输出片段c_frag为零
-    wmma::<span class="pl-en">fill_fragment</span>(c_frag, 0.0f);
+    <span class="pl-c"><span class="pl-c">//</span> 初始化输出片段c_frag为零</span>
+    <span class="pl-c1">wmma::fill_fragment</span>(c_frag, <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>);
 
-    // 加载输入矩阵数据到片段中
-    wmma::<span class="pl-en">load_matrix_sync</span>(a_frag, a, 16);
-    wmma::<span class="pl-en">load_matrix_sync</span>(b_frag, b, 16);
+    <span class="pl-c"><span class="pl-c">//</span> 加载输入矩阵数据到片段中</span>
+    <span class="pl-c1">wmma::load_matrix_sync</span>(a_frag, a, <span class="pl-c1">16</span>);
+    <span class="pl-c1">wmma::load_matrix_sync</span>(b_frag, b, <span class="pl-c1">16</span>);
 
-    // 执行矩阵乘法
-    wmma::<span class="pl-en">mma_sync</span>(c_frag, a_frag, b_frag, c_frag);
+    <span class="pl-c"><span class="pl-c">//</span> 执行矩阵乘法</span>
+    <span class="pl-c1">wmma::mma_sync</span>(c_frag, a_frag, b_frag, c_frag);
 
-    // 将结果存储到输出矩阵中
-    wmma::<span class="pl-en">store_matrix_sync</span>(c, c_frag, 16, wmma::mem_row_major);
+    <span class="pl-c"><span class="pl-c">//</span> 将结果存储到输出矩阵中</span>
+    <span class="pl-c1">wmma::store_matrix_sync</span>(c, c_frag, <span class="pl-c1">16</span>, wmma::mem_row_major);
 }</pre></div>
 <div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p><p>该程序通过数据片段化、混合精度计算、同步计算、高效存储和加载以及利用 Tensor Core 等多种优化手段来提高矩阵乘法运算的效率。矩阵被分解成小块（片段）存储在专用寄存器中，以减少内存访问延迟；输入矩阵 A 和 B 使用半精度（FP16）表示，累加结果使用单精度（FP32）表示，从而在保证计算精度的同时提高计算速度和效率；mma_sync 操作确保所有线程同步执行矩阵乘法并将结果累加到累加片段中，保证了计算的一致性和准确性；load_matrix_sync 和 store_matrix_sync 操作高效地加载和存储数据，最大限度地减少数据传输延迟；程序通过 WMMA 接口直接利用 NVIDIA GPU 中的 Tensor Core，这些专用硬件单元能够以极高的吞吐量执行矩阵运算，从而大幅提高深度学习和高性能计算任务的效率。</p>
 </div>
@@ -264,128 +264,128 @@ Global Memory Write-back：最终结果从共享内存写回到全局内存，�
 </blockquote>
 <p>上图的GEMM过程演示了在Tensor Core上的经过，下面用代码进行说明：</p>
 <p>🌰：</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate">// 详细注释说明以便理解
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> 详细注释说明以便理解</span>
 
-#include &lt;mma.h&gt;
-#include &lt;cuda_runtime.h&gt;
-#include &lt;iostream&gt;
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>mma.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cuda_runtime.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
 
-<span class="pl-k">using</span> <span class="pl-k">namespace</span> nvcuda;
+<span class="pl-k">using</span> <span class="pl-k">namespace</span> <span class="pl-en">nvcuda</span><span class="pl-k">;</span>
 
-#define M 1024
-#define N 1024
-#define K 1024
+#<span class="pl-k">define</span> <span class="pl-en">M</span> <span class="pl-c1">1024</span>
+#<span class="pl-k">define</span> <span class="pl-en">N</span> <span class="pl-c1">1024</span>
+#<span class="pl-k">define</span> <span class="pl-en">K</span> <span class="pl-c1">1024</span>
 
-__global__ void matrixMulKernel(const half* __restrict__ A, const half* __restrict__ B, float* __restrict__ C, int M, int N, int K) {
-    // Declare shared memory to hold the tiles of A and B
-    // 声明存储矩阵A和B片段的共享内存区域
-    __shared__ half shared_A[16][16];
-    __shared__ half shared_B[16][16];
+__global__ <span class="pl-k">void</span> <span class="pl-en">matrixMulKernel</span>(<span class="pl-k">const</span> half* __restrict__ A, <span class="pl-k">const</span> half* __restrict__ B, <span class="pl-k">float</span>* __restrict__ C, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N, <span class="pl-k">int</span> K) {
+    <span class="pl-c"><span class="pl-c">//</span> Declare shared memory to hold the tiles of A and B</span>
+    <span class="pl-c"><span class="pl-c">//</span> 声明存储矩阵A和B片段的共享内存区域</span>
+    __shared__ half shared_A[<span class="pl-c1">16</span>][<span class="pl-c1">16</span>];
+    __shared__ half shared_B[<span class="pl-c1">16</span>][<span class="pl-c1">16</span>];
 
-    // Declare the fragments
-    // 使用 WMMA 声明矩阵片段，a_frag 和 b_frag 分别用于存储矩阵 A 和 B 的片段，c_frag 用于累加结果。
-    wmma::fragment&lt;wmma::matrix_a, 16, 16, 16, half, wmma::col_major&gt; a_frag;
-    wmma::fragment&lt;wmma::matrix_b, 16, 16, 16, half, wmma::row_major&gt; b_frag;
-    wmma::fragment&lt;wmma::accumulator, 16, 16, 16, float&gt; c_frag;
+    <span class="pl-c"><span class="pl-c">//</span> Declare the fragments</span>
+    <span class="pl-c"><span class="pl-c">//</span> 使用 WMMA 声明矩阵片段，a_frag 和 b_frag 分别用于存储矩阵 A 和 B 的片段，c_frag 用于累加结果。</span>
+    wmma::fragment&lt;wmma::matrix_a, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, half, wmma::col_major&gt; a_frag;
+    wmma::fragment&lt;wmma::matrix_b, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, half, wmma::row_major&gt; b_frag;
+    wmma::fragment&lt;wmma::accumulator, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-k">float</span>&gt; c_frag;
 
-    // 计算 warp 的位置
+    <span class="pl-c"><span class="pl-c">//</span> 计算 warp 的位置</span>
     
-    int warpM = (blockIdx.y * blockDim.y + threadIdx.y) / 16;
-    int warpN = (blockIdx.x * blockDim.x + threadIdx.x) / 16;
+    <span class="pl-k">int</span> warpM = (blockIdx.<span class="pl-smi">y</span> * blockDim.<span class="pl-smi">y</span> + threadIdx.<span class="pl-smi">y</span>) / <span class="pl-c1">16</span>;
+    <span class="pl-k">int</span> warpN = (blockIdx.<span class="pl-smi">x</span> * blockDim.<span class="pl-smi">x</span> + threadIdx.<span class="pl-smi">x</span>) / <span class="pl-c1">16</span>;
 
-    wmma::<span class="pl-en">fill_fragment</span>(c_frag, 0.0f);
+    <span class="pl-c1">wmma::fill_fragment</span>(c_frag, <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>);
 
-    for (int i = 0; i &lt; K; i += 16) {
-        int aRow = warpM * 16 + threadIdx.y % 16;
-        int aCol = i + threadIdx.x % 16;
-        int bRow = i + threadIdx.y % 16;
-        int bCol = warpN * 16 + threadIdx.x % 16;
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; K; i += <span class="pl-c1">16</span>) {
+        <span class="pl-k">int</span> aRow = warpM * <span class="pl-c1">16</span> + threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>;
+        <span class="pl-k">int</span> aCol = i + threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>;
+        <span class="pl-k">int</span> bRow = i + threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>;
+        <span class="pl-k">int</span> bCol = warpN * <span class="pl-c1">16</span> + threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>;
 
-        // 计算共享内存中的行和列索引，并将矩阵 A 和 B 的数据加载到共享内存中
-        if (aRow &lt; M &amp;&amp; aCol &lt; K) {
-            shared_A[threadIdx.y % 16][threadIdx.x % 16] = A[aRow * K + aCol];
-        } else {
-            shared_A[threadIdx.y % 16][threadIdx.x % 16] = 0.0;
+        <span class="pl-c"><span class="pl-c">//</span> 计算共享内存中的行和列索引，并将矩阵 A 和 B 的数据加载到共享内存中</span>
+        <span class="pl-k">if</span> (aRow &lt; M &amp;&amp; aCol &lt; K) {
+            shared_A[threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>][threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>] = A[aRow * K + aCol];
+        } <span class="pl-k">else</span> {
+            shared_A[threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>][threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>] = <span class="pl-c1">0.0</span>;
         }
 
-        if (bRow &lt; K &amp;&amp; bCol &lt; N) {
-            shared_B[threadIdx.y % 16][threadIdx.x % 16] = B[bRow * N + bCol];
-        } else {
-            shared_B[threadIdx.y % 16][threadIdx.x % 16] = 0.0;
+        <span class="pl-k">if</span> (bRow &lt; K &amp;&amp; bCol &lt; N) {
+            shared_B[threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>][threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>] = B[bRow * N + bCol];
+        } <span class="pl-k">else</span> {
+            shared_B[threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>][threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>] = <span class="pl-c1">0.0</span>;
         }
 
-        __syncthreads();
+        <span class="pl-c1">__syncthreads</span>();
 
-        wmma::<span class="pl-en">load_matrix_sync</span>(a_frag, shared_A[0], 16);
-        wmma::<span class="pl-en">load_matrix_sync</span>(b_frag, shared_B[0], 16);
+        <span class="pl-c1">wmma::load_matrix_sync</span>(a_frag, shared_A[<span class="pl-c1">0</span>], <span class="pl-c1">16</span>);
+        <span class="pl-c1">wmma::load_matrix_sync</span>(b_frag, shared_B[<span class="pl-c1">0</span>], <span class="pl-c1">16</span>);
 
-        wmma::<span class="pl-en">mma_sync</span>(c_frag, a_frag, b_frag, c_frag);
+        <span class="pl-c1">wmma::mma_sync</span>(c_frag, a_frag, b_frag, c_frag);
 
-        __syncthreads();
+        <span class="pl-c1">__syncthreads</span>();
     }
-    // 计算输出矩阵 C 的行和列索引并将累加结果从 c_frag 存储到全局内存中的矩阵C
-    int cRow = warpM * 16 + threadIdx.y % 16;
-    int cCol = warpN * 16 + threadIdx.x % 16;
+    <span class="pl-c"><span class="pl-c">//</span> 计算输出矩阵 C 的行和列索引并将累加结果从 c_frag 存储到全局内存中的矩阵C</span>
+    <span class="pl-k">int</span> cRow = warpM * <span class="pl-c1">16</span> + threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>;
+    <span class="pl-k">int</span> cCol = warpN * <span class="pl-c1">16</span> + threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>;
 
-    if (cRow &lt; M &amp;&amp; cCol &lt; N) {
-        wmma::<span class="pl-en">store_matrix_sync</span>(C + cRow * N + cCol, c_frag, N,  wmma::mem_row_major);
+    <span class="pl-k">if</span> (cRow &lt; M &amp;&amp; cCol &lt; N) {
+        <span class="pl-c1">wmma::store_matrix_sync</span>(C + cRow * N + cCol, c_frag, N,  wmma::mem_row_major);
     }
 }
 
-void matrixMultiply(const half* A, const half* B, float* C, int M, int N, int K) {
-    dim3 threadsPerBlock(16, 16);
-    dim3 blocksPerGrid((N + 15) / 16, (M + 15) / 16);
+<span class="pl-k">void</span> <span class="pl-en">matrixMultiply</span>(<span class="pl-k">const</span> half* A, <span class="pl-k">const</span> half* B, <span class="pl-k">float</span>* C, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N, <span class="pl-k">int</span> K) {
+    dim3 <span class="pl-smi">threadsPerBlock</span>(<span class="pl-c1">16</span>, <span class="pl-c1">16</span>);
+    dim3 <span class="pl-smi">blocksPerGrid</span>((N + <span class="pl-c1">15</span>) / <span class="pl-c1">16</span>, (M + <span class="pl-c1">15</span>) / <span class="pl-c1">16</span>);
 
-    matrixMulKernel&lt;&lt;<span class="pl-en"></span>&lt;blocksPerGrid, threadsPerBlock&gt;&gt;&gt;(A, B, C, M, N, K);
-    cudaDeviceSynchronize();
+    matrixMulKernel&lt;&lt;&lt;blocksPerGrid, threadsPerBlock&gt;&gt;&gt;(A, B, C, M, N, K);
+    <span class="pl-c1">cudaDeviceSynchronize</span>();
 }
 
-int main() {
-    // Allocate and initialize host matrices
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    <span class="pl-c"><span class="pl-c">//</span> Allocate and initialize host matrices</span>
     half *h_A, *h_B;
-    float *h_C;
-    cudaMallocHost(&amp;h_A, M * K * sizeof(half));
-    cudaMallocHost(&amp;h_B, K * N * sizeof(half));
-    cudaMallocHost(&amp;h_C, M * N * sizeof(float));
+    <span class="pl-k">float</span> *h_C;
+    <span class="pl-c1">cudaMallocHost</span>(&amp;h_A, M * K * <span class="pl-k">sizeof</span>(half));
+    <span class="pl-c1">cudaMallocHost</span>(&amp;h_B, K * N * <span class="pl-k">sizeof</span>(half));
+    <span class="pl-c1">cudaMallocHost</span>(&amp;h_C, M * N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>));
 
-    for (int i = 0; i &lt; M * K; i++) h_A[i] = __float2half(1.0f);
-    for (int i = 0; i &lt; K * N; i++) h_B[i] = __float2half(1.0f);
-    for (int i = 0; i &lt; M * N; i++) h_C[i] = 0.0f;
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; M * K; i++) h_A[i] = <span class="pl-c1">__float2half</span>(<span class="pl-c1">1</span>.<span class="pl-c1">0f</span>);
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; K * N; i++) h_B[i] = <span class="pl-c1">__float2half</span>(<span class="pl-c1">1</span>.<span class="pl-c1">0f</span>);
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; M * N; i++) h_C[i] = <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>;
 
-    // Allocate and initialize device matrices
+    <span class="pl-c"><span class="pl-c">//</span> Allocate and initialize device matrices</span>
     half *d_A, *d_B;
-    float *d_C;
-    cudaMalloc(&amp;d_A, M * K * sizeof(half));
-    cudaMalloc(&amp;d_B, K * N * sizeof(half));
-    cudaMalloc(&amp;d_C, M * N * sizeof(float));
+    <span class="pl-k">float</span> *d_C;
+    <span class="pl-c1">cudaMalloc</span>(&amp;d_A, M * K * <span class="pl-k">sizeof</span>(half));
+    <span class="pl-c1">cudaMalloc</span>(&amp;d_B, K * N * <span class="pl-k">sizeof</span>(half));
+    <span class="pl-c1">cudaMalloc</span>(&amp;d_C, M * N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>));
 
-    cudaMemcpy(d_A, h_A, M * K * sizeof(half), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_B, h_B, K * N * sizeof(half), cudaMemcpyHostToDevice);
+    <span class="pl-c1">cudaMemcpy</span>(d_A, h_A, M * K * <span class="pl-k">sizeof</span>(half), cudaMemcpyHostToDevice);
+    <span class="pl-c1">cudaMemcpy</span>(d_B, h_B, K * N * <span class="pl-k">sizeof</span>(half), cudaMemcpyHostToDevice);
 
-    // Perform matrix multiplication on the device
-    matrixMultiply(d_A, d_B, d_C, M, N, K);
+    <span class="pl-c"><span class="pl-c">//</span> Perform matrix multiplication on the device</span>
+    <span class="pl-c1">matrixMultiply</span>(d_A, d_B, d_C, M, N, K);
 
-    // Copy the result back to host
-    cudaMemcpy(h_C, d_C, M * N * sizeof(float), cudaMemcpyDeviceToHost);
+    <span class="pl-c"><span class="pl-c">//</span> Copy the result back to host</span>
+    <span class="pl-c1">cudaMemcpy</span>(h_C, d_C, M * N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>), cudaMemcpyDeviceToHost);
 
-    // Print the result
-    std::cout &lt;&lt; "Result: " &lt;&lt; std::endl;
-    for (int i = 0; i &lt; 10; i++) {
-        for (int j = 0; j &lt; 10; j++) {
-            std::cout &lt;&lt; h_C[i * N + j] &lt;&lt; " ";
+    <span class="pl-c"><span class="pl-c">//</span> Print the result</span>
+    std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Result: <span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">10</span>; i++) {
+        <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">10</span>; j++) {
+            std::cout &lt;&lt; h_C[i * N + j] &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span> <span class="pl-pds">"</span></span>;
         }
         std::cout &lt;&lt; std::endl;
     }
 
-    // Cleanup
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
-    cudaFreeHost(h_A);
-    cudaFreeHost(h_B);
-    cudaFreeHost(h_C);
+    <span class="pl-c"><span class="pl-c">//</span> Cleanup</span>
+    <span class="pl-c1">cudaFree</span>(d_A);
+    <span class="pl-c1">cudaFree</span>(d_B);
+    <span class="pl-c1">cudaFree</span>(d_C);
+    <span class="pl-c1">cudaFreeHost</span>(h_A);
+    <span class="pl-c1">cudaFreeHost</span>(h_B);
+    <span class="pl-c1">cudaFreeHost</span>(h_C);
 
-    return 0;
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
 }</pre></div>
 <p>从上述程序中可以看出，在使用wmma::mma_sync函数 <em>WMMA (Warp Matrix Multiply Accumulate))</em> 时，需要将矩阵划分为适合Tensor Cores处理的块。具体来说，矩阵需要划分为16x16的子矩阵，以便与Tensor Cores的工作方式匹配。如果矩阵的尺寸不是16的倍数，则需要填充或对矩阵进行分块处理，以使其适应Tensor Cores的操作。</p>
 <p>在调用wmma::mma_sync时，确保以下几点：</p>
