@@ -16,9 +16,8 @@
 引用：Yuetao Chen, Kun Li, Yuhao Wang, Donglin Bai, Lei Wang, Lingxiao Ma, Liang Yuan, Yunquan Zhang, Ting Cao, and Mao Yang. 2024. ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Cores. In Proceedings of the 29th ACM SIGPLAN Annual Symposium on Principles and Practice of Parallel Programming (PPoPP '24). Association for Computing Machinery, New York, NY, USA, 333–347. https://doi.org/10.1145/3627535.3638476
 
 ---
-![image](https://github.com/user-attachments/assets/8c65ef9d-829a-4a31-b993-cdefbe66482f)
-- A00 80GB PCIe:
-	- 使用标准的 PCIe（Peripheral Component Interconnect Express）接口，方便与标准服务器进行兼容。">
+
+不要钻牛角尖，细节的东西暂时不需要花大把时间去考虑。">
 <meta property="og:title" content="ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Cores">
 <meta property="og:description" content="ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Cores
 
@@ -26,9 +25,8 @@
 引用：Yuetao Chen, Kun Li, Yuhao Wang, Donglin Bai, Lei Wang, Lingxiao Ma, Liang Yuan, Yunquan Zhang, Ting Cao, and Mao Yang. 2024. ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Cores. In Proceedings of the 29th ACM SIGPLAN Annual Symposium on Principles and Practice of Parallel Programming (PPoPP '24). Association for Computing Machinery, New York, NY, USA, 333–347. https://doi.org/10.1145/3627535.3638476
 
 ---
-![image](https://github.com/user-attachments/assets/8c65ef9d-829a-4a31-b993-cdefbe66482f)
-- A00 80GB PCIe:
-	- 使用标准的 PCIe（Peripheral Component Interconnect Express）接口，方便与标准服务器进行兼容。">
+
+不要钻牛角尖，细节的东西暂时不需要花大把时间去考虑。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://jibinghu.github.io/post/ConvStencil-%20Transform%20Stencil%20Computation%20to%20Matrix%20Multiplication%20on%20Tensor%20Cores.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
@@ -93,6 +91,8 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <p>链接：<a href="https://dl.acm.org/doi/pdf/10.1145/3627535.3638476" rel="nofollow">https://dl.acm.org/doi/pdf/10.1145/3627535.3638476</a><br>
 引用：Yuetao Chen, Kun Li, Yuhao Wang, Donglin Bai, Lei Wang, Lingxiao Ma, Liang Yuan, Yunquan Zhang, Ting Cao, and Mao Yang. 2024. ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Cores. In Proceedings of the 29th ACM SIGPLAN Annual Symposium on Principles and Practice of Parallel Programming (PPoPP '24). Association for Computing Machinery, New York, NY, USA, 333–347. <a href="https://doi.org/10.1145/3627535.3638476" rel="nofollow">https://doi.org/10.1145/3627535.3638476</a></p>
 <hr>
+<p>不要钻牛角尖，细节的东西暂时不需要花大把时间去考虑。</p>
+<hr>
 <p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/8c65ef9d-829a-4a31-b993-cdefbe66482f"><img src="https://github.com/user-attachments/assets/8c65ef9d-829a-4a31-b993-cdefbe66482f" alt="image" style="max-width: 100%;"></a></p>
 <ul>
 <li>A00 80GB PCIe:
@@ -109,8 +109,15 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </li>
 </ul>
 <hr>
+<p>A100 的共享内存 —— 每个 SM 上 164KB * 108 SM</p>
+<hr>
 <p>Stencil 本身就是 Memory-bound 的算法；</p>
 <p>im2col 方法的缺点：</p>
+<ol>
+<li>内存成倍扩展 -&gt; Stencil2row 变换</li>
+<li>TCU 的部分浪费 - 对于 Stencil 计算的 kernel 部分只能容纳一列 -&gt; 计算适应(Dual Tessellation)</li>
+<li>算法和硬件冲突 -&gt; 冲突消除</li>
+</ol>
 <p>将输入通道转换为矩阵形式后，相邻两行之间至少有[(kernel_size - 1) / kernel_size]重复元素，</p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 

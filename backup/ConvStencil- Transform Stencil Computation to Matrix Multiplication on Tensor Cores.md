@@ -4,6 +4,11 @@ ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Co
 引用：Yuetao Chen, Kun Li, Yuhao Wang, Donglin Bai, Lei Wang, Lingxiao Ma, Liang Yuan, Yunquan Zhang, Ting Cao, and Mao Yang. 2024. ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Cores. In Proceedings of the 29th ACM SIGPLAN Annual Symposium on Principles and Practice of Parallel Programming (PPoPP '24). Association for Computing Machinery, New York, NY, USA, 333–347. https://doi.org/10.1145/3627535.3638476
 
 ---
+
+不要钻牛角尖，细节的东西暂时不需要花大把时间去考虑。
+
+---
+
 ![image](https://github.com/user-attachments/assets/8c65ef9d-829a-4a31-b993-cdefbe66482f)
 - A00 80GB PCIe:
 	- 使用标准的 PCIe（Peripheral Component Interconnect Express）接口，方便与标准服务器进行兼容。
@@ -13,8 +18,15 @@ ConvStencil: Transform Stencil Computation to Matrix Multiplication on Tensor Co
 	- SXM 设计允许更高的带宽和更紧密的集成，但对硬件有更高的要求。
 ---
 
+A100 的共享内存 —— 每个 SM 上 164KB * 108 SM
+
+---
+
 Stencil 本身就是 Memory-bound 的算法；
 
 im2col 方法的缺点：
+1. 内存成倍扩展 -> Stencil2row 变换
+2. TCU 的部分浪费 - 对于 Stencil 计算的 kernel 部分只能容纳一列 -> 计算适应(Dual Tessellation)
+3. 算法和硬件冲突 -> 冲突消除
 
 将输入通道转换为矩阵形式后，相邻两行之间至少有[(kernel_size - 1) / kernel_size]重复元素，
