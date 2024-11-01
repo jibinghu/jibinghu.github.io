@@ -33,3 +33,14 @@ sudo systemctl status ollama.service
 journalctl -u ollama.service
 
 这将显示 ollama 服务的运行日志，有助于发现可能的错误原因。
+
+
+---
+
+没用的话尝试清理缓存后重新配置：
+
+``` bash
+sudo systemctl stop ollama.service
+sudo systemctl daemon-reload
+sudo systemctl start ollama.service
+```
