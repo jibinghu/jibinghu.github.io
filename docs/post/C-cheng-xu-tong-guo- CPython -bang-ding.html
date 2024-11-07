@@ -130,6 +130,86 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 PyMODINIT_FUNC <span class="pl-en">PyInit_mymodule</span>(<span class="pl-k">void</span>) {
     <span class="pl-k">return</span> <span class="pl-c1">PyModule_Create</span>(&amp;mymodule);
 }</pre></div>
+<hr>
+<p>解释：<br>
+这是一个用 C++ 编写的 Python 扩展模块的完整示例，包含了一个简单的函数 <code class="notranslate">add</code>，可以将其作为 Python 模块导入并调用。下面对代码进行逐步解释：</p>
+<h3>1. <code class="notranslate">#include &lt;Python.h&gt;</code></h3>
+<ul>
+<li><strong>作用</strong>：包含 Python 的 C API 头文件 <code class="notranslate">Python.h</code>，这是使用 CPython API 编写扩展模块的必要前提。它提供了与 Python 解释器进行交互的函数和数据结构。</li>
+</ul>
+<h3>2. <code class="notranslate">static PyObject* add(PyObject* self, PyObject* args)</code></h3>
+<ul>
+<li><strong>定义</strong>：这是一个静态 C++ 函数，用于在 Python 中被调用。</li>
+<li><strong>参数</strong>：
+<ul>
+<li><code class="notranslate">PyObject* self</code>：通常用于方法的第一个参数，在模块级函数中一般未使用（保持占位）。</li>
+<li><code class="notranslate">PyObject* args</code>：传递给函数的参数，打包为一个 <code class="notranslate">PyObject</code>。</li>
+</ul>
+</li>
+</ul>
+<h3>3. <code class="notranslate">if (!PyArg_ParseTuple(args, "ii", &amp;a, &amp;b))</code></h3>
+<ul>
+<li><strong>作用</strong>：解析 Python 传递的参数。<code class="notranslate">PyArg_ParseTuple</code> 函数用于将 <code class="notranslate">args</code> 解包为 C++ 本地变量。
+<ul>
+<li><code class="notranslate">"ii"</code> 表示期望两个整数参数。</li>
+<li><code class="notranslate">&amp;a</code> 和 <code class="notranslate">&amp;b</code> 是解析后存储参数值的 C++ 变量的地址。</li>
+</ul>
+</li>
+<li><strong>错误处理</strong>：如果解析失败（例如参数类型不匹配），返回 <code class="notranslate">nullptr</code>，表示函数出错并引发 Python 级别的异常。</li>
+</ul>
+<h3>4. <code class="notranslate">int result = a + b</code></h3>
+<ul>
+<li><strong>功能</strong>：执行 C++ 逻辑，将两个传入的整数相加。</li>
+</ul>
+<h3>5. <code class="notranslate">return PyLong_FromLong(result)</code></h3>
+<ul>
+<li><strong>作用</strong>：将 C++ 中的整数 <code class="notranslate">result</code> 转换为 Python 整数对象并返回。这使得 Python 可以接收返回值并将其识别为 Python 原生对象。</li>
+</ul>
+<h3>6. <code class="notranslate">static PyMethodDef MyModuleMethods[]</code></h3>
+<ul>
+<li><strong>作用</strong>：定义模块方法表，其中列出模块包含的所有方法。
+<ul>
+<li><code class="notranslate">{"add", add, METH_VARARGS, "Add two integers"}</code> 定义了方法 <code class="notranslate">add</code> 的信息。
+<ul>
+<li><code class="notranslate">"add"</code>：方法的名称，在 Python 中调用时使用。</li>
+<li><code class="notranslate">add</code>：对应的 C++ 函数指针。</li>
+<li><code class="notranslate">METH_VARARGS</code>：表明该方法接受的参数形式为元组。</li>
+<li><code class="notranslate">"Add two integers"</code>：方法的简要说明。</li>
+</ul>
+</li>
+<li><code class="notranslate">{nullptr, nullptr, 0, nullptr}</code> 是结束符，表示方法表的结尾。</li>
+</ul>
+</li>
+</ul>
+<h3>7. <code class="notranslate">static struct PyModuleDef mymodule</code></h3>
+<ul>
+<li><strong>定义模块对象</strong>，提供了有关模块的元数据和方法表。
+<ul>
+<li><code class="notranslate">PyModuleDef_HEAD_INIT</code>：初始化宏。</li>
+<li><code class="notranslate">"mymodule"</code>：模块名称。</li>
+<li><code class="notranslate">nullptr</code>：模块文档字符串（可以留空）。</li>
+<li><code class="notranslate">-1</code>：模块的状态大小。<code class="notranslate">-1</code> 表示模块是全局的，不会维护状态。</li>
+<li><code class="notranslate">MyModuleMethods</code>：模块中的方法表。</li>
+</ul>
+</li>
+</ul>
+<h3>8. <code class="notranslate">PyMODINIT_FUNC PyInit_mymodule(void)</code></h3>
+<ul>
+<li><strong>模块初始化函数</strong>：
+<ul>
+<li><strong>作用</strong>：定义了 Python 解释器在 <code class="notranslate">import mymodule</code> 时调用的函数。</li>
+<li>返回值为 <code class="notranslate">PyModule_Create(&amp;mymodule)</code>，创建并返回模块对象。</li>
+</ul>
+</li>
+</ul>
+<h3><strong>整体流程</strong>：</h3>
+<ol>
+<li>Python 调用 <code class="notranslate">import mymodule</code> 时，<code class="notranslate">PyInit_mymodule</code> 被执行。</li>
+<li><code class="notranslate">PyModule_Create</code> 创建一个 Python 模块对象，注册了方法表 <code class="notranslate">MyModuleMethods</code>。</li>
+<li>调用 <code class="notranslate">mymodule.add(3, 4)</code> 会触发 <code class="notranslate">add</code> 函数，在 C++ 层解析参数，执行加法操作，并将结果返回给 Python。</li>
+</ol>
+<p>这种方式可以有效地扩展 Python 的功能，将高效的 C++ 代码作为 Python 模块使用。</p>
+<hr>
 <ol start="2">
 <li>编译 C++ 代码：<br>
 使用编译器将代码编译成共享库，例如使用 g++：</li>

@@ -49,6 +49,63 @@ PyMODINIT_FUNC PyInit_mymodule(void) {
 }
 ```
 
+---
+
+解释：
+这是一个用 C++ 编写的 Python 扩展模块的完整示例，包含了一个简单的函数 `add`，可以将其作为 Python 模块导入并调用。下面对代码进行逐步解释：
+
+### 1. `#include <Python.h>`
+- **作用**：包含 Python 的 C API 头文件 `Python.h`，这是使用 CPython API 编写扩展模块的必要前提。它提供了与 Python 解释器进行交互的函数和数据结构。
+
+### 2. `static PyObject* add(PyObject* self, PyObject* args)`
+- **定义**：这是一个静态 C++ 函数，用于在 Python 中被调用。
+- **参数**：
+  - `PyObject* self`：通常用于方法的第一个参数，在模块级函数中一般未使用（保持占位）。
+  - `PyObject* args`：传递给函数的参数，打包为一个 `PyObject`。
+
+### 3. `if (!PyArg_ParseTuple(args, "ii", &a, &b))`
+- **作用**：解析 Python 传递的参数。`PyArg_ParseTuple` 函数用于将 `args` 解包为 C++ 本地变量。
+  - `"ii"` 表示期望两个整数参数。
+  - `&a` 和 `&b` 是解析后存储参数值的 C++ 变量的地址。
+- **错误处理**：如果解析失败（例如参数类型不匹配），返回 `nullptr`，表示函数出错并引发 Python 级别的异常。
+
+### 4. `int result = a + b`
+- **功能**：执行 C++ 逻辑，将两个传入的整数相加。
+
+### 5. `return PyLong_FromLong(result)`
+- **作用**：将 C++ 中的整数 `result` 转换为 Python 整数对象并返回。这使得 Python 可以接收返回值并将其识别为 Python 原生对象。
+
+### 6. `static PyMethodDef MyModuleMethods[]`
+- **作用**：定义模块方法表，其中列出模块包含的所有方法。
+  - `{"add", add, METH_VARARGS, "Add two integers"}` 定义了方法 `add` 的信息。
+    - `"add"`：方法的名称，在 Python 中调用时使用。
+    - `add`：对应的 C++ 函数指针。
+    - `METH_VARARGS`：表明该方法接受的参数形式为元组。
+    - `"Add two integers"`：方法的简要说明。
+  - `{nullptr, nullptr, 0, nullptr}` 是结束符，表示方法表的结尾。
+
+### 7. `static struct PyModuleDef mymodule`
+- **定义模块对象**，提供了有关模块的元数据和方法表。
+  - `PyModuleDef_HEAD_INIT`：初始化宏。
+  - `"mymodule"`：模块名称。
+  - `nullptr`：模块文档字符串（可以留空）。
+  - `-1`：模块的状态大小。`-1` 表示模块是全局的，不会维护状态。
+  - `MyModuleMethods`：模块中的方法表。
+
+### 8. `PyMODINIT_FUNC PyInit_mymodule(void)`
+- **模块初始化函数**：
+  - **作用**：定义了 Python 解释器在 `import mymodule` 时调用的函数。
+  - 返回值为 `PyModule_Create(&mymodule)`，创建并返回模块对象。
+
+### **整体流程**：
+1. Python 调用 `import mymodule` 时，`PyInit_mymodule` 被执行。
+2. `PyModule_Create` 创建一个 Python 模块对象，注册了方法表 `MyModuleMethods`。
+3. 调用 `mymodule.add(3, 4)` 会触发 `add` 函数，在 C++ 层解析参数，执行加法操作，并将结果返回给 Python。
+
+这种方式可以有效地扩展 Python 的功能，将高效的 C++ 代码作为 Python 模块使用。
+
+---
+
 2. 编译 C++ 代码：
 使用编译器将代码编译成共享库，例如使用 g++：
 
