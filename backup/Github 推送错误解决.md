@@ -1,4 +1,4 @@
-但正常使用 `git push origin` 向 repo 推送时发现报错如下：
+在正常使用 `git push origin` 向 repo 推送时发现报错如下：
 
 ``` bash
 [main da5bafe] 11/8/01
