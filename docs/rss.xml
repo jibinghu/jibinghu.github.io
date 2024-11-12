@@ -1,5 +1,15 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 12 Nov 2024 14:03:12 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>论文阅读_A novel HPL-AI approach for FP16-only accelerator and its instantiation on Kunpeng+Ascend AI-specific platform</title><link>https://jibinghu.github.io/post/lun-wen-yue-du-_A%20novel%20HPL-AI%20approach%20for%20FP16-only%20accelerator%20and%20its%20instantiation%20on%20Kunpeng%2BAscend%20AI-specific%20platform.html</link><description>论文地址：https://dl.acm.org/doi/10.1016/j.jpdc.2024.104884&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 12 Nov 2024 14:11:12 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>论文阅读_MFFT: A GPU Accelerated Highly Efficient Mixed-Precision Large-Scale FFT Framework</title><link>https://jibinghu.github.io/post/lun-wen-yue-du-_MFFT-%20A%20GPU%20Accelerated%20Highly%20Efficient%20Mixed-Precision%20Large-Scale%20FFT%20Framework.html</link><description>论文地址：https://dl.acm.org/doi/10.1145/3605148&#13;
+&#13;
+---&#13;
+&#13;
+GPT-4o 总结：&#13;
+&#13;
+&gt; https://dl.acm.org/doi/10.1145/3605148&#13;
+&#13;
+&gt; 分点详细总结这篇问题的场景、作用和创新点&#13;
+&#13;
+该论文针对在GPU集群上执行大规模快速傅里叶变换（FFT）时的性能瓶颈，提出了一种名为MFFT的高效混合精度FFT框架。</description><guid isPermaLink="true">https://jibinghu.github.io/post/lun-wen-yue-du-_MFFT-%20A%20GPU%20Accelerated%20Highly%20Efficient%20Mixed-Precision%20Large-Scale%20FFT%20Framework.html</guid><pubDate>Tue, 12 Nov 2024 14:10:47 +0000</pubDate></item><item><title>论文阅读_A novel HPL-AI approach for FP16-only accelerator and its instantiation on Kunpeng+Ascend AI-specific platform</title><link>https://jibinghu.github.io/post/lun-wen-yue-du-_A%20novel%20HPL-AI%20approach%20for%20FP16-only%20accelerator%20and%20its%20instantiation%20on%20Kunpeng%2BAscend%20AI-specific%20platform.html</link><description>论文地址：https://dl.acm.org/doi/10.1016/j.jpdc.2024.104884&#13;
 &#13;
 ---&#13;
 &#13;
