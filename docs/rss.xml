@@ -1,5 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Fri, 08 Nov 2024 07:26:19 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>面试回顾 -&gt; RAG中搜索效果不好如何解决</title><link>https://jibinghu.github.io/post/mian-shi-hui-gu-%20--%20RAG-zhong-sou-suo-xiao-guo-bu-hao-ru-he-jie-jue.html</link><description>如果通过 RAG（Retrieval-Augmented Generation）检索出来的内容效果不理想，可以尝试以下改进措施：&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 12 Nov 2024 08:59:52 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>Linux 使用日常：find 重点标注</title><link>https://jibinghu.github.io/post/Linux%20-shi-yong-ri-chang-%EF%BC%9Afind%20-zhong-dian-biao-zhu.html</link><description>查找特定文件/文件夹，筛选所选信息并将重点信息标红：&#13;
+&#13;
+`find / -name '* search_content*' 2&gt;/dev/null | grep --color=always 'search_content'`&#13;
+&#13;
+&#13;
+`find / -name '*search_content*' -printf '\033[1;31m%p\033[0m\n' 2&gt;/dev/null`&#13;
+&#13;
+这里将 find 的输出高亮设置为红色 (\033[1;31m)，可以根据需要修改颜色。</description><guid isPermaLink="true">https://jibinghu.github.io/post/Linux%20-shi-yong-ri-chang-%EF%BC%9Afind%20-zhong-dian-biao-zhu.html</guid><pubDate>Tue, 12 Nov 2024 08:59:26 +0000</pubDate></item><item><title>面试回顾 -&gt; RAG中搜索效果不好如何解决</title><link>https://jibinghu.github.io/post/mian-shi-hui-gu-%20--%20RAG-zhong-sou-suo-xiao-guo-bu-hao-ru-he-jie-jue.html</link><description>如果通过 RAG（Retrieval-Augmented Generation）检索出来的内容效果不理想，可以尝试以下改进措施：&#13;
 &#13;
 1. 改进检索库质量&#13;
 &#13;
