@@ -1,0 +1,41 @@
+### 常见以 "inter-" 为前缀的单词
+1. Interaction：互动，交互。
+2. Interconnect：互相连接。
+3. Interchange：交换，互换。
+4. Interfere：干涉，干扰。
+5. Intervene：介入，干预。
+6. Interpret：解释，口译。
+7. Interrupt：中断，打断。
+8. Intersection：交叉，十字路口。
+9. Interstellar：星际的。
+10. Interpersonal：人际之间的。
+11. Intercontinental：跨洲的，洲际的。
+12. Interdependent：相互依赖的。
+13. International：国际的。
+14. Intermission：中场休息，间歇。
+15. Interpolate：插入，篡改。
+16. Interrelated：相互关联的。
+17. Intermediate：中间的，过渡的。
+18. Interchangeable：可互换的。
+19. Intercom：对讲机，内部通话系统。
+20. Interlock：互锁，连锁。
+
+### 高级单词
+1. Interdisciplinary：跨学科的，跨领域的。
+2. Interrogate：质问，审问。
+3. Interception：拦截，截取。
+4. Interstate：州际的（美国）。
+5. Interplanetary：行星间的。
+6. Interdenominational：跨宗派的。
+7. Interdependent：互相依存的。
+8. Intertwine：交织，纠缠。
+9. Intermodal：多式联运的（交通运输）。
+10. Intercommunication：互相通信，交流。
+
+### 组合形式
+- Interfaith：跨信仰的。
+- Interface：界面，接口。
+- Intertextual：文本之间的。
+- Intercultural：跨文化的。
+- Intergroup：群体间的。
+- Intercity：城市之间的。
