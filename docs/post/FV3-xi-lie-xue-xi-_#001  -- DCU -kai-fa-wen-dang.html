@@ -10,8 +10,7 @@
         let theme = localStorage.getItem("meek_theme") || "light";
         document.documentElement.setAttribute("data-color-mode", theme);
     </script>
-<meta name="description" content="
----
+<meta name="description" content="---
 
 FV3 源码：
 
@@ -60,8 +59,7 @@ export LD_LIBRARY_PATH=/public/software/mathlib/netcdf/intel/4.7.4/lib/:$LD_LIBR
 1. 编译阶段 DEBUG
 > 在 Fortran 文件 mpp_io.F90 的第 335 行，编译器尝试寻找一个名为 **netcdf.inc** 的包含文件，但未能找到。">
 <meta property="og:title" content="FV3系列学习_#001  // DCU 开发文档">
-<meta property="og:description" content="
----
+<meta property="og:description" content="---
 
 FV3 源码：
 
@@ -347,7 +345,531 @@ make: Nothing to be done for 'all'.
 <ul>
 <li>理论贡献：细致阐述了有限体积方法在流体动力学中的应用。</li>
 <li>实用价值：为未来开发高性能、可扩展的动力模型奠定了基础。</li>
-</ul></div>
+</ul>
+<hr>
+<p>Makefile 全文附上：</p>
+<div class="highlight highlight-source-makefile"><pre class="notranslate">[ac0w1vpw3p@login01 exec.amd64]$ cat Makefile 
+<span class="pl-c"><span class="pl-c">#</span> Makefile created by mkmf $Id: mkmf,v 18.0 2010/03/02 23:26:08 fms Exp $ </span>
+
+<span class="pl-smi">CC</span> = icc
+<span class="pl-smi">MPICC</span> = mpiicc
+
+<span class="pl-smi">SRCROOT</span> = /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/src/
+
+<span class="pl-smi">CPPDEFS</span> = -Duse_libMPI -Duse_netCDF -DSPMD
+
+
+<span class="pl-k">include</span> /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../bin/mkmf.template.amd64
+
+<span class="pl-smi">NETCDF_INC</span> = -I/public/software/mathlib/netcdf/intel/4.7.4/include
+<span class="pl-smi">NETCDF_LIB</span> = -L/public/software/mathlib/netcdf/intel/4.7.4/lib/
+
+<span class="pl-smi">FFLAGS</span> += <span class="pl-s">$(<span class="pl-smi">NETCDF_INC</span>)</span>
+<span class="pl-smi">CFLAGS</span> += <span class="pl-s">$(<span class="pl-smi">NETCDF_INC</span>)</span> <span class="pl-s">$(<span class="pl-smi">NETCDF_LIB</span>)</span>
+<span class="pl-smi">LDFLAGS</span> += -L/public/software/compiler/dtk/24.04.2/lib -L/public/software/mathlib/netcdf/intel/4.7.4/lib/ -L/public/software/mpi/intelmpi/2021.3.0/lib
+
+
+<span class="pl-c1">.DEFAULT</span>:
+        -echo $@ does not exist.
+<span class="pl-en">all</span>: fms.x
+<span class="pl-en">trid_d_sw_gpu.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/trid_d_sw_gpu.cu trid_d_sw_gpu.o
+        $(NVCC) $(NVCCFLAGS) -c $(SRCROOT)atmos_cubed_sphere/model/trid_d_sw_gpu.cu
+<span class="pl-en">trid_d_sw_cpu.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/trid_d_sw_cpu.c trid_d_sw_cpu.o
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c $(SRCROOT)atmos_cubed_sphere/model/trid_d_sw_cpu.c
+<span class="pl-en">a2b_edge_cpu.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/a2b_edge_cpu.c
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c $(SRCROOT)atmos_cubed_sphere/model/a2b_edge_cpu.c
+<span class="pl-en">fv_mp_mod_cpu.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_mp_mod_cpu.c fv_mp_mod_cpu.o
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c $(SRCROOT)atmos_cubed_sphere/model/fv_mp_mod_cpu.c
+<span class="pl-en">d_sw_gpu.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/d_sw_gpu.cu
+        $(NVCC) $(NVCCFLAGS) -c $(SRCROOT)atmos_cubed_sphere/model/d_sw_gpu.cu
+<span class="pl-en">d_sw_cpu.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/d_sw_cpu.c d_sw_cpu.o
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c $(SRCROOT)atmos_cubed_sphere/model/d_sw_cpu.c
+<span class="pl-en">sw_gpu.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/sw_gpu.cu
+        $(NVCC) $(NVCCFLAGS) -c $(SRCROOT)atmos_cubed_sphere/model/sw_gpu.cu
+<span class="pl-en">sw_cpu.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/sw_cpu.c sw_cpu.o
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c $(SRCROOT)atmos_cubed_sphere/model/sw_cpu.c
+<span class="pl-en">tp_core_cpu.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/tp_core_cpu.c tp_core_cpu.o
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c $(SRCROOT)atmos_cubed_sphere/model/tp_core_cpu.c
+<span class="pl-en">a2b_edge.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/a2b_edge.F90 fv_grid_utils.o fv_grid_tools.o fv_mp_mod.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/a2b_edge.F90
+<span class="pl-en">amip_interp.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/amip_interp/amip_interp.F90 time_interp.o time_manager.o horiz_interp.o fms.o fms_io.o constants.o platform.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/amip_interp/amip_interp.F90
+<span class="pl-en">atmos_model.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_solo/atmos_model.F90 atmosphere.o time_manager.o fms.o fms_io.o mpp_domains.o mpp_io.o diag_manager.o field_manager.o tracer_manager.o memutils.o constants.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_solo/atmos_model.F90
+<span class="pl-en">atmosphere.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/driver/solo/atmosphere.F90 constants.o fms.o time_manager.o mpp_domains.o fv_arrays.o fv_control.o fv_phys.o fv_diagnostics.o fv_timing.o fv_restart.o fv_dynamics.o fv_grid_tools.o lin_cloud_microphys.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/driver/solo/atmosphere.F90
+<span class="pl-en">axis_utils.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/axis_utils/axis_utils.F90 mpp_io.o mpp.o fms.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/axis_utils/axis_utils.F90
+<span class="pl-en">constants.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/constants/constants.F90
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/constants/constants.F90
+<span class="pl-en">create_xgrid.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/create_xgrid.c /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/mosaic_util.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/create_xgrid.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/constant.h
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic  $(SRCROOT)shared/mosaic/create_xgrid.c
+<span class="pl-en">diag_axis.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_axis.F90 mpp_domains.o fms.o diag_data.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/diag_manager/diag_axis.F90
+<span class="pl-en">diag_data.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_data.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h time_manager.o mpp_domains.o mpp_io.o fms.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)shared/diag_manager/diag_data.F90
+<span class="pl-en">diag_grid.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_grid.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h constants.o fms.o mpp.o mpp_domains.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)shared/diag_manager/diag_grid.F90
+<span class="pl-en">diag_manager.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_manager.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h time_manager.o mpp_io.o fms.o mpp.o diag_axis.o diag_util.o diag_data.o diag_output.o diag_grid.o constants.o mpp_domains.o fms_io.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)shared/diag_manager/diag_manager.F90
+<span class="pl-en">diag_output.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_output.F90 mpp_io.o mpp_domains.o mpp.o diag_axis.o diag_data.o time_manager.o fms.o platform.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/diag_manager/diag_output.F90
+<span class="pl-en">diag_util.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_util.F90 diag_data.o diag_axis.o diag_output.o diag_grid.o fms.o fms_io.o mpp_domains.o time_manager.o mpp_io.o mpp.o constants.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/diag_manager/diag_util.F90
+<span class="pl-en">dyn_core.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/dyn_core.F90 mpp_domains.o mpp_parameter.o fv_mp_mod.o fv_control.o sw_core.o a2b_edge.o nh_core.o fv_grid_tools.o fv_grid_utils.o fv_timing.o fv_diagnostics.o fv_nudge.o test_cases.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/dyn_core.F90
+<span class="pl-en">external_ic.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/external_ic.F90 fms.o fms_io.o mpp.o mpp_parameter.o mpp_domains.o tracer_manager.o field_manager.o constants.o external_sst.o fv_arrays.o fv_diagnostics.o fv_grid_tools.o fv_grid_utils.o fv_io.o fv_mapz.o fv_mp_mod.o fv_surf_map.o fv_timing.o init_hydro.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/external_ic.F90
+<span class="pl-en">external_sst.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/external_sst.F90 amip_interp.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/external_sst.F90
+<span class="pl-en">field_manager.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/field_manager/field_manager.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/field_manager/parse.inc mpp.o mpp_io.o fms.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/field_manager    $(SRCROOT)shared/field_manager/field_manager.F90
+<span class="pl-en">fm_util.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/field_manager/fm_util.F90 field_manager.o fms.o mpp.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/field_manager/fm_util.F90
+<span class="pl-en">fms.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/fms/fms.F90 mpp.o mpp_domains.o mpp_io.o fms_io.o memutils.o constants.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/fms/fms.F90
+<span class="pl-en">fms_io.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/fms/fms_io.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_2d.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_3d.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_4d.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/write_data.inc mpp_io.o mpp_domains.o mpp.o platform.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms      $(SRCROOT)shared/fms/fms_io.F90
+<span class="pl-en">fv_arrays.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_arrays.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h mpp_domains.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)atmos_cubed_sphere/model/fv_arrays.F90
+<span class="pl-en">fv_control.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_control.F90 constants.o field_manager.o mpp.o mpp_domains.o tracer_manager.o fv_io.o fv_restart.o fv_arrays.o fv_grid_utils.o fv_grid_tools.o fv_mp_mod.o test_cases.o fv_timing.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/fv_control.F90
+<span class="pl-en">fv_diagnostics.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_diagnostics.F90 constants.o fms_io.o time_manager.o mpp_domains.o diag_manager.o fv_arrays.o fv_mapz.o fv_mp_mod.o fv_eta.o fv_grid_tools.o fv_grid_utils.o a2b_edge.o fv_surf_map.o fv_sg.o tracer_manager.o field_manager.o mpp.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/fv_diagnostics.F90
+<span class="pl-en">fv_dynamics.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_dynamics.F90 constants.o dyn_core.o fv_mapz.o fv_tracer2d.o fv_grid_tools.o fv_control.o fv_grid_utils.o fv_mp_mod.o fv_timing.o diag_manager.o fv_diagnostics.o mpp_domains.o field_manager.o tracer_manager.o fv_sg.o tp_core.o time_manager.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/fv_dynamics.F90
+<span class="pl-en">fv_eta.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_eta.F90 constants.o fv_mp_mod.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/fv_eta.F90
+<span class="pl-en">fv_fill.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_fill.F90
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/fv_fill.F90
+<span class="pl-en">fv_grid_tools.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_grid_tools.F90 constants.o fv_arrays.o fv_grid_utils.o fv_timing.o fv_mp_mod.o sorted_index.o mpp.o mpp_domains.o mpp_io.o mpp_parameter.o fms.o fms_io.o mosaic.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/fv_grid_tools.F90
+<span class="pl-en">fv_grid_utils.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_grid_utils.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h mpp.o mpp_domains.o mpp_parameter.o external_sst.o fv_arrays.o fv_eta.o fv_mp_mod.o fv_timing.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)atmos_cubed_sphere/model/fv_grid_utils.F90
+<span class="pl-en">fv_io.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_io.F90 fms.o fms_io.o mpp.o mpp_domains.o tracer_manager.o field_manager.o external_sst.o fv_arrays.o fv_mapz.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/fv_io.F90
+<span class="pl-en">fv_mapz.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_mapz.F90 constants.o fv_grid_tools.o fv_grid_utils.o fv_fill.o fv_mp_mod.o mpp_domains.o mpp.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/fv_mapz.F90
+<span class="pl-en">fv_mp_mod.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_mp_mod.F90 fms.o mpp.o mpp_domains.o mpp_parameter.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/fv_mp_mod.F90
+<span class="pl-en">fv_nudge.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_nudge.F90 constants.o fms.o fms_io.o mpp.o mpp_domains.o time_manager.o external_sst.o fv_control.o fv_grid_utils.o fv_grid_tools.o fv_diagnostics.o tp_core.o fv_mapz.o fv_mp_mod.o fv_timing.o sim_nc_mod.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/fv_nudge.F90
+<span class="pl-en">fv_phys.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/driver/solo/fv_phys.F90 time_manager.o fv_update_phys.o fv_timing.o hswf.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/driver/solo/fv_phys.F90
+<span class="pl-en">fv_restart.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_restart.F90 constants.o fv_arrays.o fv_io.o fv_grid_tools.o fv_grid_utils.o fv_diagnostics.o init_hydro.o mpp_domains.o mpp.o test_cases.o fv_mp_mod.o fv_surf_map.o tracer_manager.o field_manager.o external_ic.o fv_eta.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/fv_restart.F90
+<span class="pl-en">fv_sg.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_sg.F90 constants.o fv_mp_mod.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/fv_sg.F90
+<span class="pl-en">fv_surf_map.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_surf_map.F90 fms.o mpp.o mpp_domains.o constants.o fms_io.o fv_grid_utils.o fv_mp_mod.o fv_timing.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/fv_surf_map.F90
+<span class="pl-en">fv_timing.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_timing.F90 fv_mp_mod.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/fv_timing.F90
+<span class="pl-en">fv_tracer2d.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_tracer2d.F90 tp_core.o fv_grid_tools.o fv_grid_utils.o fv_mp_mod.o mpp_domains.o fv_timing.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/fv_tracer2d.F90
+<span class="pl-en">fv_update_phys.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_update_phys.F90 constants.o field_manager.o mpp_domains.o mpp_parameter.o mpp.o time_manager.o tracer_manager.o fv_arrays.o fv_control.o fv_mp_mod.o fv_eta.o fv_grid_utils.o fv_grid_tools.o fv_timing.o fv_diagnostics.o fv_nudge.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/fv_update_phys.F90
+<span class="pl-en">gradient.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/gradient.F90 mpp.o constants.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/mosaic/gradient.F90
+<span class="pl-en">gradient_c2l.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/gradient_c2l.c /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/constant.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/mosaic_util.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/gradient_c2l.h
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic  $(SRCROOT)shared/mosaic/gradient_c2l.c
+<span class="pl-en">grid.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/grid.F90 constants.o fms.o mosaic.o mpp_domains.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/mosaic/grid.F90
+<span class="pl-en">horiz_interp.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp.F90 fms.o mpp.o constants.o horiz_interp_type.o horiz_interp_conserve.o horiz_interp_bilinear.o horiz_interp_bicubic.o horiz_interp_spherical.o mpp_io.o mpp_domains.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/horiz_interp/horiz_interp.F90
+<span class="pl-en">horiz_interp_bicubic.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp_bicubic.F90 mpp.o fms.o horiz_interp_type.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/horiz_interp/horiz_interp_bicubic.F90
+<span class="pl-en">horiz_interp_bilinear.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp_bilinear.F90 mpp.o fms.o constants.o horiz_interp_type.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/horiz_interp/horiz_interp_bilinear.F90
+<span class="pl-en">horiz_interp_conserve.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp_conserve.F90 mpp.o fms.o constants.o horiz_interp_type.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/horiz_interp/horiz_interp_conserve.F90
+<span class="pl-en">horiz_interp_spherical.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp_spherical.F90 mpp.o fms.o constants.o horiz_interp_type.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/horiz_interp/horiz_interp_spherical.F90
+<span class="pl-en">horiz_interp_type.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp_type.F90 mpp.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/horiz_interp/horiz_interp_type.F90
+<span class="pl-en">hswf.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/driver/solo/hswf.F90 constants.o mpp_domains.o time_manager.o diag_manager.o lin_cloud_microphys.o fv_grid_tools.o fv_grid_utils.o fv_mp_mod.o fv_diagnostics.o fv_timing.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/driver/solo/hswf.F90
+<span class="pl-en">init_hydro.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/init_hydro.F90 constants.o fv_grid_utils.o fv_grid_tools.o fv_mp_mod.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/init_hydro.F90
+<span class="pl-en">interp.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/interp.c /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/mosaic_util.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/interp.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/create_xgrid.h
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic  $(SRCROOT)shared/mosaic/interp.c
+<span class="pl-en">lin_cloud_microphys.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_param/lin_cloud_microphys/lin_cloud_microphys.F90 mpp.o diag_manager.o time_manager.o constants.o fms.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_param/lin_cloud_microphys/lin_cloud_microphys.F90
+<span class="pl-en">memuse.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/memutils/memuse.c
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c $(SRCROOT)shared/memutils/memuse.c
+<span class="pl-en">memutils.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/memutils/memutils.F90 mpp.o mpp_io.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/memutils/memutils.F90
+<span class="pl-en">mosaic.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/mosaic.F90 mpp.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/mosaic/mosaic.F90
+<span class="pl-en">mosaic_util.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/mosaic_util.c /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/mosaic_util.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/constant.h
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic  $(SRCROOT)shared/mosaic/mosaic_util.c
+mpp.o: $(SRCROOT)shared/mpp/mpp.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/system_clock.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_sma.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_mpi.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_nocomm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_a_a.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_a_s.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_s_a.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_s_s.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_sma.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_sma.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_sma.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_sma.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_mpi.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_mpi.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_mpi.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_mpi.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_nocomm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_nocomm.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_nocomm.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_nocomm.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum_int.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum_scalar.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum.h mpp_parameter.o mpp_data.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include      $(SRCROOT)shared/mpp/mpp.F90
+<span class="pl-en">mpp_data.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_data.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_sma.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_mpi.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_nocomm.inc mpp_parameter.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include      $(SRCROOT)shared/mpp/mpp_data.F90
+mpp_domains.o: $(SRCROOT)shared/mpp/mpp_domains.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_util.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_comm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_define.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_misc.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_update_domains2D.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_update.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_updateV.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_check.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_checkV.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_redistribute.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_get_boundary.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_get_boundary.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_reduce.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_reduce.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_sum.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_sum_tl.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_field.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_global_field.h mpp_parameter.o mpp_data.o mpp.o mpp_memutils.o mpp_pset.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include      $(SRCROOT)shared/mpp/mpp_domains.F90
+mpp_io.o: $(SRCROOT)shared/mpp/mpp_io.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_util.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_misc.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_connect.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_read.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_read_2Ddecomp.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_write.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_write_2Ddecomp.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_write.h mpp_parameter.o mpp.o mpp_domains.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include      $(SRCROOT)shared/mpp/mpp_io.F90
+<span class="pl-en">mpp_memutils.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_memutils.F90 mpp.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/mpp/mpp_memutils.F90
+<span class="pl-en">mpp_parameter.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_parameter.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)shared/mpp/mpp_parameter.F90
+<span class="pl-en">mpp_pset.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_pset.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h mpp.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)shared/mpp/mpp_pset.F90
+<span class="pl-en">mpp_utilities.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_utilities.F90 mpp.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/mpp/mpp_utilities.F90
+<span class="pl-en">nh_core.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/nh_core.F90 fms.o constants.o fv_control.o tp_core.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/nh_core.F90
+<span class="pl-en">nsclock.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/nsclock.c
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c $(SRCROOT)shared/mpp/nsclock.c
+<span class="pl-en">platform.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/platform/platform.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)shared/platform/platform.F90
+<span class="pl-en">read_mosaic.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/read_mosaic.c /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/read_mosaic.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/constant.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/mosaic_util.h
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic  $(SRCROOT)shared/mosaic/read_mosaic.c
+<span class="pl-en">sim_nc_mod.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/sim_nc_mod.F90 mpp.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/sim_nc_mod.F90
+<span class="pl-en">sorted_index.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/sorted_index.F90
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/sorted_index.F90
+<span class="pl-en">sw_core.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/sw_core.F90 fv_mp_mod.o fv_grid_tools.o tp_core.o fv_grid_utils.o test_cases.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/sw_core.F90
+<span class="pl-en">test_cases.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/test_cases.F90 constants.o init_hydro.o fv_mp_mod.o fv_grid_utils.o fv_surf_map.o fv_grid_tools.o fv_eta.o mpp.o mpp_domains.o mpp_parameter.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/tools/test_cases.F90
+<span class="pl-en">test_fms_io.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/fms/test_fms_io.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h mpp.o mpp_domains.o mpp_io.o fms_io.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)shared/fms/test_fms_io.F90
+<span class="pl-en">test_mpp.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/test_mpp.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h mpp.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)shared/mpp/test_mpp.F90
+<span class="pl-en">test_mpp_domains.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/test_mpp_domains.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h mpp.o mpp_domains.o mpp_memutils.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)shared/mpp/test_mpp_domains.F90
+<span class="pl-en">test_mpp_io.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/test_mpp_io.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h mpp.o mpp_domains.o mpp_io.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)shared/mpp/test_mpp_io.F90
+<span class="pl-en">test_mpp_pset.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/test_mpp_pset.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h mpp.o mpp_pset.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c -I/work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include $(SRCROOT)shared/mpp/test_mpp_pset.F90
+<span class="pl-en">threadloc.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/threadloc.c
+        $(CC) $(CPPDEFS) $(CPPFLAGS) $(CFLAGS) $(OTHERFLAGS) -c $(SRCROOT)shared/mpp/threadloc.c
+<span class="pl-en">time_interp.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/time_interp/time_interp.F90 time_manager.o fms.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/time_interp/time_interp.F90
+<span class="pl-en">time_manager.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/time_manager/time_manager.F90 constants.o fms.o fms_io.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/time_manager/time_manager.F90
+<span class="pl-en">tp_core.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/tp_core.F90 fv_mp_mod.o fv_grid_utils.o fv_grid_tools.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)atmos_cubed_sphere/model/tp_core.F90
+<span class="pl-en">tracer_manager.o</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/tracer_manager/tracer_manager.F90 mpp.o mpp_io.o fms.o field_manager.o
+        $(FC) $(CPPDEFS) $(CPPFLAGS) $(FPPFLAGS) $(FFLAGS) $(OTHERFLAGS) -c     $(SRCROOT)shared/tracer_manager/tracer_manager.F90
+<span class="pl-en">./external_ic.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/external_ic.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/external_ic.F90 .
+<span class="pl-en">./tp_core.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/tp_core.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/tp_core.F90 .
+<span class="pl-en">./mpp_sum_mpi.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_mpi.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_mpi.h .
+<span class="pl-en">./fv_sg.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_sg.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/fv_sg.F90 .
+<span class="pl-en">./create_xgrid.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/create_xgrid.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/create_xgrid.h .
+<span class="pl-en">./fv_grid_utils.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_grid_utils.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/fv_grid_utils.F90 .
+<span class="pl-en">./fv_update_phys.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_update_phys.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/fv_update_phys.F90 .
+<span class="pl-en">./mpp_pset.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_pset.F90
+        cp $(SRCROOT)shared/mpp/mpp_pset.F90 .
+<span class="pl-en">./mpp_data_sma.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_sma.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_sma.inc .
+<span class="pl-en">./test_mpp_pset.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/test_mpp_pset.F90
+        cp $(SRCROOT)shared/mpp/test_mpp_pset.F90 .
+<span class="pl-en">./fms_io.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/fms/fms_io.F90
+        cp $(SRCROOT)shared/fms/fms_io.F90 .
+<span class="pl-en">./mpp_do_global_field.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_global_field.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_global_field.h .
+<span class="pl-en">./mpp_do_update.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_update.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_update.h .
+<span class="pl-en">./mpp_data_nocomm.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_nocomm.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_nocomm.inc .
+<span class="pl-en">./fv_grid_tools.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_grid_tools.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/fv_grid_tools.F90 .
+<span class="pl-en">./fv_io.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_io.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/fv_io.F90 .
+<span class="pl-en">./read_mosaic.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/read_mosaic.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/read_mosaic.h .
+<span class="pl-en">./platform.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/platform/platform.F90
+        cp $(SRCROOT)shared/platform/platform.F90 .
+<span class="pl-en">./mosaic.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/mosaic.F90
+        cp $(SRCROOT)shared/mosaic/mosaic.F90 .
+<span class="pl-en">./read_data_2d.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_2d.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_2d.inc .
+<span class="pl-en">./mpp_error_a_s.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_a_s.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_a_s.h .
+<span class="pl-en">./fv_dynamics.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_dynamics.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/fv_dynamics.F90 .
+<span class="pl-en">./mpp_do_updateV.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_updateV.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_updateV.h .
+<span class="pl-en">./hswf.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/driver/solo/hswf.F90
+        cp $(SRCROOT)atmos_cubed_sphere/driver/solo/hswf.F90 .
+<span class="pl-en">./test_cases.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/test_cases.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/test_cases.F90 .
+<span class="pl-en">./fv_arrays.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_arrays.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/fv_arrays.F90 .
+<span class="pl-en">./fv_timing.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_timing.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/fv_timing.F90 .
+<span class="pl-en">./mpp_util.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util.inc .
+<span class="pl-en">./mpp_data.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_data.F90
+        cp $(SRCROOT)shared/mpp/mpp_data.F90 .
+<span class="pl-en">./amip_interp.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/amip_interp/amip_interp.F90
+        cp $(SRCROOT)shared/amip_interp/amip_interp.F90 .
+<span class="pl-en">./sw_core.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/sw_core.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/sw_core.F90 .
+<span class="pl-en">./mpp_io_misc.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_misc.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_misc.inc .
+<span class="pl-en">./gradient.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/gradient.F90
+        cp $(SRCROOT)shared/mosaic/gradient.F90 .
+<span class="pl-en">./horiz_interp_type.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp_type.F90
+        cp $(SRCROOT)shared/horiz_interp/horiz_interp_type.F90 .
+<span class="pl-en">./fv_tracer2d.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_tracer2d.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/fv_tracer2d.F90 .
+<span class="pl-en">./mpp_global_sum_tl.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_sum_tl.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_sum_tl.h .
+<span class="pl-en">./fv_surf_map.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_surf_map.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/fv_surf_map.F90 .
+<span class="pl-en">./mpp_comm_mpi.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_mpi.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_mpi.inc .
+<span class="pl-en">./mpp_utilities.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_utilities.F90
+        cp $(SRCROOT)shared/mpp/mpp_utilities.F90 .
+<span class="pl-en">./parse.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/field_manager/parse.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/field_manager/parse.inc .
+<span class="pl-en">./axis_utils.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/axis_utils/axis_utils.F90
+        cp $(SRCROOT)shared/axis_utils/axis_utils.F90 .
+<span class="pl-en">./fms_platform.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h .
+<span class="pl-en">./time_manager.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/time_manager/time_manager.F90
+        cp $(SRCROOT)shared/time_manager/time_manager.F90 .
+<span class="pl-en">./atmosphere.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/driver/solo/atmosphere.F90
+        cp $(SRCROOT)atmos_cubed_sphere/driver/solo/atmosphere.F90 .
+<span class="pl-en">./test_mpp_domains.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/test_mpp_domains.F90
+        cp $(SRCROOT)shared/mpp/test_mpp_domains.F90 .
+<span class="pl-en">./read_data_4d.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_4d.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_4d.inc .
+<span class="pl-en">./mpp_transmit.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit.inc .
+<span class="pl-en">./mpp_reduce_sma.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_sma.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_sma.h .
+<span class="pl-en">./diag_axis.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_axis.F90
+        cp $(SRCROOT)shared/diag_manager/diag_axis.F90 .
+<span class="pl-en">./constant.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/constant.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/constant.h .
+<span class="pl-en">./mpp_write.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_write.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_write.h .
+<span class="pl-en">./mpp_global_reduce.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_reduce.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_reduce.h .
+<span class="pl-en">./mpp_global_sum.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_sum.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_sum.h .
+<span class="pl-en">./mpp_util_nocomm.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_nocomm.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_nocomm.inc .
+<span class="pl-en">./mosaic_util.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/mosaic_util.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/mosaic_util.h .
+<span class="pl-en">./horiz_interp_conserve.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp_conserve.F90
+        cp $(SRCROOT)shared/horiz_interp/horiz_interp_conserve.F90 .
+<span class="pl-en">./dyn_core.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/dyn_core.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/dyn_core.F90 .
+<span class="pl-en">./init_hydro.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/init_hydro.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/init_hydro.F90 .
+<span class="pl-en">./nh_core.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/nh_core.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/nh_core.F90 .
+<span class="pl-en">./mpp_util_sma.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_sma.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_sma.inc .
+<span class="pl-en">./mpp_reduce_nocomm.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_nocomm.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_nocomm.h .
+<span class="pl-en">./diag_util.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_util.F90
+        cp $(SRCROOT)shared/diag_manager/diag_util.F90 .
+<span class="pl-en">./diag_manager.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_manager.F90
+        cp $(SRCROOT)shared/diag_manager/diag_manager.F90 .
+<span class="pl-en">./fv_fill.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_fill.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/fv_fill.F90 .
+<span class="pl-en">./horiz_interp_bicubic.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp_bicubic.F90
+        cp $(SRCROOT)shared/horiz_interp/horiz_interp_bicubic.F90 .
+<span class="pl-en">./fms.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/fms/fms.F90
+        cp $(SRCROOT)shared/fms/fms.F90 .
+<span class="pl-en">./fv_restart.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_restart.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/fv_restart.F90 .
+<span class="pl-en">./mpp_domains_comm.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_comm.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_comm.inc .
+<span class="pl-en">./mpp_update_domains2D.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_update_domains2D.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_update_domains2D.h .
+<span class="pl-en">./field_manager.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/field_manager/field_manager.F90
+        cp $(SRCROOT)shared/field_manager/field_manager.F90 .
+<span class="pl-en">./mpp_do_redistribute.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_redistribute.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_redistribute.h .
+<span class="pl-en">./fm_util.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/field_manager/fm_util.F90
+        cp $(SRCROOT)shared/field_manager/fm_util.F90 .
+<span class="pl-en">./mpp_comm_nocomm.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_nocomm.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_nocomm.inc .
+<span class="pl-en">./mpp_io.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_io.F90
+        cp $(SRCROOT)shared/mpp/mpp_io.F90 .
+<span class="pl-en">./sim_nc_mod.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/sim_nc_mod.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/sim_nc_mod.F90 .
+<span class="pl-en">./mpp.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp.F90
+        cp $(SRCROOT)shared/mpp/mpp.F90 .
+<span class="pl-en">./mpp_domains_reduce.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_reduce.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_reduce.inc .
+<span class="pl-en">./memuse.c</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/memutils/memuse.c
+        cp $(SRCROOT)shared/memutils/memuse.c .
+<span class="pl-en">./mpp_sum_sma.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_sma.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_sma.h .
+<span class="pl-en">./mpp_domains_misc.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_misc.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_misc.inc .
+<span class="pl-en">./gradient_c2l.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/gradient_c2l.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/gradient_c2l.h .
+<span class="pl-en">./mpp_util_mpi.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_mpi.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_mpi.inc .
+<span class="pl-en">./mpp_sum.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum.inc .
+<span class="pl-en">./mpp_chksum_scalar.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum_scalar.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum_scalar.h .
+<span class="pl-en">./gradient_c2l.c</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/gradient_c2l.c
+        cp $(SRCROOT)shared/mosaic/gradient_c2l.c .
+<span class="pl-en">./test_mpp_io.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/test_mpp_io.F90
+        cp $(SRCROOT)shared/mpp/test_mpp_io.F90 .
+<span class="pl-en">./diag_grid.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_grid.F90
+        cp $(SRCROOT)shared/diag_manager/diag_grid.F90 .
+<span class="pl-en">./mpp_domains.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_domains.F90
+        cp $(SRCROOT)shared/mpp/mpp_domains.F90 .
+<span class="pl-en">./mpp_domains_define.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_define.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_define.inc .
+<span class="pl-en">./interp.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/interp.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/interp.h .
+<span class="pl-en">./diag_data.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_data.F90
+        cp $(SRCROOT)shared/diag_manager/diag_data.F90 .
+<span class="pl-en">./a2b_edge.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/a2b_edge.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/a2b_edge.F90 .
+<span class="pl-en">./mpp_data_mpi.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_mpi.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_mpi.inc .
+<span class="pl-en">./mpp_memutils.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_memutils.F90
+        cp $(SRCROOT)shared/mpp/mpp_memutils.F90 .
+<span class="pl-en">./mpp_parameter.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/mpp_parameter.F90
+        cp $(SRCROOT)shared/mpp/mpp_parameter.F90 .
+<span class="pl-en">./mpp_chksum.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum.h .
+<span class="pl-en">./mpp_io_util.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_util.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_util.inc .
+<span class="pl-en">./mpp_do_check.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_check.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_check.h .
+<span class="pl-en">./mpp_error_a_a.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_a_a.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_a_a.h .
+<span class="pl-en">./lin_cloud_microphys.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_param/lin_cloud_microphys/lin_cloud_microphys.F90
+        cp $(SRCROOT)atmos_param/lin_cloud_microphys/lin_cloud_microphys.F90 .
+<span class="pl-en">./mpp_io_read.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_read.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_read.inc .
+<span class="pl-en">./test_fms_io.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/fms/test_fms_io.F90
+        cp $(SRCROOT)shared/fms/test_fms_io.F90 .
+<span class="pl-en">./fv_diagnostics.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_diagnostics.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/fv_diagnostics.F90 .
+<span class="pl-en">./horiz_interp_spherical.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp_spherical.F90
+        cp $(SRCROOT)shared/horiz_interp/horiz_interp_spherical.F90 .
+<span class="pl-en">./memutils.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/memutils/memutils.F90
+        cp $(SRCROOT)shared/memutils/memutils.F90 .
+<span class="pl-en">./write_data.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/write_data.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/write_data.inc .
+<span class="pl-en">./mpp_global_field.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_field.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_field.h .
+<span class="pl-en">./constants.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/constants/constants.F90
+        cp $(SRCROOT)shared/constants/constants.F90 .
+<span class="pl-en">./tracer_manager.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/tracer_manager/tracer_manager.F90
+        cp $(SRCROOT)shared/tracer_manager/tracer_manager.F90 .
+<span class="pl-en">./mpp_read_2Ddecomp.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_read_2Ddecomp.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_read_2Ddecomp.h .
+<span class="pl-en">./test_mpp.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/test_mpp.F90
+        cp $(SRCROOT)shared/mpp/test_mpp.F90 .
+<span class="pl-en">./mpp_error_s_s.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_s_s.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_s_s.h .
+<span class="pl-en">./mpp_io_write.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_write.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_write.inc .
+<span class="pl-en">./mpp_reduce_mpi.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_mpi.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_mpi.h .
+<span class="pl-en">./horiz_interp_bilinear.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp_bilinear.F90
+        cp $(SRCROOT)shared/horiz_interp/horiz_interp_bilinear.F90 .
+<span class="pl-en">./mosaic_util.c</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/mosaic_util.c
+        cp $(SRCROOT)shared/mosaic/mosaic_util.c .
+<span class="pl-en">./read_mosaic.c</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/read_mosaic.c
+        cp $(SRCROOT)shared/mosaic/read_mosaic.c .
+<span class="pl-en">./fv_mapz.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_mapz.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/fv_mapz.F90 .
+<span class="pl-en">./fv_nudge.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_nudge.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/fv_nudge.F90 .
+<span class="pl-en">./interp.c</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/interp.c
+        cp $(SRCROOT)shared/mosaic/interp.c .
+<span class="pl-en">./sorted_index.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/sorted_index.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/sorted_index.F90 .
+<span class="pl-en">./mpp_domains_util.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_util.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_util.inc .
+<span class="pl-en">./threadloc.c</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/threadloc.c
+        cp $(SRCROOT)shared/mpp/threadloc.c .
+<span class="pl-en">./mpp_transmit_sma.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_sma.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_sma.h .
+<span class="pl-en">./mpp_comm_sma.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_sma.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_sma.inc .
+<span class="pl-en">./mpp_get_boundary.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_get_boundary.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_get_boundary.h .
+<span class="pl-en">./mpp_write_2Ddecomp.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_write_2Ddecomp.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_write_2Ddecomp.h .
+<span class="pl-en">./mpp_do_checkV.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_checkV.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_checkV.h .
+<span class="pl-en">./fv_phys.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/driver/solo/fv_phys.F90
+        cp $(SRCROOT)atmos_cubed_sphere/driver/solo/fv_phys.F90 .
+<span class="pl-en">./read_data_3d.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_3d.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_3d.inc .
+<span class="pl-en">./time_interp.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/time_interp/time_interp.F90
+        cp $(SRCROOT)shared/time_interp/time_interp.F90 .
+<span class="pl-en">./fv_eta.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_eta.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/fv_eta.F90 .
+<span class="pl-en">./horiz_interp.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/horiz_interp/horiz_interp.F90
+        cp $(SRCROOT)shared/horiz_interp/horiz_interp.F90 .
+<span class="pl-en">./diag_output.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/diag_manager/diag_output.F90
+        cp $(SRCROOT)shared/diag_manager/diag_output.F90 .
+<span class="pl-en">./fv_control.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/model/fv_control.F90
+        cp $(SRCROOT)atmos_cubed_sphere/model/fv_control.F90 .
+<span class="pl-en">./mpp_error_s_a.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_s_a.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_s_a.h .
+<span class="pl-en">./mpp_transmit_mpi.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_mpi.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_mpi.h .
+<span class="pl-en">./nsclock.c</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mpp/nsclock.c
+        cp $(SRCROOT)shared/mpp/nsclock.c .
+<span class="pl-en">./mpp_transmit_nocomm.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_nocomm.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_nocomm.h .
+<span class="pl-en">./grid.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/grid.F90
+        cp $(SRCROOT)shared/mosaic/grid.F90 .
+<span class="pl-en">./mpp_comm.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm.inc .
+<span class="pl-en">./system_clock.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/system_clock.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/system_clock.h .
+<span class="pl-en">./atmos_model.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_solo/atmos_model.F90
+        cp $(SRCROOT)atmos_solo/atmos_model.F90 .
+<span class="pl-en">./external_sst.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/external_sst.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/external_sst.F90 .
+<span class="pl-en">./mpp_sum_nocomm.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_nocomm.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_nocomm.h .
+<span class="pl-en">./mpp_do_get_boundary.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_get_boundary.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_get_boundary.h .
+<span class="pl-en">./fv_mp_mod.F90</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>atmos_cubed_sphere/tools/fv_mp_mod.F90
+        cp $(SRCROOT)atmos_cubed_sphere/tools/fv_mp_mod.F90 .
+<span class="pl-en">./create_xgrid.c</span>: <span class="pl-s">$(<span class="pl-smi">SRCROOT</span>)</span>shared/mosaic/create_xgrid.c
+        cp $(SRCROOT)shared/mosaic/create_xgrid.c .
+<span class="pl-en">./mpp_chksum_int.h</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum_int.h
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum_int.h .
+<span class="pl-en">./mpp_io_connect.inc</span>: /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_connect.inc
+        cp /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_connect.inc .
+SRC = $(SRCROOT)shared/mpp/mpp_data.F90 $(SRCROOT)atmos_cubed_sphere/model/tp_core.F90 $(SRCROOT)atmos_cubed_sphere/model/sw_core.F90 $(SRCROOT)shared/mosaic/gradient_c2l.c $(SRCROOT)atmos_cubed_sphere/driver/solo/atmosphere.F90 $(SRCROOT)shared/fms/fms_io.F90 $(SRCROOT)shared/tracer_manager/tracer_manager.F90 $(SRCROOT)shared/mpp/mpp_memutils.F90 $(SRCROOT)atmos_cubed_sphere/driver/solo/fv_phys.F90 $(SRCROOT)shared/diag_manager/diag_util.F90 $(SRCROOT)shared/mosaic/mosaic_util.c $(SRCROOT)atmos_cubed_sphere/model/a2b_edge.F90 $(SRCROOT)atmos_cubed_sphere/tools/external_ic.F90 $(SRCROOT)shared/time_interp/time_interp.F90 $(SRCROOT)shared/mosaic/mosaic.F90 $(SRCROOT)shared/memutils/memuse.c $(SRCROOT)shared/memutils/memutils.F90 $(SRCROOT)shared/mpp/threadloc.c $(SRCROOT)shared/horiz_interp/horiz_interp_bicubic.F90 $(SRCROOT)shared/diag_manager/diag_axis.F90 $(SRCROOT)shared/diag_manager/diag_manager.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_grid_utils.F90 $(SRCROOT)shared/mpp/mpp_utilities.F90 $(SRCROOT)shared/mpp/mpp_pset.F90 $(SRCROOT)shared/fms/fms.F90 $(SRCROOT)shared/mpp/test_mpp_io.F90 $(SRCROOT)shared/mosaic/create_xgrid.c $(SRCROOT)shared/mosaic/interp.c $(SRCROOT)shared/diag_manager/diag_output.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_io.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_nudge.F90 $(SRCROOT)shared/horiz_interp/horiz_interp_conserve.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_update_phys.F90 $(SRCROOT)shared/mpp/mpp_parameter.F90 $(SRCROOT)shared/axis_utils/axis_utils.F90 $(SRCROOT)atmos_cubed_sphere/tools/external_sst.F90 $(SRCROOT)shared/platform/platform.F90 $(SRCROOT)shared/amip_interp/amip_interp.F90 $(SRCROOT)shared/mpp/mpp_domains.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_dynamics.F90 $(SRCROOT)shared/diag_manager/diag_grid.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_mapz.F90 $(SRCROOT)atmos_cubed_sphere/tools/test_cases.F90 $(SRCROOT)shared/time_manager/time_manager.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_sg.F90 $(SRCROOT)atmos_cubed_sphere/driver/solo/hswf.F90 $(SRCROOT)atmos_cubed_sphere/tools/sorted_index.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_arrays.F90 $(SRCROOT)atmos_solo/atmos_model.F90 $(SRCROOT)shared/mpp/mpp_io.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_control.F90 $(SRCROOT)atmos_cubed_sphere/tools/sim_nc_mod.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_tracer2d.F90 $(SRCROOT)shared/horiz_interp/horiz_interp_spherical.F90 $(SRCROOT)atmos_cubed_sphere/tools/init_hydro.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_restart.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_timing.F90 $(SRCROOT)shared/horiz_interp/horiz_interp.F90 $(SRCROOT)shared/mosaic/gradient.F90 $(SRCROOT)atmos_cubed_sphere/model/dyn_core.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_diagnostics.F90 $(SRCROOT)atmos_cubed_sphere/model/nh_core.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_mp_mod.F90 $(SRCROOT)shared/field_manager/fm_util.F90 $(SRCROOT)shared/horiz_interp/horiz_interp_bilinear.F90 $(SRCROOT)shared/diag_manager/diag_data.F90 $(SRCROOT)shared/mosaic/grid.F90 $(SRCROOT)shared/mosaic/read_mosaic.c $(SRCROOT)shared/constants/constants.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_grid_tools.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_fill.F90 $(SRCROOT)shared/mpp/test_mpp_pset.F90 $(SRCROOT)shared/fms/test_fms_io.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_eta.F90 $(SRCROOT)shared/field_manager/field_manager.F90 $(SRCROOT)shared/mpp/nsclock.c $(SRCROOT)shared/mpp/mpp.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_surf_map.F90 $(SRCROOT)shared/horiz_interp/horiz_interp_type.F90 $(SRCROOT)shared/mpp/test_mpp_domains.F90 $(SRCROOT)shared/mpp/test_mpp.F90 $(SRCROOT)atmos_param/lin_cloud_microphys/lin_cloud_microphys.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_mpi.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/create_xgrid.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_comm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_update_domains2D.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_redistribute.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_nocomm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_sma.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_reduce.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_global_field.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_update.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_nocomm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_sma.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/read_mosaic.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_misc.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum_scalar.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/gradient_c2l.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_mpi.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_2d.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_a_s.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_define.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/interp.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_mpi.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_util.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_check.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_updateV.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_a_a.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_read.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/write_data.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_field.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_read_2Ddecomp.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_misc.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_write.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_s_s.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_mpi.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_sum_tl.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_mpi.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/field_manager/parse.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_util.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_sma.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_write_2Ddecomp.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_sma.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_get_boundary.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_checkV.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_4d.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_3d.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_sma.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/constant.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_write.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_reduce.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_nocomm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/mosaic_util.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_sum.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_s_a.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_mpi.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_nocomm.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_sma.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_nocomm.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/system_clock.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_nocomm.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_get_boundary.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum_int.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_connect.inc
+OBJ =a2b_edge_cpu.o fv_mp_mod_cpu.o trid_d_sw_gpu.o sw_gpu.o d_sw_gpu.o tp_core_cpu.o sw_cpu.o trid_d_sw_cpu.o d_sw_cpu.o  mpp_data.o tp_core.o sw_core.o gradient_c2l.o atmosphere.o fms_io.o tracer_manager.o mpp_memutils.o fv_phys.o diag_util.o mosaic_util.o a2b_edge.o external_ic.o time_interp.o mosaic.o memuse.o memutils.o threadloc.o horiz_interp_bicubic.o diag_axis.o diag_manager.o fv_grid_utils.o mpp_utilities.o mpp_pset.o fms.o test_mpp_io.o create_xgrid.o interp.o diag_output.o fv_io.o fv_nudge.o horiz_interp_conserve.o fv_update_phys.o mpp_parameter.o axis_utils.o external_sst.o platform.o amip_interp.o mpp_domains.o fv_dynamics.o diag_grid.o fv_mapz.o test_cases.o time_manager.o fv_sg.o hswf.o sorted_index.o fv_arrays.o atmos_model.o mpp_io.o fv_control.o sim_nc_mod.o fv_tracer2d.o horiz_interp_spherical.o init_hydro.o fv_restart.o fv_timing.o horiz_interp.o gradient.o dyn_core.o fv_diagnostics.o nh_core.o fv_mp_mod.o fm_util.o horiz_interp_bilinear.o diag_data.o grid.o read_mosaic.o constants.o fv_grid_tools.o fv_fill.o test_mpp_pset.o test_fms_io.o fv_eta.o field_manager.o nsclock.o mpp.o fv_surf_map.o horiz_interp_type.o test_mpp_domains.o test_mpp.o lin_cloud_microphys.o
+OFF = $(SRCROOT)atmos_cubed_sphere/tools/external_ic.F90 $(SRCROOT)atmos_cubed_sphere/model/tp_core.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_mpi.h $(SRCROOT)atmos_cubed_sphere/model/fv_sg.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/create_xgrid.h $(SRCROOT)atmos_cubed_sphere/model/fv_grid_utils.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_update_phys.F90 $(SRCROOT)shared/mpp/mpp_pset.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_sma.inc $(SRCROOT)shared/mpp/test_mpp_pset.F90 $(SRCROOT)shared/fms/fms_io.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_global_field.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_update.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_nocomm.inc $(SRCROOT)atmos_cubed_sphere/tools/fv_grid_tools.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_io.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/read_mosaic.h $(SRCROOT)shared/platform/platform.F90 $(SRCROOT)shared/mosaic/mosaic.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_2d.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_a_s.h $(SRCROOT)atmos_cubed_sphere/model/fv_dynamics.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_updateV.h $(SRCROOT)atmos_cubed_sphere/driver/solo/hswf.F90 $(SRCROOT)atmos_cubed_sphere/tools/test_cases.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_arrays.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_timing.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util.inc $(SRCROOT)shared/mpp/mpp_data.F90 $(SRCROOT)shared/amip_interp/amip_interp.F90 $(SRCROOT)atmos_cubed_sphere/model/sw_core.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_misc.inc $(SRCROOT)shared/mosaic/gradient.F90 $(SRCROOT)shared/horiz_interp/horiz_interp_type.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_tracer2d.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_sum_tl.h $(SRCROOT)atmos_cubed_sphere/tools/fv_surf_map.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_mpi.inc $(SRCROOT)shared/mpp/mpp_utilities.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/field_manager/parse.inc $(SRCROOT)shared/axis_utils/axis_utils.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/include/fms_platform.h $(SRCROOT)shared/time_manager/time_manager.F90 $(SRCROOT)atmos_cubed_sphere/driver/solo/atmosphere.F90 $(SRCROOT)shared/mpp/test_mpp_domains.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_4d.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_sma.h $(SRCROOT)shared/diag_manager/diag_axis.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/constant.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_write.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_reduce.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_sum.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_nocomm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/mosaic_util.h $(SRCROOT)shared/horiz_interp/horiz_interp_conserve.F90 $(SRCROOT)atmos_cubed_sphere/model/dyn_core.F90 $(SRCROOT)atmos_cubed_sphere/tools/init_hydro.F90 $(SRCROOT)atmos_cubed_sphere/model/nh_core.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_sma.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_nocomm.h $(SRCROOT)shared/diag_manager/diag_util.F90 $(SRCROOT)shared/diag_manager/diag_manager.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_fill.F90 $(SRCROOT)shared/horiz_interp/horiz_interp_bicubic.F90 $(SRCROOT)shared/fms/fms.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_restart.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_comm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_update_domains2D.h $(SRCROOT)shared/field_manager/field_manager.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_redistribute.h $(SRCROOT)shared/field_manager/fm_util.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_nocomm.inc $(SRCROOT)shared/mpp/mpp_io.F90 $(SRCROOT)atmos_cubed_sphere/tools/sim_nc_mod.F90 $(SRCROOT)shared/mpp/mpp.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_reduce.inc $(SRCROOT)shared/memutils/memuse.c /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_sma.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_misc.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/gradient_c2l.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_util_mpi.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum_scalar.h $(SRCROOT)shared/mosaic/gradient_c2l.c $(SRCROOT)shared/mpp/test_mpp_io.F90 $(SRCROOT)shared/diag_manager/diag_grid.F90 $(SRCROOT)shared/mpp/mpp_domains.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_define.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mosaic/interp.h $(SRCROOT)shared/diag_manager/diag_data.F90 $(SRCROOT)atmos_cubed_sphere/model/a2b_edge.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_data_mpi.inc $(SRCROOT)shared/mpp/mpp_memutils.F90 $(SRCROOT)shared/mpp/mpp_parameter.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_util.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_check.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_a_a.h $(SRCROOT)atmos_param/lin_cloud_microphys/lin_cloud_microphys.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_read.inc $(SRCROOT)shared/fms/test_fms_io.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_diagnostics.F90 $(SRCROOT)shared/horiz_interp/horiz_interp_spherical.F90 $(SRCROOT)shared/memutils/memutils.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/write_data.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_global_field.h $(SRCROOT)shared/constants/constants.F90 $(SRCROOT)shared/tracer_manager/tracer_manager.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_read_2Ddecomp.h $(SRCROOT)shared/mpp/test_mpp.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_s_s.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_write.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_reduce_mpi.h $(SRCROOT)shared/horiz_interp/horiz_interp_bilinear.F90 $(SRCROOT)shared/mosaic/mosaic_util.c $(SRCROOT)shared/mosaic/read_mosaic.c $(SRCROOT)atmos_cubed_sphere/model/fv_mapz.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_nudge.F90 $(SRCROOT)shared/mosaic/interp.c $(SRCROOT)atmos_cubed_sphere/tools/sorted_index.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_domains_util.inc $(SRCROOT)shared/mpp/threadloc.c /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_sma.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm_sma.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_get_boundary.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_write_2Ddecomp.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_checkV.h $(SRCROOT)atmos_cubed_sphere/driver/solo/fv_phys.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/fms/read_data_3d.inc $(SRCROOT)shared/time_interp/time_interp.F90 $(SRCROOT)atmos_cubed_sphere/tools/fv_eta.F90 $(SRCROOT)shared/horiz_interp/horiz_interp.F90 $(SRCROOT)shared/diag_manager/diag_output.F90 $(SRCROOT)atmos_cubed_sphere/model/fv_control.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_error_s_a.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_mpi.h $(SRCROOT)shared/mpp/nsclock.c /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_transmit_nocomm.h $(SRCROOT)shared/mosaic/grid.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_comm.inc /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/system_clock.h $(SRCROOT)atmos_solo/atmos_model.F90 $(SRCROOT)atmos_cubed_sphere/tools/external_sst.F90 /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_sum_nocomm.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_do_get_boundary.h $(SRCROOT)atmos_cubed_sphere/tools/fv_mp_mod.F90 $(SRCROOT)shared/mosaic/create_xgrid.c /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_chksum_int.h /work/home/ac0w1vpw3p/jibinghu_fv3/fv3_source/ics_231207_checked/exp/../src/shared/mpp/include/mpp_io_connect.inc
+<span class="pl-en">clean</span>: neat
+        -rm -f .fms.x.cppdefs $(OBJ) fms.x
+<span class="pl-en">neat</span>:
+        -rm -f $(TMPFILES)
+<span class="pl-en">localize</span>: <span class="pl-s">$(<span class="pl-smi">OFF</span>)</span>
+        cp $(OFF) .
+<span class="pl-en">TAGS</span>: <span class="pl-s">$(<span class="pl-smi">SRC</span>)</span>
+        etags $(SRC)
+<span class="pl-en">tags</span>: <span class="pl-s">$(<span class="pl-smi">SRC</span>)</span>
+        ctags $(SRC)
+<span class="pl-en">fms.x</span>: <span class="pl-s">$(<span class="pl-smi">OBJ</span>)</span> 
+        $(LD) $(OBJ) -o fms.x  $(LDFLAGS)
+[ac0w1vpw3p@login01 exec.amd64]$ </pre></div></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
