@@ -1,5 +1,22 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 28 Nov 2024 06:54:45 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>BLAS库</title><link>https://jibinghu.github.io/post/BLAS-ku.html</link><description>什么是 BLAS？&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 02 Dec 2024 08:36:38 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>FV3 运行BUG记录 -&gt;&gt;&gt; #3</title><link>https://jibinghu.github.io/post/FV3%20-yun-xing-BUG-ji-lu-%20----%20%233.html</link><description>``` bash&#13;
+[acox11ust1@login02 pubrel]$ ./fms.x mpirun -np=24&#13;
+[0] MPI startup(): FI_PSM3_UUID was not generated, please set it to avoid possible resources ownership conflicts between MPI processes&#13;
+login02:pid12135.fms.x: unknown link speed 0x80&#13;
+login02:pid12135.fms.x: Failed to modify UD QP to INIT on mlx5_0: Operation not permitted&#13;
+Abort(1615503) on node 0 (rank 0 in comm 0): Fatal error in PMPI_Init: Other MPI error, error stack:&#13;
+MPIR_Init_thread(138)........: &#13;
+MPID_Init(1169)..............: &#13;
+MPIDI_OFI_mpi_init_hook(1807): &#13;
+create_endpoint(2473)........: OFI endpoint open failed (ofi_init.c:2473:create_endpoint:Invalid argument)&#13;
+```&#13;
+&#13;
+&gt; 遇事不决先问GPT：&#13;
+&#13;
+---&#13;
+&#13;
+1. FI_PSM3_UUID 问题&#13;
+   错误信息中提到 FI_PSM3_UUID 没有生成。</description><guid isPermaLink="true">https://jibinghu.github.io/post/FV3%20-yun-xing-BUG-ji-lu-%20----%20%233.html</guid><pubDate>Mon, 02 Dec 2024 08:36:14 +0000</pubDate></item><item><title>BLAS库</title><link>https://jibinghu.github.io/post/BLAS-ku.html</link><description>什么是 BLAS？&#13;
 &#13;
 BLAS（Basic Linear Algebra Subprograms）是一组标准化的线性代数计算例程，广泛用于科学计算和高性能计算领域。</description><guid isPermaLink="true">https://jibinghu.github.io/post/BLAS-ku.html</guid><pubDate>Thu, 28 Nov 2024 06:54:22 +0000</pubDate></item><item><title>FV_3 系列学习002-&gt;天气预报数值求解方程组</title><link>https://jibinghu.github.io/post/FV_3%20-xi-lie-xue-xi-002---tian-qi-yu-bao-shu-zhi-qiu-jie-fang-cheng-zu.html</link><description>流体力学和热力学的基本定律，通常用于描述大气或流体中的运动和能量变化。</description><guid isPermaLink="true">https://jibinghu.github.io/post/FV_3%20-xi-lie-xue-xi-002---tian-qi-yu-bao-shu-zhi-qiu-jie-fang-cheng-zu.html</guid><pubDate>Thu, 28 Nov 2024 06:52:22 +0000</pubDate></item><item><title>WebRTC 相关学习 #1</title><link>https://jibinghu.github.io/post/WebRTC%20-xiang-guan-xue-xi-%20%231.html</link><description>https://zhuanlan.zhihu.com/p/409462524 #音视频通信为什么要选择WebRTC？&#13;
 。</description><guid isPermaLink="true">https://jibinghu.github.io/post/WebRTC%20-xiang-guan-xue-xi-%20%231.html</guid><pubDate>Wed, 20 Nov 2024 15:38:15 +0000</pubDate></item><item><title>FV3系列学习_#001  // DCU 开发文档</title><link>https://jibinghu.github.io/post/FV3-xi-lie-xue-xi-_%23001%20%20--%20DCU%20-kai-fa-wen-dang.html</link><description>---&#13;
