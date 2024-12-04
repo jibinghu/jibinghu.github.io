@@ -1,5 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Wed, 04 Dec 2024 02:07:32 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>FV3_学习 FAQ</title><link>https://jibinghu.github.io/post/FV3_-xue-xi-%20FAQ.html</link><description>---&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Wed, 04 Dec 2024 09:43:58 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>FV3_学习</title><link>https://jibinghu.github.io/post/FV3_-xue-xi.html</link><description>&lt;img width='719' alt='image' src='https://github.com/user-attachments/assets/3226f95b-f32e-460b-8698-6238a4ec8e41'&gt;&#13;
+&#13;
+![image](https://github.com/user-attachments/assets/12c07b7f-e083-43a1-8389-93edca2d1d94)&#13;
+&#13;
+这张图描述了 GFDL 模型（FV3 动力核心） 的工作流程，展示了从初始化到动力学求解、物理量计算和最终输出的完整过程。</description><guid isPermaLink="true">https://jibinghu.github.io/post/FV3_-xue-xi.html</guid><pubDate>Wed, 04 Dec 2024 09:43:34 +0000</pubDate></item><item><title>FV3_学习 FAQ</title><link>https://jibinghu.github.io/post/FV3_-xue-xi-%20FAQ.html</link><description>---&#13;
 &#13;
 ### 如何将地球分为六个立方体面？&#13;
 &#13;
