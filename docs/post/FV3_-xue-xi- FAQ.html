@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="---
+
+### 如何将地球分为六个立方体面？
+
+1. 构建立方体：
+- 在球体内部放置一个立方体，使得立方体的八个角与球体表面相切。">
+<meta property="og:title" content="FV3_学习 FAQ">
+<meta property="og:description" content="---
+
+### 如何将地球分为六个立方体面？
+
+1. 构建立方体：
+- 在球体内部放置一个立方体，使得立方体的八个角与球体表面相切。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/FV3_-xue-xi-%20FAQ.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>FV3_学习 FAQ</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">FV3_学习 FAQ</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/88" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><hr>
+<h3>如何将地球分为六个立方体面？</h3>
+<ol>
+<li>构建立方体：</li>
+</ol>
+<ul>
+<li>在球体内部放置一个立方体，使得立方体的八个角与球体表面相切。</li>
+</ul>
+<ol start="2">
+<li>球面投影：</li>
+</ol>
+<ul>
+<li>使用几何投影方法（例如<strong>正轴投影</strong>或<strong>斜轴投影</strong>），将地球表面的点投影到立方体的六个面上。</li>
+<li>投影后，六个面上的网格可以用二维平面网格表示。</li>
+</ul>
+<ol start="3">
+<li>网格划分：</li>
+</ol>
+<ul>
+<li>每个立方体面可以进一步划分为等距的小网格（例如正方形或长方形）。</li>
+<li>六个面组合后覆盖整个地球表面。</li>
+</ul>
+<ol start="4">
+<li>处理面之间的连接：</li>
+</ol>
+<ul>
+<li>由于每个面是独立的平面，立方体的边缘和角点需要进行特殊的数值处理以确保连续性。</li>
+</ul>
+<hr>
+<h3>时间步长是什么</h3>
+<p>时间步长（Time Step， $\Delta$  t）是数值模拟中每次迭代所跨越的模拟时间长度，通常以秒（s）为单位。<br>
+1.	如果一个数值模型以 \Delta t = 1 , \text{s} 的时间步长运行，意味着模型每次迭代模拟地球系统中 1 秒的时间演化。<br>
+2.	<strong>时间步长越短，每次迭代所描述的物理时间范围越小，为了模拟相同的物理时间（比如 1 小时），需要执行更多的迭代。</strong></p>
+<hr>
+<h3>FV3 是把立方体投影到球面上还是球面投影到立方体上？</h3>
+<p>FV3 是把球面投影到立方体上，具体来说是把球面点映射到立方体的六个面上：</p>
+<ol>
+<li>投影方向：</li>
+</ol>
+<ul>
+<li>球体表面上的每个点通过正射投影、等面积投影等方法，映射到立方体的六个面上。</li>
+</ul>
+<ol start="2">
+<li>目的：</li>
+</ol>
+<ul>
+<li>将复杂的球面计算转化为立方体面上的二维计算，方便网格划分和数值处理。</li>
+</ul>
+<ol start="3">
+<li>投影结果：</li>
+</ol>
+<ul>
+<li>立方体的六个面形成覆盖球体表面的规则区域。</li>
+<li>每个区域上的网格单元近似均匀，减少了球面极点处网格收缩的问题</li>
+</ul>
+<hr>
+<h3>高阶插值算法解释</h3>
+<p>FV3 使用高阶插值算法解决立方体面间的连接问题，保证网格单元间的连续性和数值稳定性。以下是高阶插值算法的主要原理和作用：</p>
+<h4>什么是高阶插值？</h4>
+<ul>
+<li>插值算法 是在已知离散点的情况下，估算中间未知点值的方法。</li>
+<li>高阶插值 是通过高阶多项式（如三次或更高阶多项式）或更复杂的数值方法来提高插值的精度，减少误差。</li>
+</ul>
+<h4>高阶插值在 FV3 中的作用</h4>
+<ol>
+<li>面间数据的连续性：</li>
+</ol>
+<ul>
+<li>立方体的六个面彼此独立，但在边界处必须进行物理量（如速度、温度、湿度等）的交换。</li>
+<li>高阶插值算法保证边界处的物理量在数值上连续，不会出现明显的跳跃或不稳定。</li>
+</ul>
+<ol start="2">
+<li>减少数值误差：</li>
+</ol>
+<ul>
+<li>简单的低阶插值（如线性插值）可能导致边界值不够平滑，影响计算精度。</li>
+<li>高阶插值方法（如三次样条插值或加权平均插值）能够更精确地拟合边界值，减小误差。</li>
+</ul>
+<ol start="3">
+<li>能量和守恒性：</li>
+</ol>
+<ul>
+<li>高阶插值方法可以保证在边界处的能量、动量和质量守恒，满足物理一致性。</li>
+</ul>
+<h4>具体的高阶插值方法</h4>
+<p>FV3 中常用以下插值方法：</p>
+<ol>
+<li>三次样条插值：</li>
+</ol>
+<ul>
+<li>使用三次多项式来拟合每个网格边界上的数据点，确保插值后的曲线连续且光滑。</li>
+</ul>
+<ol start="2">
+<li>加权插值：</li>
+</ol>
+<ul>
+<li>在插值过程中对不同点赋予权重，以优先考虑网格边缘的局部平滑性和守恒性。</li>
+</ul>
+<ol start="3">
+<li>模仿性插值（Mimetic Interpolation）：</li>
+</ol>
+<ul>
+<li>这种方法直接根据物理守恒方程设计插值公式，保证在插值的同时不破坏原有的动量或质量守恒。</li>
+</ul>
+<h4>插值的计算复杂性</h4>
+<p>高阶插值需要更多的计算资源，因为：</p>
+<ul>
+<li>它需要在每个边界处构建高阶多项式。</li>
+<li>计算过程中需要考虑网格的几何变形。</li>
+<li>对于动态网格（如自适应网格），插值过程可能需要实时调整。</li>
+</ul>
+<hr>
+<h3><strong>1. 网格上的方程离散化</strong></h3>
+<h4><strong>目标</strong>：</h4>
+<p>利用投影生成的立方体网格，对大气的控制方程（偏微分方程组）进行离散化，以便在离散网格上进行数值求解。</p>
+<h4><strong>主要控制方程</strong>：</h4>
+<p>FV3 求解的是<strong>可压缩的欧拉方程组</strong>，这些方程描述了大气的质量、动量和能量的守恒。主要包括：</p>
+<ul>
+<li><strong>动量方程</strong>：大气流体的速度变化。</li>
+<li><strong>质量守恒方程</strong>：气体的连续性。</li>
+<li><strong>能量方程</strong>：描述大气中的热力学过程。</li>
+</ul>
+<h4><strong>离散化方法</strong>：</h4>
+<p>FV3 使用<strong>有限体积法</strong>对控制方程进行离散化：</p>
+<ul>
+<li>每个网格单元作为一个控制体，物理量通过网格边界的通量交换。</li>
+<li>空间离散：基于网格点计算物理量在每个单元内的平均值，使用高阶方法（如五次插值）计算网格边界的通量。</li>
+<li>时间离散：采用显式或半隐式时间步进方法。</li>
+</ul>
+<p><strong>优势</strong>：</p>
+<ul>
+<li>保证质量、动量和能量的守恒。</li>
+<li>避免数值耗散和非物理性震荡。</li>
+</ul>
+<hr>
+<h3><strong>2. 计算物理过程</strong></h3>
+<p>在 FV3 的数值模型中，物理过程包括各种大气现象，如辐射、降水、云形成和湍流。这些过程通过<strong>物理参数化方案</strong>处理，并与动力学核心进行耦合。</p>
+<h4><strong>物理过程的主要内容</strong>：</h4>
+<ol>
+<li><strong>辐射传输</strong>：
+<ul>
+<li>模拟太阳辐射和地球长波辐射的吸收、反射和散射。</li>
+</ul>
+</li>
+<li><strong>云和降水</strong>：
+<ul>
+<li>模拟云水、雨水和冰晶等的生成和沉降。</li>
+</ul>
+</li>
+<li><strong>湍流和对流</strong>：
+<ul>
+<li>模拟边界层湍流、地表热通量以及深对流。</li>
+</ul>
+</li>
+<li><strong>大气化学和气溶胶</strong>（可选）：
+<ul>
+<li>模拟化学物质的传输和反应。</li>
+</ul>
+</li>
+</ol>
+<h4><strong>物理过程与动力学核心的耦合</strong>：</h4>
+<p>FV3 使用<strong>时间步进方法</strong>将物理过程与动力学求解器耦合：</p>
+<ul>
+<li>动力学核心提供风场和温度场的更新。</li>
+<li>物理过程利用这些更新的场进行计算（如辐射冷却、云生成）。</li>
+<li>通过交互，更新后的物理量再次反馈给动力学核心。</li>
+</ul>
+<hr>
+<h3><strong>3. 水平和垂直方向的求解</strong></h3>
+<h4><strong>水平方向</strong>：</h4>
+<ul>
+<li>FV3 在立方体网格的六个面上进行水平方向的计算，使用<strong>有限体积方法</strong>确保通量计算的守恒性。</li>
+<li>高阶插值用于平滑网格边界和面间过渡，减少数值误差。</li>
+</ul>
+<h4><strong>垂直方向</strong>：</h4>
+<ul>
+<li>FV3 使用<strong>拉格朗日垂直坐标</strong>，将垂直方向的运动描述为随气块移动的参考系，避免了传统方法中需要频繁计算垂直速度的缺点。</li>
+<li>垂直方向的动力学过程通过半隐式方法求解，以提高计算效率。</li>
+</ul>
+<hr>
+<h3><strong>4. 非静力效应的处理</strong></h3>
+<p>FV3 支持<strong>非静力动力学</strong>，可以在高分辨率模式下模拟精细的大气运动：</p>
+<ul>
+<li>处理地形影响：非静力模式可以更准确地处理山区的重力波。</li>
+<li>模拟深对流：适用于描述强对流天气，如雷暴和龙卷风。</li>
+</ul>
+<hr>
+<h3><strong>5. 时间步进与并行计算</strong></h3>
+<h4><strong>时间步进</strong>：</h4>
+<p>FV3 使用两种主要的时间步进方法：</p>
+<ol>
+<li><strong>显式时间步进</strong>：
+<ul>
+<li>适合高分辨率模式，计算精确，但需要满足 CFL 条件。</li>
+</ul>
+</li>
+<li><strong>半隐式时间步进</strong>：
+<ul>
+<li>适合处理大尺度运动，不受 CFL 条件限制。</li>
+</ul>
+</li>
+</ol>
+<h4><strong>并行计算</strong>：</h4>
+<p>FV3 的立方体网格非常适合并行计算：</p>
+<ul>
+<li>每个面可以分配到不同的处理器，独立计算。</li>
+<li>网格单元的负载可以动态平衡，支持大规模并行。</li>
+<li>GPU 加速：FV3 也支持 GPU 并行，通过优化核心代码提升计算性能。</li>
+</ul>
+<hr>
+<h3><strong>6. 数据输出与可视化</strong></h3>
+<h4><strong>输出格式</strong>：</h4>
+<p>FV3 输出的模拟结果通常包括：</p>
+<ul>
+<li>三维大气状态场（如温度、湿度、风速）。</li>
+<li>地表变量（如降水量、地表辐射）。</li>
+<li>时间序列结果用于评估和后处理。</li>
+</ul>
+<h4><strong>可视化</strong>：</h4>
+<p>模拟结果可以通过地球科学数据可视化工具（如 GrADS、NCAR Command Language）进行后续分析，包括天气图、云层覆盖图等。</p>
+<hr>
+<h3><strong>总结：立方体网格后的流程</strong></h3>
+<ol>
+<li><strong>方程离散化</strong>：在网格上将控制方程离散化，使用有限体积方法保证守恒性。</li>
+<li><strong>物理过程计算</strong>：模拟辐射、降水、湍流等物理现象，与动力学核心耦合。</li>
+<li><strong>动力学求解</strong>：在立方体网格上进行水平和垂直方向的数值求解。</li>
+<li><strong>时间步进与并行计算</strong>：动态模拟大气演化，充分利用并行计算资源。</li>
+<li><strong>数据输出与分析</strong>：输出模拟结果供进一步研究或应用。</li>
+</ol>
+<p>FV3 将网格投影、高阶插值和上述过程有机结合，实现了从全球天气预报到区域气候模拟的多尺度高精度计算。</p>
+<hr>
+<h3>FV3 中有限体积法的应用</h3>
+<h4>1. 网格体积</h4>
+<p>在 FV3 的立方体网格中：</p>
+<ul>
+<li><strong>水平网格</strong>：每个网格单元是立方体面上的二维网格。</li>
+<li><strong>垂直方向</strong>：每个单元通过多个垂直层划分，形成一系列柱状体积。</li>
+<li><strong>体积计算</strong>：完整网格的体积是水平面积乘以垂直高度。</li>
+</ul>
+<h4>2. 物理量的平均值</h4>
+<p>有限体积法的关键是将物理量存储为网格单元内的<strong>体积平均值</strong>：</p>
+<p>$$Q_i = \frac{1}{V_i} \int_{V_i} q , dV$$</p>
+<p>其中：</p>
+<ul>
+<li>
+$Q_i$ 是网格单元 ( i ) 的体积平均物理量。</li>
+<li>
+$q$ 是连续物理场（如密度、温度）。</li>
+<li>
+$V_i$ 是网格单元的体积。</li>
+</ul>
+<h4>3. 通量计算</h4>
+<p>物理量的变化取决于通过网格单元边界的通量：</p>
+<p>$$\frac{d}{dt} Q_i = -\frac{1}{V_i} \sum_{j} F_{ij} A_{ij}$$</p>
+<p>其中：</p>
+<ul>
+<li>
+$F_{ij}$ 是物理量通过网格单元边界 ( j ) 的通量。</li>
+<li>
+$A_{ij}$ 是边界的面积。</li>
+<li>
+$V_i$ 是网格单元的体积。</li>
+</ul>
+<p>在 FV3 中，通量计算使用高阶插值方法（如五次插值）保证精度和守恒性。</p>
+<hr>
+<h3>垂直方向的处理</h3>
+<p>FV3 中的大气垂直方向处理是有限体积法的一个重要部分，但并不是它的全部。垂直方向上的特点包括：</p>
+<ol>
+<li>
+<p><strong>拉格朗日坐标</strong>：</p>
+<ul>
+<li>垂直方向使用随气块移动的坐标系统，保持气块的完整性，减少垂直速度的计算复杂性。</li>
+<li>气块的物理量变化通过垂直边界的通量进行计算。</li>
+</ul>
+</li>
+<li>
+<p><strong>层结构</strong>：</p>
+<ul>
+<li>垂直方向被划分为若干层（通常为几十至上百层），每层的厚度可以随气压、温度等条件动态调整。</li>
+</ul>
+</li>
+<li>
+<p><strong>垂直通量</strong>：</p>
+<ul>
+<li>垂直方向的通量（如水汽、热量）通过层间交换来计算，并对总体积平均值产生贡献。</li>
+</ul>
+</li>
+</ol></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+
+
+</script>
+<script>MathJax = {tex: {inlineMath: [["$", "$"]]}};</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</html>
