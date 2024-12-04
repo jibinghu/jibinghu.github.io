@@ -48,7 +48,21 @@ export I_MPI_CXX=icc
 4. 运行时命令：
 
 ```
+# 动态库路径
 export LD_LIBRARY_PATH=/public/software/mathlib/netcdf/intel/4.7.4/lib/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/opt/hpc/software/compiler/intel/intel-compiler-2021.3.0/compiler/lib/intel64:$LD_LIBRARY_PATH
+
+# Fabric 和 MPI 配置
+export FI_PROVIDER=verbs
+export FI_MLX_IFACE=mlx5_0
+export I_MPI_FABRICS=shm:ofi
+export I_MPI_DEBUG=5
+export FI_PSM3_DISABLE=1
+
+
+# 执行程序
+mpirun -np 4 ./fms.x
+
 ./fms.x # 需要input.nml配置文件
 ```
 
@@ -97,7 +111,21 @@ export I_MPI_CXX=icc
 4. 运行时命令：
 
 ```
+# 动态库路径
 export LD_LIBRARY_PATH=/public/software/mathlib/netcdf/intel/4.7.4/lib/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/opt/hpc/software/compiler/intel/intel-compiler-2021.3.0/compiler/lib/intel64:$LD_LIBRARY_PATH
+
+# Fabric 和 MPI 配置
+export FI_PROVIDER=verbs
+export FI_MLX_IFACE=mlx5_0
+export I_MPI_FABRICS=shm:ofi
+export I_MPI_DEBUG=5
+export FI_PSM3_DISABLE=1
+
+
+# 执行程序
+mpirun -np 4 ./fms.x
+
 ./fms.x # 需要input.nml配置文件
 ```
 
@@ -212,7 +240,21 @@ MPICC = mpiicc</pre></div>
 <p>运行时命令：</p>
 </li>
 </ol>
-<pre class="notranslate"><code class="notranslate">export LD_LIBRARY_PATH=/public/software/mathlib/netcdf/intel/4.7.4/lib/:$LD_LIBRARY_PATH
+<pre class="notranslate"><code class="notranslate"># 动态库路径
+export LD_LIBRARY_PATH=/public/software/mathlib/netcdf/intel/4.7.4/lib/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/opt/hpc/software/compiler/intel/intel-compiler-2021.3.0/compiler/lib/intel64:$LD_LIBRARY_PATH
+
+# Fabric 和 MPI 配置
+export FI_PROVIDER=verbs
+export FI_MLX_IFACE=mlx5_0
+export I_MPI_FABRICS=shm:ofi
+export I_MPI_DEBUG=5
+export FI_PSM3_DISABLE=1
+
+
+# 执行程序
+mpirun -np 4 ./fms.x
+
 ./fms.x # 需要input.nml配置文件
 </code></pre>
 <hr>
