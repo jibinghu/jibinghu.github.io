@@ -1,5 +1,24 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 05 Dec 2024 03:15:09 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>12/5运行结果</title><link>https://jibinghu.github.io/post/12-5-yun-xing-jie-guo.html</link><description>``` bash&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 05 Dec 2024 06:00:32 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>FV3运行BUG解决</title><link>https://jibinghu.github.io/post/FV3-yun-xing-BUG-jie-jue.html</link><description>``` bash&#13;
+ERROR: Unable to locate a modulefile for 'compiler/cmake/3.22.0-rc1'&#13;
+ERROR: Unable to locate a modulefile for 'apps/anaconda3/5.2.0'&#13;
+ERROR: Unable to locate a modulefile for 'mathlib/fftw/3.3.8/double/intel'&#13;
+ERROR: Unable to locate a modulefile for 'compiler/rocm/dtk-22.04.2'&#13;
+ERROR: Unable to locate a modulefile for 'mathlib/netcdf/4.6.2/intel'&#13;
+ERROR: Unable to locate a modulefile for 'mathlib/hdf5/1.8.12/intel'&#13;
+srun: error: a01r4n05: task 3: Segmentation fault (core dumped)&#13;
+srun: launch/slurm: _step_signal: Terminating StepId=2417.0&#13;
+slurmstepd: error: *** STEP 2417.0 ON a01r4n02 CANCELLED AT 2024-12-04T22:23:57 ***&#13;
+srun: error: a01r4n02: task 0: Segmentation fault (core dumped)&#13;
+srun: error: a01r4n04: task 2: Segmentation fault (core dumped)&#13;
+srun: error: a01r4n03: task 1: Segmentation fault (core dumped)&#13;
+[mpiexec@a01r4n02] wait_proxies_to_terminate (../../../../../src/pm/i_hydra/mpiexec/intel/i_mpiexec.c:537): downstream from host a01r4n02 exited with status 139&#13;
+[mpiexec@a01r4n02] main (../../../../../src/pm/i_hydra/mpiexec/mpiexec.c:2125): assert (pg-&gt;intel.exitcodes != NULL) failed&#13;
+[mpiexec@a01r4n02] HYD_sock_write (../../../../../src/pm/i_hydra/libhydra/sock/hydra_sock_intel.c:360): write error (Bad file descriptor)&#13;
+[mpiexec@a01r4n02] HYD_sock_write (../../../../../src/pm/i_hydra/libhydra/sock/hydra_sock_intel.c:360): write error (Bad file descriptor)&#13;
+[mpiexec@a01r4n02] HYD_sock_write (../../../../../src/pm/i_hydra/libhydra/sock/hydra_sock_intel.c:360): write error (Bad file descriptor)&#13;
+[mpiexec@a01r4n02] HYD_sock_write (../../../../../src/pm/i_hydra/libhydra/sock/hydra_sock_intel.c:360): write error (Bad file descriptor)&#13;
+```。</description><guid isPermaLink="true">https://jibinghu.github.io/post/FV3-yun-xing-BUG-jie-jue.html</guid><pubDate>Thu, 05 Dec 2024 06:00:02 +0000</pubDate></item><item><title>12/5运行结果</title><link>https://jibinghu.github.io/post/12-5-yun-xing-jie-guo.html</link><description>``` bash&#13;
 [acox11ust1@login01 pubrel]$ cp ../exp/exec.amd64/fms.x ./&#13;
 [acox11ust1@login01 pubrel]$ ./fv3run.sh &#13;
 [0] MPI startup(): Intel(R) MPI Library, Version 2021.3  Build 20210601 (id: 6f90181f1)&#13;
