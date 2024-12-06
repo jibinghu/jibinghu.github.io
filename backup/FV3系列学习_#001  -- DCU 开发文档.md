@@ -46,12 +46,8 @@ export FI_MLX_IFACE=mlx5_0
 export I_MPI_FABRICS=shm:ofi
 export I_MPI_DEBUG=5
 export FI_PSM3_DISABLE=1
+ulimit -s unlimited
 
-
-# 执行程序
-mpirun -np 4 ./fms.x
-
-./fms.x # 需要input.nml配置文件
 ```
 
 ---

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 05 Dec 2024 06:00:32 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>FV3运行BUG解决</title><link>https://jibinghu.github.io/post/FV3-yun-xing-BUG-jie-jue.html</link><description>``` bash&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Fri, 06 Dec 2024 07:11:20 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>FV3运行BUG解决</title><link>https://jibinghu.github.io/post/FV3-yun-xing-BUG-jie-jue.html</link><description>``` bash&#13;
 ERROR: Unable to locate a modulefile for 'compiler/cmake/3.22.0-rc1'&#13;
 ERROR: Unable to locate a modulefile for 'apps/anaconda3/5.2.0'&#13;
 ERROR: Unable to locate a modulefile for 'mathlib/fftw/3.3.8/double/intel'&#13;
@@ -388,12 +388,8 @@ export FI_MLX_IFACE=mlx5_0&#13;
 export I_MPI_FABRICS=shm:ofi&#13;
 export I_MPI_DEBUG=5&#13;
 export FI_PSM3_DISABLE=1&#13;
+ulimit -s unlimited&#13;
 &#13;
-&#13;
-# 执行程序&#13;
-mpirun -np 4 ./fms.x&#13;
-&#13;
-./fms.x # 需要input.nml配置文件&#13;
 ```&#13;
 &#13;
 ---&#13;
