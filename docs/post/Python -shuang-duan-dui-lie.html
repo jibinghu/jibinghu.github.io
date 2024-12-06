@@ -92,20 +92,20 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <span class="pl-s1">dq</span> <span class="pl-c1">=</span> <span class="pl-en">deque</span>()
 
 <span class="pl-c"># 在队尾添加元素</span>
-<span class="pl-s1">dq</span>.<span class="pl-en">append</span>(<span class="pl-s">'A'</span>)
-<span class="pl-s1">dq</span>.<span class="pl-en">append</span>(<span class="pl-s">'B'</span>)
+<span class="pl-s1">dq</span>.<span class="pl-c1">append</span>(<span class="pl-s">'A'</span>)
+<span class="pl-s1">dq</span>.<span class="pl-c1">append</span>(<span class="pl-s">'B'</span>)
 
 <span class="pl-c"># 在队头添加元素</span>
-<span class="pl-s1">dq</span>.<span class="pl-en">appendleft</span>(<span class="pl-s">'C'</span>)
+<span class="pl-s1">dq</span>.<span class="pl-c1">appendleft</span>(<span class="pl-s">'C'</span>)
 
 <span class="pl-c"># 查看队列内容</span>
 <span class="pl-en">print</span>(<span class="pl-s1">dq</span>)  <span class="pl-c"># 输出：deque(['C', 'A', 'B'])</span>
 
 <span class="pl-c"># 从队尾移除元素</span>
-<span class="pl-s1">dq</span>.<span class="pl-en">pop</span>()  <span class="pl-c"># 输出：'B'</span>
+<span class="pl-s1">dq</span>.<span class="pl-c1">pop</span>()  <span class="pl-c"># 输出：'B'</span>
 
 <span class="pl-c"># 从队头移除元素</span>
-<span class="pl-s1">dq</span>.<span class="pl-en">popleft</span>()  <span class="pl-c"># 输出：'C'</span>
+<span class="pl-s1">dq</span>.<span class="pl-c1">popleft</span>()  <span class="pl-c"># 输出：'C'</span>
 
 <span class="pl-c"># 查看剩余的队列内容</span>
 <span class="pl-en">print</span>(<span class="pl-s1">dq</span>)  <span class="pl-c"># 输出：deque(['A'])</span></pre></div>
@@ -133,19 +133,19 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </ol>
 <p>deque 可以用作栈（后进先出，LIFO），因为 append() 和 pop() 操作在队尾添加和删除元素，与栈的操作一致。</p>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">stack</span> <span class="pl-c1">=</span> <span class="pl-en">deque</span>()
-<span class="pl-s1">stack</span>.<span class="pl-en">append</span>(<span class="pl-c1">1</span>)
-<span class="pl-s1">stack</span>.<span class="pl-en">append</span>(<span class="pl-c1">2</span>)
-<span class="pl-en">print</span>(<span class="pl-s1">stack</span>.<span class="pl-en">pop</span>())  <span class="pl-c"># 输出：2</span>
-<span class="pl-en">print</span>(<span class="pl-s1">stack</span>.<span class="pl-en">pop</span>())  <span class="pl-c"># 输出：1</span></pre></div>
+<span class="pl-s1">stack</span>.<span class="pl-c1">append</span>(<span class="pl-c1">1</span>)
+<span class="pl-s1">stack</span>.<span class="pl-c1">append</span>(<span class="pl-c1">2</span>)
+<span class="pl-en">print</span>(<span class="pl-s1">stack</span>.<span class="pl-c1">pop</span>())  <span class="pl-c"># 输出：2</span>
+<span class="pl-en">print</span>(<span class="pl-s1">stack</span>.<span class="pl-c1">pop</span>())  <span class="pl-c"># 输出：1</span></pre></div>
 <ol start="2">
 <li>实现队列</li>
 </ol>
 <p>deque 本身就是一种双端队列，可以直接用于队列（先进先出，FIFO）操作，通过 append() 添加到队尾，popleft() 从队头取出。</p>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">queue</span> <span class="pl-c1">=</span> <span class="pl-en">deque</span>()
-<span class="pl-s1">queue</span>.<span class="pl-en">append</span>(<span class="pl-c1">1</span>)
-<span class="pl-s1">queue</span>.<span class="pl-en">append</span>(<span class="pl-c1">2</span>)
-<span class="pl-en">print</span>(<span class="pl-s1">queue</span>.<span class="pl-en">popleft</span>())  <span class="pl-c"># 输出：1</span>
-<span class="pl-en">print</span>(<span class="pl-s1">queue</span>.<span class="pl-en">popleft</span>())  <span class="pl-c"># 输出：2</span></pre></div>
+<span class="pl-s1">queue</span>.<span class="pl-c1">append</span>(<span class="pl-c1">1</span>)
+<span class="pl-s1">queue</span>.<span class="pl-c1">append</span>(<span class="pl-c1">2</span>)
+<span class="pl-en">print</span>(<span class="pl-s1">queue</span>.<span class="pl-c1">popleft</span>())  <span class="pl-c"># 输出：1</span>
+<span class="pl-en">print</span>(<span class="pl-s1">queue</span>.<span class="pl-c1">popleft</span>())  <span class="pl-c"># 输出：2</span></pre></div>
 <ol start="3">
 <li>滑动窗口</li>
 </ol>
@@ -154,8 +154,8 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     <span class="pl-s1">dq</span> <span class="pl-c1">=</span> <span class="pl-en">deque</span>(<span class="pl-s1">maxlen</span><span class="pl-c1">=</span><span class="pl-s1">n</span>)
     <span class="pl-s1">result</span> <span class="pl-c1">=</span> []
     <span class="pl-k">for</span> <span class="pl-s1">num</span> <span class="pl-c1">in</span> <span class="pl-s1">sequence</span>:
-        <span class="pl-s1">dq</span>.<span class="pl-en">append</span>(<span class="pl-s1">num</span>)
-        <span class="pl-s1">result</span>.<span class="pl-en">append</span>(<span class="pl-en">sum</span>(<span class="pl-s1">dq</span>) <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">dq</span>))
+        <span class="pl-s1">dq</span>.<span class="pl-c1">append</span>(<span class="pl-s1">num</span>)
+        <span class="pl-s1">result</span>.<span class="pl-c1">append</span>(<span class="pl-en">sum</span>(<span class="pl-s1">dq</span>) <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">dq</span>))
     <span class="pl-k">return</span> <span class="pl-s1">result</span>
 
 <span class="pl-en">print</span>(<span class="pl-en">moving_average</span>([<span class="pl-c1">1</span>, <span class="pl-c1">2</span>, <span class="pl-c1">3</span>, <span class="pl-c1">4</span>, <span class="pl-c1">5</span>], <span class="pl-c1">3</span>))  <span class="pl-c"># 输出：[1.0, 1.5, 2.0, 3.0, 4.0]</span></pre></div>
@@ -167,12 +167,12 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     <span class="pl-s1">queue</span> <span class="pl-c1">=</span> <span class="pl-en">deque</span>([<span class="pl-s1">start</span>])
     <span class="pl-s1">visited</span> <span class="pl-c1">=</span> <span class="pl-en">set</span>([<span class="pl-s1">start</span>])
     <span class="pl-k">while</span> <span class="pl-s1">queue</span>:
-        <span class="pl-s1">node</span> <span class="pl-c1">=</span> <span class="pl-s1">queue</span>.<span class="pl-en">popleft</span>()
+        <span class="pl-s1">node</span> <span class="pl-c1">=</span> <span class="pl-s1">queue</span>.<span class="pl-c1">popleft</span>()
         <span class="pl-en">print</span>(<span class="pl-s1">node</span>)
         <span class="pl-k">for</span> <span class="pl-s1">neighbor</span> <span class="pl-c1">in</span> <span class="pl-s1">graph</span>[<span class="pl-s1">node</span>]:
-            <span class="pl-k">if</span> <span class="pl-s1">neighbor</span> <span class="pl-c1">not</span> <span class="pl-c1">in</span> <span class="pl-s1">visited</span>:
-                <span class="pl-s1">visited</span>.<span class="pl-en">add</span>(<span class="pl-s1">neighbor</span>)
-                <span class="pl-s1">queue</span>.<span class="pl-en">append</span>(<span class="pl-s1">neighbor</span>)
+            <span class="pl-k">if</span> <span class="pl-s1">neighbor</span> <span class="pl-c1"><span class="pl-c1">not</span> <span class="pl-c1">in</span></span> <span class="pl-s1">visited</span>:
+                <span class="pl-s1">visited</span>.<span class="pl-c1">add</span>(<span class="pl-s1">neighbor</span>)
+                <span class="pl-s1">queue</span>.<span class="pl-c1">append</span>(<span class="pl-s1">neighbor</span>)
 
 <span class="pl-c"># 示例图（邻接表）</span>
 <span class="pl-s1">graph</span> <span class="pl-c1">=</span> {
@@ -199,13 +199,13 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     <span class="pl-s1">topological_order</span> <span class="pl-c1">=</span> []
 
     <span class="pl-k">while</span> <span class="pl-s1">queue</span>:
-        <span class="pl-s1">node</span> <span class="pl-c1">=</span> <span class="pl-s1">queue</span>.<span class="pl-en">popleft</span>()
-        <span class="pl-s1">topological_order</span>.<span class="pl-en">append</span>(<span class="pl-s1">node</span>)
+        <span class="pl-s1">node</span> <span class="pl-c1">=</span> <span class="pl-s1">queue</span>.<span class="pl-c1">popleft</span>()
+        <span class="pl-s1">topological_order</span>.<span class="pl-c1">append</span>(<span class="pl-s1">node</span>)
         
         <span class="pl-k">for</span> <span class="pl-s1">neighbor</span> <span class="pl-c1">in</span> <span class="pl-s1">graph</span>[<span class="pl-s1">node</span>]:
             <span class="pl-s1">in_degree</span>[<span class="pl-s1">neighbor</span>] <span class="pl-c1">-=</span> <span class="pl-c1">1</span>
             <span class="pl-k">if</span> <span class="pl-s1">in_degree</span>[<span class="pl-s1">neighbor</span>] <span class="pl-c1">==</span> <span class="pl-c1">0</span>:
-                <span class="pl-s1">queue</span>.<span class="pl-en">append</span>(<span class="pl-s1">neighbor</span>)
+                <span class="pl-s1">queue</span>.<span class="pl-c1">append</span>(<span class="pl-s1">neighbor</span>)
 
     <span class="pl-k">if</span> <span class="pl-en">len</span>(<span class="pl-s1">topological_order</span>) <span class="pl-c1">==</span> <span class="pl-en">len</span>(<span class="pl-s1">graph</span>):
         <span class="pl-k">return</span> <span class="pl-s1">topological_order</span>

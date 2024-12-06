@@ -126,21 +126,21 @@ print(attention_output.shape)  # 输出形状: (4, 8, 64, 64)</p>
 <a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/1b85c0c2-2ab4-4fd5-aaf6-34872e787fb5"><img src="https://github.com/user-attachments/assets/1b85c0c2-2ab4-4fd5-aaf6-34872e787fb5" alt="image" style="max-width: 100%;"></a></p>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">time</span>
 <span class="pl-k">import</span> <span class="pl-s1">torch</span>
-<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span>.<span class="pl-s1">functional</span> <span class="pl-k">as</span> <span class="pl-v">F</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span>.<span class="pl-s1">functional</span> <span class="pl-k">as</span> <span class="pl-c1">F</span>
 
 <span class="pl-k">from</span> <span class="pl-s1">sageattention</span> <span class="pl-k">import</span> <span class="pl-s1">sageattn</span>
-<span class="pl-v">F</span>.<span class="pl-s1">scaled_dot_product_attention</span> <span class="pl-c1">=</span> <span class="pl-s1">sageattn</span>
+<span class="pl-c1">F</span>.<span class="pl-c1">scaled_dot_product_attention</span> <span class="pl-c1">=</span> <span class="pl-s1">sageattn</span>
 
 <span class="pl-c"># 假设输入的 Query、Key 和 Value 张量维度为 (batch_size, num_heads, seq_len, embed_dim)</span>
-<span class="pl-v">Q</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">randn</span>(<span class="pl-c1">4</span>, <span class="pl-c1">8</span>, <span class="pl-c1">128</span>, <span class="pl-c1">128</span>).<span class="pl-en">cuda</span>()  <span class="pl-c"># 例如: batch_size=4, num_heads=8, seq_len=64, embed_dim=64</span>
-<span class="pl-v">K</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">randn</span>(<span class="pl-c1">4</span>, <span class="pl-c1">8</span>, <span class="pl-c1">128</span>, <span class="pl-c1">128</span>).<span class="pl-en">cuda</span>()
-<span class="pl-v">V</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">randn</span>(<span class="pl-c1">4</span>, <span class="pl-c1">8</span>, <span class="pl-c1">128</span>, <span class="pl-c1">128</span>).<span class="pl-en">cuda</span>()
+<span class="pl-c1">Q</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">randn</span>(<span class="pl-c1">4</span>, <span class="pl-c1">8</span>, <span class="pl-c1">128</span>, <span class="pl-c1">128</span>).<span class="pl-c1">cuda</span>()  <span class="pl-c"># 例如: batch_size=4, num_heads=8, seq_len=64, embed_dim=64</span>
+<span class="pl-c1">K</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">randn</span>(<span class="pl-c1">4</span>, <span class="pl-c1">8</span>, <span class="pl-c1">128</span>, <span class="pl-c1">128</span>).<span class="pl-c1">cuda</span>()
+<span class="pl-c1">V</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">randn</span>(<span class="pl-c1">4</span>, <span class="pl-c1">8</span>, <span class="pl-c1">128</span>, <span class="pl-c1">128</span>).<span class="pl-c1">cuda</span>()
 
-<span class="pl-s1">start_time</span> <span class="pl-c1">=</span> <span class="pl-s1">time</span>.<span class="pl-en">time</span>()
+<span class="pl-s1">start_time</span> <span class="pl-c1">=</span> <span class="pl-s1">time</span>.<span class="pl-c1">time</span>()
 <span class="pl-c"># 使用 scaled_dot_product_attention 计算 Attention 输出</span>
-<span class="pl-s1">attention_output</span> <span class="pl-c1">=</span> <span class="pl-v">F</span>.<span class="pl-en">scaled_dot_product_attention</span>(<span class="pl-v">Q</span>, <span class="pl-v">K</span>, <span class="pl-v">V</span>)
+<span class="pl-s1">attention_output</span> <span class="pl-c1">=</span> <span class="pl-c1">F</span>.<span class="pl-c1">scaled_dot_product_attention</span>(<span class="pl-c1">Q</span>, <span class="pl-c1">K</span>, <span class="pl-c1">V</span>)
 
-<span class="pl-s1">end_time</span> <span class="pl-c1">=</span> <span class="pl-s1">time</span>.<span class="pl-en">time</span>()
+<span class="pl-s1">end_time</span> <span class="pl-c1">=</span> <span class="pl-s1">time</span>.<span class="pl-c1">time</span>()
 
 <span class="pl-en">print</span>(<span class="pl-s">f"消耗时间：<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">end_time</span> <span class="pl-c1">-</span> <span class="pl-s1">start_time</span><span class="pl-kos">}</span></span>"</span>)
 <span class="pl-c"># print(attention_output.shape)  # 输出形状: (4, 8, 64, 64)</span>

@@ -176,16 +176,16 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span> <span class="pl-k">as</span> <span class="pl-s1">nn</span>
 
 <span class="pl-c"># Create a sample tensor (2D)</span>
-<span class="pl-s1">input_tensor</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">tensor</span>([[<span class="pl-c1">1.</span>, <span class="pl-c1">2.</span>, <span class="pl-c1">3.</span>, <span class="pl-c1">4.</span>],
+<span class="pl-s1">input_tensor</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">tensor</span>([[<span class="pl-c1">1.</span>, <span class="pl-c1">2.</span>, <span class="pl-c1">3.</span>, <span class="pl-c1">4.</span>],
                              [<span class="pl-c1">5.</span>, <span class="pl-c1">6.</span>, <span class="pl-c1">7.</span>, <span class="pl-c1">8.</span>],
                              [<span class="pl-c1">9.</span>, <span class="pl-c1">10.</span>, <span class="pl-c1">11.</span>, <span class="pl-c1">12.</span>],
                              [<span class="pl-c1">13.</span>, <span class="pl-c1">14.</span>, <span class="pl-c1">15.</span>, <span class="pl-c1">16.</span>]])
 
 <span class="pl-c"># Reshape the tensor to 1x1x4x4 (as expected by pooling layers for 2D input)</span>
-<span class="pl-s1">input_tensor</span> <span class="pl-c1">=</span> <span class="pl-s1">input_tensor</span>.<span class="pl-en">unsqueeze</span>(<span class="pl-c1">0</span>).<span class="pl-en">unsqueeze</span>(<span class="pl-c1">0</span>)
+<span class="pl-s1">input_tensor</span> <span class="pl-c1">=</span> <span class="pl-s1">input_tensor</span>.<span class="pl-c1">unsqueeze</span>(<span class="pl-c1">0</span>).<span class="pl-c1">unsqueeze</span>(<span class="pl-c1">0</span>)
 
 <span class="pl-c"># Max Pooling with padding</span>
-<span class="pl-s1">max_pool</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-v">MaxPool2d</span>(<span class="pl-s1">kernel_size</span><span class="pl-c1">=</span><span class="pl-c1">2</span>, <span class="pl-s1">stride</span><span class="pl-c1">=</span><span class="pl-c1">2</span>, <span class="pl-s1">padding</span><span class="pl-c1">=</span><span class="pl-c1">0</span>)
+<span class="pl-s1">max_pool</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">MaxPool2d</span>(<span class="pl-s1">kernel_size</span><span class="pl-c1">=</span><span class="pl-c1">2</span>, <span class="pl-s1">stride</span><span class="pl-c1">=</span><span class="pl-c1">2</span>, <span class="pl-s1">padding</span><span class="pl-c1">=</span><span class="pl-c1">0</span>)
 <span class="pl-s1">max_pooled_output</span> <span class="pl-c1">=</span> <span class="pl-en">max_pool</span>(<span class="pl-s1">input_tensor</span>)
 
 <span class="pl-c"># Average Pooling with padding</span>

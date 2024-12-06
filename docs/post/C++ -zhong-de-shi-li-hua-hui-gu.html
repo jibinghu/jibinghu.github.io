@@ -188,8 +188,8 @@ solu-&gt;<span class="pl-en">printMessage</span>(); <span class="pl-c"><span cla
         <span class="pl-en">print</span>(<span class="pl-s">"Hello from Solution!"</span>)
 
 <span class="pl-c"># 实例化一个 Solution 对象</span>
-<span class="pl-s1">solu</span> <span class="pl-c1">=</span> <span class="pl-v">Solution</span>()  <span class="pl-c"># 直接调用类名即可</span>
-<span class="pl-s1">solu</span>.<span class="pl-en">print_message</span>()  <span class="pl-c"># 调用实例方法</span></pre></div>
+<span class="pl-s1">solu</span> <span class="pl-c1">=</span> <span class="pl-en">Solution</span>()  <span class="pl-c"># 直接调用类名即可</span>
+<span class="pl-s1">solu</span>.<span class="pl-c1">print_message</span>()  <span class="pl-c"># 调用实例方法</span></pre></div>
 <p><strong>Python 中的内存管理</strong></p>
 <ul>
 <li>内存管理：Python 使用内存自动管理和垃圾回收机制，因此你不需要像 C++ 那样手动使用 delete。当一个对象没有引用时，Python 的垃圾回收器会自动释放内存。</li>
@@ -200,25 +200,25 @@ solu-&gt;<span class="pl-en">printMessage</span>(); <span class="pl-c"><span cla
 <p><strong>使用 class：</strong></p>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-v">Data</span>:
     <span class="pl-k">def</span> <span class="pl-en">__init__</span>(<span class="pl-s1">self</span>, <span class="pl-s1">value</span>):
-        <span class="pl-s1">self</span>.<span class="pl-s1">value</span> <span class="pl-c1">=</span> <span class="pl-s1">value</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">value</span> <span class="pl-c1">=</span> <span class="pl-s1">value</span>
 
-<span class="pl-s1">data_instance</span> <span class="pl-c1">=</span> <span class="pl-v">Data</span>(<span class="pl-c1">42</span>)
-<span class="pl-en">print</span>(<span class="pl-s1">data_instance</span>.<span class="pl-s1">value</span>)  <span class="pl-c"># 输出 42</span></pre></div>
+<span class="pl-s1">data_instance</span> <span class="pl-c1">=</span> <span class="pl-en">Data</span>(<span class="pl-c1">42</span>)
+<span class="pl-en">print</span>(<span class="pl-s1">data_instance</span>.<span class="pl-c1">value</span>)  <span class="pl-c"># 输出 42</span></pre></div>
 <p><strong>使用 namedtuple：</strong></p>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">collections</span> <span class="pl-k">import</span> <span class="pl-s1">namedtuple</span>
 
 <span class="pl-v">Data</span> <span class="pl-c1">=</span> <span class="pl-en">namedtuple</span>(<span class="pl-s">'Data'</span>, [<span class="pl-s">'value'</span>])
-<span class="pl-s1">data_instance</span> <span class="pl-c1">=</span> <span class="pl-v">Data</span>(<span class="pl-c1">42</span>)
-<span class="pl-en">print</span>(<span class="pl-s1">data_instance</span>.<span class="pl-s1">value</span>)  <span class="pl-c"># 输出 42</span></pre></div>
+<span class="pl-s1">data_instance</span> <span class="pl-c1">=</span> <span class="pl-en">Data</span>(<span class="pl-c1">42</span>)
+<span class="pl-en">print</span>(<span class="pl-s1">data_instance</span>.<span class="pl-c1">value</span>)  <span class="pl-c"># 输出 42</span></pre></div>
 <p><strong>使用 dataclass（Python 3.7+）：</strong></p>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">dataclasses</span> <span class="pl-k">import</span> <span class="pl-s1">dataclass</span>
 
 <span class="pl-en">@<span class="pl-s1">dataclass</span></span>
 <span class="pl-k">class</span> <span class="pl-v">Data</span>:
-    <span class="pl-s1">value</span>: <span class="pl-s1">int</span>
+    <span class="pl-s1">value</span>: <span class="pl-smi">int</span>
 
-<span class="pl-s1">data_instance</span> <span class="pl-c1">=</span> <span class="pl-v">Data</span>(<span class="pl-c1">42</span>)
-<span class="pl-en">print</span>(<span class="pl-s1">data_instance</span>.<span class="pl-s1">value</span>)  <span class="pl-c"># 输出 42</span></pre></div>
+<span class="pl-s1">data_instance</span> <span class="pl-c1">=</span> <span class="pl-en">Data</span>(<span class="pl-c1">42</span>)
+<span class="pl-en">print</span>(<span class="pl-s1">data_instance</span>.<span class="pl-c1">value</span>)  <span class="pl-c"># 输出 42</span></pre></div>
 <p><strong>总结</strong></p>
 <ul>
 <li>在 Python 中，实例化对象时直接使用 ClassName()。</li>

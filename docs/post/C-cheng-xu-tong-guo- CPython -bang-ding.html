@@ -222,7 +222,7 @@ PyMODINIT_FUNC <span class="pl-en">PyInit_mymodule</span>(<span class="pl-k">voi
 </ol>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">mymodule</span>
 
-<span class="pl-s1">result</span> <span class="pl-c1">=</span> <span class="pl-s1">mymodule</span>.<span class="pl-en">add</span>(<span class="pl-c1">3</span>, <span class="pl-c1">4</span>)
+<span class="pl-s1">result</span> <span class="pl-c1">=</span> <span class="pl-s1">mymodule</span>.<span class="pl-c1">add</span>(<span class="pl-c1">3</span>, <span class="pl-c1">4</span>)
 <span class="pl-en">print</span>(<span class="pl-s">"Result:"</span>, <span class="pl-s1">result</span>)  <span class="pl-c"># 输出：Result: 7</span></pre></div>
 <h3>解释 CPython 的作用</h3>
 <p>CPython 是 Python 语言最常见的实现，是用 C 编写的。CPython 提供了丰富的 C API，可以用来编写 Python 扩展模块。在这个上下文中，我们使用 CPython API（如 PyArg_ParseTuple, PyLong_FromLong）来解析 Python 传入的参数和返回 Python 对象。</p>

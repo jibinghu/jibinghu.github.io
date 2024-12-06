@@ -499,53 +499,53 @@ $$\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h
 <h5>代码示例</h5>
 <p>以下是一个简化版的 PyTorch 代码示例，展示了 Masked Multi-Head Attention 的实现：</p>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
-<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span>.<span class="pl-s1">functional</span> <span class="pl-k">as</span> <span class="pl-v">F</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span>.<span class="pl-s1">functional</span> <span class="pl-k">as</span> <span class="pl-c1">F</span>
 <span class="pl-k">from</span> <span class="pl-s1">torch</span> <span class="pl-k">import</span> <span class="pl-s1">nn</span>
 
-<span class="pl-k">class</span> <span class="pl-v">MultiHeadAttention</span>(<span class="pl-s1">nn</span>.<span class="pl-v">Module</span>):
+<span class="pl-k">class</span> <span class="pl-v">MultiHeadAttention</span>(<span class="pl-s1">nn</span>.<span class="pl-c1">Module</span>):
     <span class="pl-k">def</span> <span class="pl-en">__init__</span>(<span class="pl-s1">self</span>, <span class="pl-s1">d_model</span>, <span class="pl-s1">num_heads</span>):
-        <span class="pl-en">super</span>(<span class="pl-v">MultiHeadAttention</span>, <span class="pl-s1">self</span>).<span class="pl-en">__init__</span>()
-        <span class="pl-s1">self</span>.<span class="pl-s1">num_heads</span> <span class="pl-c1">=</span> <span class="pl-s1">num_heads</span>
-        <span class="pl-s1">self</span>.<span class="pl-s1">d_model</span> <span class="pl-c1">=</span> <span class="pl-s1">d_model</span>
+        <span class="pl-en">super</span>(<span class="pl-v">MultiHeadAttention</span>, <span class="pl-s1">self</span>).<span class="pl-c1">__init__</span>()
+        <span class="pl-s1">self</span>.<span class="pl-c1">num_heads</span> <span class="pl-c1">=</span> <span class="pl-s1">num_heads</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">d_model</span> <span class="pl-c1">=</span> <span class="pl-s1">d_model</span>
 
         <span class="pl-k">assert</span> <span class="pl-s1">d_model</span> <span class="pl-c1">%</span> <span class="pl-s1">num_heads</span> <span class="pl-c1">==</span> <span class="pl-c1">0</span>
-        <span class="pl-s1">self</span>.<span class="pl-s1">depth</span> <span class="pl-c1">=</span> <span class="pl-s1">d_model</span> <span class="pl-c1">//</span> <span class="pl-s1">num_heads</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">depth</span> <span class="pl-c1">=</span> <span class="pl-s1">d_model</span> <span class="pl-c1">//</span> <span class="pl-s1">num_heads</span>
 
-        <span class="pl-s1">self</span>.<span class="pl-s1">wq</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-v">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
-        <span class="pl-s1">self</span>.<span class="pl-s1">wk</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-v">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
-        <span class="pl-s1">self</span>.<span class="pl-s1">wv</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-v">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
+        <span class="pl-s1">self</span>.<span class="pl-c1">wq</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
+        <span class="pl-s1">self</span>.<span class="pl-c1">wk</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
+        <span class="pl-s1">self</span>.<span class="pl-c1">wv</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
 
-        <span class="pl-s1">self</span>.<span class="pl-s1">dense</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-v">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
+        <span class="pl-s1">self</span>.<span class="pl-c1">dense</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
 
     <span class="pl-k">def</span> <span class="pl-en">split_heads</span>(<span class="pl-s1">self</span>, <span class="pl-s1">x</span>, <span class="pl-s1">batch_size</span>):
-        <span class="pl-s1">x</span> <span class="pl-c1">=</span> <span class="pl-s1">x</span>.<span class="pl-en">view</span>(<span class="pl-s1">batch_size</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>, <span class="pl-s1">self</span>.<span class="pl-s1">num_heads</span>, <span class="pl-s1">self</span>.<span class="pl-s1">depth</span>)
-        <span class="pl-k">return</span> <span class="pl-s1">x</span>.<span class="pl-en">permute</span>(<span class="pl-c1">0</span>, <span class="pl-c1">2</span>, <span class="pl-c1">1</span>, <span class="pl-c1">3</span>)
+        <span class="pl-s1">x</span> <span class="pl-c1">=</span> <span class="pl-s1">x</span>.<span class="pl-c1">view</span>(<span class="pl-s1">batch_size</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>, <span class="pl-s1">self</span>.<span class="pl-c1">num_heads</span>, <span class="pl-s1">self</span>.<span class="pl-c1">depth</span>)
+        <span class="pl-k">return</span> <span class="pl-s1">x</span>.<span class="pl-c1">permute</span>(<span class="pl-c1">0</span>, <span class="pl-c1">2</span>, <span class="pl-c1">1</span>, <span class="pl-c1">3</span>)
 
     <span class="pl-k">def</span> <span class="pl-en">forward</span>(<span class="pl-s1">self</span>, <span class="pl-s1">v</span>, <span class="pl-s1">k</span>, <span class="pl-s1">q</span>, <span class="pl-s1">mask</span>):
-        <span class="pl-s1">batch_size</span> <span class="pl-c1">=</span> <span class="pl-s1">q</span>.<span class="pl-en">size</span>(<span class="pl-c1">0</span>)
+        <span class="pl-s1">batch_size</span> <span class="pl-c1">=</span> <span class="pl-s1">q</span>.<span class="pl-c1">size</span>(<span class="pl-c1">0</span>)
 
-        <span class="pl-s1">q</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-en">split_heads</span>(<span class="pl-s1">self</span>.<span class="pl-en">wq</span>(<span class="pl-s1">q</span>), <span class="pl-s1">batch_size</span>)
-        <span class="pl-s1">k</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-en">split_heads</span>(<span class="pl-s1">self</span>.<span class="pl-en">wk</span>(<span class="pl-s1">k</span>), <span class="pl-s1">batch_size</span>)
-        <span class="pl-s1">v</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-en">split_heads</span>(<span class="pl-s1">self</span>.<span class="pl-en">wv</span>(<span class="pl-s1">v</span>), <span class="pl-s1">batch_size</span>)
+        <span class="pl-s1">q</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">split_heads</span>(<span class="pl-s1">self</span>.<span class="pl-c1">wq</span>(<span class="pl-s1">q</span>), <span class="pl-s1">batch_size</span>)
+        <span class="pl-s1">k</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">split_heads</span>(<span class="pl-s1">self</span>.<span class="pl-c1">wk</span>(<span class="pl-s1">k</span>), <span class="pl-s1">batch_size</span>)
+        <span class="pl-s1">v</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">split_heads</span>(<span class="pl-s1">self</span>.<span class="pl-c1">wv</span>(<span class="pl-s1">v</span>), <span class="pl-s1">batch_size</span>)
 
-        <span class="pl-s1">scaled_attention</span>, <span class="pl-s1">attention_weights</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-en">scaled_dot_product_attention</span>(<span class="pl-s1">q</span>, <span class="pl-s1">k</span>, <span class="pl-s1">v</span>, <span class="pl-s1">mask</span>)
+        <span class="pl-s1">scaled_attention</span>, <span class="pl-s1">attention_weights</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">scaled_dot_product_attention</span>(<span class="pl-s1">q</span>, <span class="pl-s1">k</span>, <span class="pl-s1">v</span>, <span class="pl-s1">mask</span>)
 
-        <span class="pl-s1">scaled_attention</span> <span class="pl-c1">=</span> <span class="pl-s1">scaled_attention</span>.<span class="pl-en">permute</span>(<span class="pl-c1">0</span>, <span class="pl-c1">2</span>, <span class="pl-c1">1</span>, <span class="pl-c1">3</span>).<span class="pl-en">contiguous</span>()
-        <span class="pl-s1">original_size_attention</span> <span class="pl-c1">=</span> <span class="pl-s1">scaled_attention</span>.<span class="pl-en">view</span>(<span class="pl-s1">batch_size</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>, <span class="pl-s1">self</span>.<span class="pl-s1">d_model</span>)
-        <span class="pl-s1">output</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-en">dense</span>(<span class="pl-s1">original_size_attention</span>)
+        <span class="pl-s1">scaled_attention</span> <span class="pl-c1">=</span> <span class="pl-s1">scaled_attention</span>.<span class="pl-c1">permute</span>(<span class="pl-c1">0</span>, <span class="pl-c1">2</span>, <span class="pl-c1">1</span>, <span class="pl-c1">3</span>).<span class="pl-c1">contiguous</span>()
+        <span class="pl-s1">original_size_attention</span> <span class="pl-c1">=</span> <span class="pl-s1">scaled_attention</span>.<span class="pl-c1">view</span>(<span class="pl-s1">batch_size</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>, <span class="pl-s1">self</span>.<span class="pl-c1">d_model</span>)
+        <span class="pl-s1">output</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">dense</span>(<span class="pl-s1">original_size_attention</span>)
 
         <span class="pl-k">return</span> <span class="pl-s1">output</span>, <span class="pl-s1">attention_weights</span>
 
     <span class="pl-k">def</span> <span class="pl-en">scaled_dot_product_attention</span>(<span class="pl-s1">self</span>, <span class="pl-s1">q</span>, <span class="pl-s1">k</span>, <span class="pl-s1">v</span>, <span class="pl-s1">mask</span>):
-        <span class="pl-s1">matmul_qk</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">matmul</span>(<span class="pl-s1">q</span>, <span class="pl-s1">k</span>.<span class="pl-en">transpose</span>(<span class="pl-c1">-</span><span class="pl-c1">2</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>))
-        <span class="pl-s1">dk</span> <span class="pl-c1">=</span> <span class="pl-s1">k</span>.<span class="pl-en">size</span>()[<span class="pl-c1">-</span><span class="pl-c1">1</span>]
-        <span class="pl-s1">scaled_attention_logits</span> <span class="pl-c1">=</span> <span class="pl-s1">matmul_qk</span> <span class="pl-c1">/</span> <span class="pl-s1">torch</span>.<span class="pl-en">sqrt</span>(<span class="pl-s1">torch</span>.<span class="pl-en">tensor</span>(<span class="pl-s1">dk</span>, <span class="pl-s1">dtype</span><span class="pl-c1">=</span><span class="pl-s1">torch</span>.<span class="pl-s1">float32</span>))
+        <span class="pl-s1">matmul_qk</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">matmul</span>(<span class="pl-s1">q</span>, <span class="pl-s1">k</span>.<span class="pl-c1">transpose</span>(<span class="pl-c1">-</span><span class="pl-c1">2</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>))
+        <span class="pl-s1">dk</span> <span class="pl-c1">=</span> <span class="pl-s1">k</span>.<span class="pl-c1">size</span>()[<span class="pl-c1">-</span><span class="pl-c1">1</span>]
+        <span class="pl-s1">scaled_attention_logits</span> <span class="pl-c1">=</span> <span class="pl-s1">matmul_qk</span> <span class="pl-c1">/</span> <span class="pl-s1">torch</span>.<span class="pl-c1">sqrt</span>(<span class="pl-s1">torch</span>.<span class="pl-c1">tensor</span>(<span class="pl-s1">dk</span>, <span class="pl-s1">dtype</span><span class="pl-c1">=</span><span class="pl-s1">torch</span>.<span class="pl-c1">float32</span>))
 
-        <span class="pl-k">if</span> <span class="pl-s1">mask</span> <span class="pl-c1">is</span> <span class="pl-c1">not</span> <span class="pl-c1">None</span>:
+        <span class="pl-k">if</span> <span class="pl-s1">mask</span> <span class="pl-c1"><span class="pl-c1">is</span> <span class="pl-c1">not</span></span> <span class="pl-c1">None</span>:
             <span class="pl-s1">scaled_attention_logits</span> <span class="pl-c1">+=</span> (<span class="pl-s1">mask</span> <span class="pl-c1">*</span> <span class="pl-c1">-</span><span class="pl-c1">1e9</span>)
 
-        <span class="pl-s1">attention_weights</span> <span class="pl-c1">=</span> <span class="pl-v">F</span>.<span class="pl-en">softmax</span>(<span class="pl-s1">scaled_attention_logits</span>, <span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">-</span><span class="pl-c1">1</span>)
-        <span class="pl-s1">output</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">matmul</span>(<span class="pl-s1">attention_weights</span>, <span class="pl-s1">v</span>)
+        <span class="pl-s1">attention_weights</span> <span class="pl-c1">=</span> <span class="pl-c1">F</span>.<span class="pl-c1">softmax</span>(<span class="pl-s1">scaled_attention_logits</span>, <span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">-</span><span class="pl-c1">1</span>)
+        <span class="pl-s1">output</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">matmul</span>(<span class="pl-s1">attention_weights</span>, <span class="pl-s1">v</span>)
 
         <span class="pl-k">return</span> <span class="pl-s1">output</span>, <span class="pl-s1">attention_weights</span>
 
@@ -556,12 +556,12 @@ $$\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h
 <span class="pl-s1">seq_length</span> <span class="pl-c1">=</span> <span class="pl-c1">50</span>
 
 <span class="pl-c"># Dummy input</span>
-<span class="pl-s1">q</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">batch_size</span>, <span class="pl-s1">seq_length</span>, <span class="pl-s1">d_model</span>)
-<span class="pl-s1">k</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">batch_size</span>, <span class="pl-s1">seq_length</span>, <span class="pl-s1">d_model</span>)
-<span class="pl-s1">v</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">batch_size</span>, <span class="pl-s1">seq_length</span>, <span class="pl-s1">d_model</span>)
-<span class="pl-s1">mask</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">tril</span>(<span class="pl-s1">torch</span>.<span class="pl-en">ones</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>))  <span class="pl-c"># Lower triangular matrix</span>
+<span class="pl-s1">q</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">rand</span>(<span class="pl-s1">batch_size</span>, <span class="pl-s1">seq_length</span>, <span class="pl-s1">d_model</span>)
+<span class="pl-s1">k</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">rand</span>(<span class="pl-s1">batch_size</span>, <span class="pl-s1">seq_length</span>, <span class="pl-s1">d_model</span>)
+<span class="pl-s1">v</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">rand</span>(<span class="pl-s1">batch_size</span>, <span class="pl-s1">seq_length</span>, <span class="pl-s1">d_model</span>)
+<span class="pl-s1">mask</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">tril</span>(<span class="pl-s1">torch</span>.<span class="pl-c1">ones</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>))  <span class="pl-c"># Lower triangular matrix</span>
 
-<span class="pl-s1">mha</span> <span class="pl-c1">=</span> <span class="pl-v">MultiHeadAttention</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">num_heads</span>)
+<span class="pl-s1">mha</span> <span class="pl-c1">=</span> <span class="pl-en">MultiHeadAttention</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">num_heads</span>)
 <span class="pl-s1">output</span>, <span class="pl-s1">attn_weights</span> <span class="pl-c1">=</span> <span class="pl-en">mha</span>(<span class="pl-s1">v</span>, <span class="pl-s1">k</span>, <span class="pl-s1">q</span>, <span class="pl-s1">mask</span>)</pre></div>
 <p>在这个实现中，掩码 <code class="notranslate">mask</code> 用于确保在计算注意力权重时只关注当前时间步之前的词。这使得模型在训练时能够正确地学习序列中的因果关系。</p>
 <hr>
@@ -627,29 +627,29 @@ $$\text{attention_weights} = \text{softmax}(\text{masked_scores})$$
 <h5>代码示例</h5>
 <p>以下是一个简化的代码示例，展示了如何构建和应用掩码矩阵：</p>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
-<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span>.<span class="pl-s1">functional</span> <span class="pl-k">as</span> <span class="pl-v">F</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span>.<span class="pl-s1">functional</span> <span class="pl-k">as</span> <span class="pl-c1">F</span>
 
 <span class="pl-k">def</span> <span class="pl-en">create_mask</span>(<span class="pl-s1">seq_length</span>):
-    <span class="pl-s1">mask</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">triu</span>(<span class="pl-s1">torch</span>.<span class="pl-en">ones</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>), <span class="pl-s1">diagonal</span><span class="pl-c1">=</span><span class="pl-c1">1</span>)
+    <span class="pl-s1">mask</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">triu</span>(<span class="pl-s1">torch</span>.<span class="pl-c1">ones</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>), <span class="pl-s1">diagonal</span><span class="pl-c1">=</span><span class="pl-c1">1</span>)
     <span class="pl-k">return</span> <span class="pl-s1">mask</span>
 
-<span class="pl-k">def</span> <span class="pl-en">masked_attention</span>(<span class="pl-v">Q</span>, <span class="pl-v">K</span>, <span class="pl-v">V</span>, <span class="pl-s1">mask</span>):
-    <span class="pl-s1">d_k</span> <span class="pl-c1">=</span> <span class="pl-v">Q</span>.<span class="pl-en">size</span>(<span class="pl-c1">-</span><span class="pl-c1">1</span>)
-    <span class="pl-s1">scores</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">matmul</span>(<span class="pl-v">Q</span>, <span class="pl-v">K</span>.<span class="pl-en">transpose</span>(<span class="pl-c1">-</span><span class="pl-c1">2</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>)) <span class="pl-c1">/</span> <span class="pl-s1">torch</span>.<span class="pl-en">sqrt</span>(<span class="pl-s1">torch</span>.<span class="pl-en">tensor</span>(<span class="pl-s1">d_k</span>, <span class="pl-s1">dtype</span><span class="pl-c1">=</span><span class="pl-s1">torch</span>.<span class="pl-s1">float32</span>))
-    <span class="pl-k">if</span> <span class="pl-s1">mask</span> <span class="pl-c1">is</span> <span class="pl-c1">not</span> <span class="pl-c1">None</span>:
-        <span class="pl-s1">scores</span> <span class="pl-c1">=</span> <span class="pl-s1">scores</span>.<span class="pl-en">masked_fill</span>(<span class="pl-s1">mask</span> <span class="pl-c1">==</span> <span class="pl-c1">1</span>, <span class="pl-en">float</span>(<span class="pl-s">'-inf'</span>))
-    <span class="pl-s1">attention_weights</span> <span class="pl-c1">=</span> <span class="pl-v">F</span>.<span class="pl-en">softmax</span>(<span class="pl-s1">scores</span>, <span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">-</span><span class="pl-c1">1</span>)
-    <span class="pl-s1">output</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">matmul</span>(<span class="pl-s1">attention_weights</span>, <span class="pl-v">V</span>)
+<span class="pl-k">def</span> <span class="pl-en">masked_attention</span>(<span class="pl-c1">Q</span>, <span class="pl-c1">K</span>, <span class="pl-c1">V</span>, <span class="pl-s1">mask</span>):
+    <span class="pl-s1">d_k</span> <span class="pl-c1">=</span> <span class="pl-c1">Q</span>.<span class="pl-c1">size</span>(<span class="pl-c1">-</span><span class="pl-c1">1</span>)
+    <span class="pl-s1">scores</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">matmul</span>(<span class="pl-c1">Q</span>, <span class="pl-c1">K</span>.<span class="pl-c1">transpose</span>(<span class="pl-c1">-</span><span class="pl-c1">2</span>, <span class="pl-c1">-</span><span class="pl-c1">1</span>)) <span class="pl-c1">/</span> <span class="pl-s1">torch</span>.<span class="pl-c1">sqrt</span>(<span class="pl-s1">torch</span>.<span class="pl-c1">tensor</span>(<span class="pl-s1">d_k</span>, <span class="pl-s1">dtype</span><span class="pl-c1">=</span><span class="pl-s1">torch</span>.<span class="pl-c1">float32</span>))
+    <span class="pl-k">if</span> <span class="pl-s1">mask</span> <span class="pl-c1"><span class="pl-c1">is</span> <span class="pl-c1">not</span></span> <span class="pl-c1">None</span>:
+        <span class="pl-s1">scores</span> <span class="pl-c1">=</span> <span class="pl-s1">scores</span>.<span class="pl-c1">masked_fill</span>(<span class="pl-s1">mask</span> <span class="pl-c1">==</span> <span class="pl-c1">1</span>, <span class="pl-en">float</span>(<span class="pl-s">'-inf'</span>))
+    <span class="pl-s1">attention_weights</span> <span class="pl-c1">=</span> <span class="pl-c1">F</span>.<span class="pl-c1">softmax</span>(<span class="pl-s1">scores</span>, <span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">-</span><span class="pl-c1">1</span>)
+    <span class="pl-s1">output</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">matmul</span>(<span class="pl-s1">attention_weights</span>, <span class="pl-c1">V</span>)
     <span class="pl-k">return</span> <span class="pl-s1">output</span>, <span class="pl-s1">attention_weights</span>
 
 <span class="pl-c"># Example usage</span>
 <span class="pl-s1">seq_length</span> <span class="pl-c1">=</span> <span class="pl-c1">4</span>
-<span class="pl-v">Q</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>)
-<span class="pl-v">K</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>)
-<span class="pl-v">V</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-en">rand</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>)
+<span class="pl-c1">Q</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">rand</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>)
+<span class="pl-c1">K</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">rand</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>)
+<span class="pl-c1">V</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">rand</span>(<span class="pl-s1">seq_length</span>, <span class="pl-s1">seq_length</span>)
 <span class="pl-s1">mask</span> <span class="pl-c1">=</span> <span class="pl-en">create_mask</span>(<span class="pl-s1">seq_length</span>)
 
-<span class="pl-s1">output</span>, <span class="pl-s1">attn_weights</span> <span class="pl-c1">=</span> <span class="pl-en">masked_attention</span>(<span class="pl-v">Q</span>, <span class="pl-v">K</span>, <span class="pl-v">V</span>, <span class="pl-s1">mask</span>)</pre></div>
+<span class="pl-s1">output</span>, <span class="pl-s1">attn_weights</span> <span class="pl-c1">=</span> <span class="pl-en">masked_attention</span>(<span class="pl-c1">Q</span>, <span class="pl-c1">K</span>, <span class="pl-c1">V</span>, <span class="pl-s1">mask</span>)</pre></div>
 <p>在这个示例中，<code class="notranslate">create_mask</code> 函数生成了一个上三角掩码矩阵，<code class="notranslate">masked_attention</code> 函数在计算注意力权重时应用了该掩码矩阵，确保未来的时间步不会影响当前的预测。</p>
 <h5>总结</h5>
 <p>掩码矩阵通过屏蔽未来位置，确保模型在预测当前位置时只能利用当前及之前的位置信息。这种机制在序列生成任务中至关重要，确保了模型的因果性。掩码矩阵与未归一化的注意力权重矩阵相加，使得未来位置的权重在softmax归一化后接近于0，从而有效地实现时间步的控制。</p>

@@ -278,11 +278,11 @@ Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=</pre></div>
   <span class="pl-smi">console</span><span class="pl-kos">.</span><span class="pl-en">error</span><span class="pl-kos">(</span><span class="pl-s">"WebSocket error observed:"</span><span class="pl-kos">,</span> <span class="pl-s1">error</span><span class="pl-kos">)</span><span class="pl-kos">;</span>
 <span class="pl-kos">}</span><span class="pl-kos">;</span>
 
-<span class="pl-c1">2.</span> <span class="pl-s1">服务器实现（Python</span> <span class="pl-s1">示例：使用</span> <span class="pl-s1">websockets</span> <span class="pl-s1">库）</span>
+<span class="pl-c1">2.</span> <span class="pl-s1">服务器实现（Python</span> <span class="pl-s1">示例：使用</span> <span class="pl-s1">websockets</span> <span class="pl-en">库）</span>
 
 <span class="pl-s">``</span>` <span class="pl-s1">python</span>
 <span class="pl-k">import</span> <span class="pl-s1">asyncio</span>
-<span class="pl-k">import</span> <span class="pl-s1">websockets</span>
+<span class="pl-s1">import</span> <span class="pl-s1">websockets</span>
 
 <span class="pl-en">async</span> <span class="pl-s1">def</span> <span class="pl-s1">handler</span><span class="pl-kos">(</span><span class="pl-s1">websocket</span><span class="pl-kos">,</span> <span class="pl-s1">path</span><span class="pl-kos">)</span>:
     <span class="pl-s1">async</span> <span class="pl-s1">for</span> <span class="pl-s1">message</span> <span class="pl-k">in</span> <span class="pl-s1">websocket</span>:
