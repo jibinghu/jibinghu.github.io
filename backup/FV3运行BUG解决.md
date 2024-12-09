@@ -1,3 +1,5 @@
+... 计算节点没申请
+
 ``` bash
 ERROR: Unable to locate a modulefile for 'compiler/cmake/3.22.0-rc1'
 ERROR: Unable to locate a modulefile for 'apps/anaconda3/5.2.0'
