@@ -1,5 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 09 Dec 2024 03:02:44 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>FV3运行BUG解决</title><link>https://jibinghu.github.io/post/FV3-yun-xing-BUG-jie-jue.html</link><description>... 计算节点没申请&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 09 Dec 2024 09:01:06 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>FV3运行记录_12/9</title><link>https://jibinghu.github.io/post/FV3-yun-xing-ji-lu-_12-9.html</link><description>执行的`NOTE from PE    0: MPP_IO_SET_STACK_SIZE: stack size set to    1179648.`在修改`fv_mp_mod.F90`文件中的对应&#13;
+&lt;img width='469' alt='image' src='https://github.com/user-attachments/assets/8ecf9ccf-2682-4662-8d76-f93e45e87297'&gt;&#13;
+部分后得到解决，原因是设置堆栈的代码必须在mpi_init和mpi_init_domain之间..&#13;
+&#13;
+&lt;img width='1345' alt='image' src='https://github.com/user-attachments/assets/c10246a9-f459-4738-9e9f-e101de3712be'&gt;&#13;
+&#13;
+目前开始正常执行了，但是速度超级慢...。</description><guid isPermaLink="true">https://jibinghu.github.io/post/FV3-yun-xing-ji-lu-_12-9.html</guid><pubDate>Mon, 09 Dec 2024 09:00:41 +0000</pubDate></item><item><title>FV3运行BUG解决</title><link>https://jibinghu.github.io/post/FV3-yun-xing-BUG-jie-jue.html</link><description>... 计算节点没申请&#13;
 &#13;
 ``` bash&#13;
 ERROR: Unable to locate a modulefile for 'compiler/cmake/3.22.0-rc1'&#13;
