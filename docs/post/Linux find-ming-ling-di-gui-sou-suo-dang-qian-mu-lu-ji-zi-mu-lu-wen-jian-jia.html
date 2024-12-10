@@ -10,9 +10,15 @@
         let theme = localStorage.getItem("meek_theme") || "light";
         document.documentElement.setAttribute("data-color-mode", theme);
     </script>
-<meta name="description" content="`find . -type f -name 'input.nml'`。">
+<meta name="description" content="`find . -type f -name 'input.nml'`
+可以加一个反向过滤：
+`find . -type f -name '*搜索的内容*' | grep -r '删除的内容' > reserve.log`
+。">
 <meta property="og:title" content="Linux find命令递归搜索当前目录及子目录文件夹">
-<meta property="og:description" content="`find . -type f -name 'input.nml'`。">
+<meta property="og:description" content="`find . -type f -name 'input.nml'`
+可以加一个反向过滤：
+`find . -type f -name '*搜索的内容*' | grep -r '删除的内容' > reserve.log`
+。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://jibinghu.github.io/post/Linux%20find-ming-ling-di-gui-sou-suo-dang-qian-mu-lu-ji-zi-mu-lu-wen-jian-jia.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
@@ -73,7 +79,9 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
 </div>
     <div id="content">
-<div class="markdown-body" id="postBody"><p><code class="notranslate">find . -type f -name "input.nml"</code></p></div>
+<div class="markdown-body" id="postBody"><p><code class="notranslate">find . -type f -name "input.nml"</code><br>
+可以加一个反向过滤：<br>
+<code class="notranslate">find . -type f -name "*搜索的内容*" | grep -r "删除的内容" &gt; reserve.log</code></p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
