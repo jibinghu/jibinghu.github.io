@@ -13,3 +13,17 @@ dialplan,inline,mod_dptools
 
 4 total.
 ```
+
+`show modules`
+> 展示已加载的（modules）模块
+```
+输出（部分）：
+xswitch>  show modules
+type,name,ikey,filename
+api,...,mod_commands,/usr/local/freeswitch/mod/mod_commands.so
+api,acl,mod_commands,/usr/local/freeswitch/mod/mod_commands.so
+api,ai,mod_ai,/usr/local/freeswitch/mod/mod_ai.so
+api,ali_token,mod_ali,/usr/local/freeswitch/mod/mod_ali.so
+api,alias,mod_commands,/usr/local/freeswitch/mod/mod_commands.so
+api,av,mod_av,/usr/local/freeswitch/mod/mod_av.so
+```

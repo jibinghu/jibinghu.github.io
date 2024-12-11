@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 10 Dec 2024 14:25:13 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>xswitch接入自有asr记录</title><link>https://jibinghu.github.io/post/xswitch-jie-ru-zi-you-asr-ji-lu.html</link><description>&lt;img width='372' alt='image' src='https://github.com/user-attachments/assets/1ab89dce-ffb9-452e-a3bb-2dbaca537d6b'&gt;&#13;
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Wed, 11 Dec 2024 04:26:45 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>xswitch接入自有asr记录</title><link>https://jibinghu.github.io/post/xswitch-jie-ru-zi-you-asr-ji-lu.html</link><description>&lt;img width='372' alt='image' src='https://github.com/user-attachments/assets/1ab89dce-ffb9-452e-a3bb-2dbaca537d6b'&gt;&#13;
 &#13;
 ---&#13;
 &#13;
@@ -26,6 +26,20 @@ dialplan,XUI,mod_xui&#13;
 dialplan,inline,mod_dptools&#13;
 &#13;
 4 total.&#13;
+```&#13;
+&#13;
+`show modules`&#13;
+&gt; 展示已加载的（modules）模块&#13;
+```&#13;
+输出（部分）：&#13;
+xswitch&gt;  show modules&#13;
+type,name,ikey,filename&#13;
+api,...,mod_commands,/usr/local/freeswitch/mod/mod_commands.so&#13;
+api,acl,mod_commands,/usr/local/freeswitch/mod/mod_commands.so&#13;
+api,ai,mod_ai,/usr/local/freeswitch/mod/mod_ai.so&#13;
+api,ali_token,mod_ali,/usr/local/freeswitch/mod/mod_ali.so&#13;
+api,alias,mod_commands,/usr/local/freeswitch/mod/mod_commands.so&#13;
+api,av,mod_av,/usr/local/freeswitch/mod/mod_av.so&#13;
 ```。</description><guid isPermaLink="true">https://jibinghu.github.io/post/fs_cli%20-ming-ling-ji-lu.html</guid><pubDate>Tue, 10 Dec 2024 14:15:23 +0000</pubDate></item><item><title>XSwitch 的三种API 接口：XCC、AIAPI 和 XRTC </title><link>https://jibinghu.github.io/post/XSwitch%20-de-san-zhong-API%20-jie-kou-%EF%BC%9AXCC%E3%80%81AIAPI%20-he-%20XRTC%20.html</link><description>XSwitch 是一款电信级 IP 电话软交换系统和综合实时音视频多媒体通信平台，提供多种 API 接口以满足不同的开发需求。</description><guid isPermaLink="true">https://jibinghu.github.io/post/XSwitch%20-de-san-zhong-API%20-jie-kou-%EF%BC%9AXCC%E3%80%81AIAPI%20-he-%20XRTC%20.html</guid><pubDate>Tue, 10 Dec 2024 13:34:20 +0000</pubDate></item><item><title>FV3运行分析</title><link>https://jibinghu.github.io/post/FV3-yun-xing-fen-xi.html</link><description>对FV3运行日志分析：&#13;
 &#13;
 以下是对日志内容的分析，并逐条对应输出日志部分，以说明为何判断这份日志是 Demo 程序的正确执行。</description><guid isPermaLink="true">https://jibinghu.github.io/post/FV3-yun-xing-fen-xi.html</guid><pubDate>Tue, 10 Dec 2024 09:00:27 +0000</pubDate></item><item><title>FV3_运行日志记录</title><link>https://jibinghu.github.io/post/FV3_-yun-xing-ri-zhi-ji-lu.html</link><description>正常运行日志记录：timestep好像没有，模拟day=1:&#13;
