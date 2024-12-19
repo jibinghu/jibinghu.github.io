@@ -136,7 +136,57 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 •	跨域请求 是指前端页面和后端服务位于不同的域名下，浏览器出于安全考虑阻止了跨域请求。<br>
 •	在 FastAPI 中，如果前后端在不同域名下，可以使用 CORSMiddleware 配置允许跨域请求。<br>
 •	配置 CORSMiddleware 可以解决 CORS 问题，允许特定来源的请求通过，控制哪些方法和头部可以跨域访问。</p>
-<p>如果你的前后端应用都在同一域下，或者你不涉及跨域访问，通常就不会遇到 CORS 问题。</p></div>
+<p>如果你的前后端应用都在同一域下，或者你不涉及跨域访问，通常就不会遇到 CORS 问题。</p>
+<hr>
+<h2>使用ip地址是否会遇到跨域问题？</h2>
+<p>使用 IP 地址访问时是否会出现跨域问题，取决于前端和后端的 源（origin） 是否不同。跨域问题的核心在于 源（origin） 的不同，而源由三个部分组成：<br>
+1.	协议（http 或 https）<br>
+2.	域名（例如 example.com）<br>
+3.	端口（例如 :80 或 :443）</p>
+<ol>
+<li>使用 IP 地址访问时的跨域问题</li>
+</ol>
+<p>当你用 IP 地址访问后端 API 时，跨域问题是否发生，取决于以下几点：<br>
+•	协议不同：如果你的前端应用是通过 <a href="http://localhost:3000" rel="nofollow">http://localhost:3000</a> 访问，而后端是通过 <a href="http://192.168.1.100:8000" rel="nofollow">http://192.168.1.100:8000</a> 访问，那么即使你使用的是 IP 地址，协议不同（一个是 http，一个可能是 https），依然会被视为不同的源。<br>
+•	端口不同：即使你使用相同的 IP 地址，只要端口号不同，浏览器也会认为是不同的源。例如，前端通过 <a href="http://192.168.1.100:3000" rel="nofollow">http://192.168.1.100:3000</a> 访问，后端通过 <a href="http://192.168.1.100:8000%EF%BC%8C%E6%B5%8F%E8%A7%88%E5%99%A8%E4%BE%9D%E7%84%B6%E4%BC%9A%E8%AE%A4%E4%B8%BA%E8%BF%99%E4%B8%A4%E4%B8%AA" rel="nofollow">http://192.168.1.100:8000，浏览器依然会认为这两个</a> URL 是跨域的。<br>
+•	协议、域名和端口相同：如果前端和后端都使用相同的协议、域名和端口（例如都使用 <a href="http://192.168.1.100:8000%EF%BC%89%EF%BC%8C%E5%88%99%E4%B8%8D%E4%BC%9A%E6%9C%89%E8%B7%A8%E5%9F%9F%E9%97%AE%E9%A2%98%EF%BC%8C%E5%9B%A0%E4%B8%BA%E5%AE%83%E4%BB%AC%E7%9A%84%E6%BA%90%E6%98%AF%E7%9B%B8%E5%90%8C%E7%9A%84%E3%80%82" rel="nofollow">http://192.168.1.100:8000），则不会有跨域问题，因为它们的源是相同的。</a></p>
+<ol start="2">
+<li>是否会出现跨域问题？</li>
+</ol>
+<p>假设你的前端应用和后端服务是通过以下方式访问的：<br>
+•	前端：<a href="http://localhost:3000" rel="nofollow">http://localhost:3000</a><br>
+•	后端：<a href="http://192.168.1.100:8000" rel="nofollow">http://192.168.1.100:8000</a></p>
+<p>在这种情况下，因为 协议不同（localhost 和 192.168.1.100 都是不同的源，即使它们可能指向同一台机器），浏览器会认为这是跨域请求，并且你会遇到 CORS 问题，除非你在后端配置了 CORS 中间件来允许来自 localhost:3000 的请求。</p>
+<ol start="3">
+<li>解决跨域问题</li>
+</ol>
+<p>无论是使用域名还是 IP 地址，只要协议、域名或端口不同，都会产生跨域问题。所以，即使你使用 IP 地址，只要涉及到跨域访问，依然需要配置 CORS。</p>
+<p>例如，在 FastAPI 中，你可以这样配置 CORS 中间件，允许来自任何来源（包括通过 IP 地址访问的请求）进行访问：</p>
+<p>from fastapi import FastAPI<br>
+from fastapi.middleware.cors import CORSMiddleware</p>
+<p>app = FastAPI()</p>
+<h1>添加 CORS 中间件，允许所有来源</h1>
+<p>app.add_middleware(<br>
+CORSMiddleware,<br>
+allow_origins=["<em>"],  # 允许所有来源<br>
+allow_credentials=True,<br>
+allow_methods=["</em>"],  # 允许所有 HTTP 方法（GET, POST, PUT, DELETE 等）<br>
+allow_headers=["*"],  # 允许所有请求头<br>
+)</p>
+<p>如果你想限制只允许特定的 IP 或域名访问，可以修改 allow_origins 为特定的 IP 地址或域名：</p>
+<p>app.add_middleware(<br>
+CORSMiddleware,<br>
+allow_origins=["http://192.168.1.100:3000"],  # 只允许该 IP 地址和端口访问<br>
+allow_credentials=True,<br>
+allow_methods=["<em>"],<br>
+allow_headers=["</em>"],<br>
+)</p>
+<ol start="4">
+<li>总结<br>
+•	跨域问题的本质是浏览器基于不同的协议、域名、端口来判断是否是不同的源（origin）。<br>
+•	即使你使用的是 IP 地址，只要协议或端口不同，浏览器依然会认为是跨域请求。<br>
+•	为了避免跨域问题，需要在后端配置 CORS 中间件，允许来自特定源的请求。</li>
+</ol></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
