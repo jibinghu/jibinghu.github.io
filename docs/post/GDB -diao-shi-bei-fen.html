@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="在使用 **gdb** (GNU Debugger) 进行调试时，有一些非常实用的命令，可以帮助你更高效地进行程序的调试。">
+<meta property="og:title" content="GDB 调试备份">
+<meta property="og:description" content="在使用 **gdb** (GNU Debugger) 进行调试时，有一些非常实用的命令，可以帮助你更高效地进行程序的调试。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/GDB%20-diao-shi-bei-fen.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>GDB 调试备份</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">GDB 调试备份</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/115" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p>在使用 <strong>gdb</strong> (GNU Debugger) 进行调试时，有一些非常实用的命令，可以帮助你更高效地进行程序的调试。以下是一些常用的 <strong>gdb</strong> 命令：</p>
+<h3>1. <strong>基本命令</strong></h3>
+<ul>
+<li><code class="notranslate">run</code> (或 <code class="notranslate">r</code>)：启动程序并开始调试。</li>
+<li><code class="notranslate">quit</code> (或 <code class="notranslate">q</code>)：退出 <strong>gdb</strong>。</li>
+<li><code class="notranslate">help</code>：显示帮助信息。</li>
+<li><code class="notranslate">continue</code> (或 <code class="notranslate">c</code>)：继续程序执行，直到下一个断点。</li>
+<li><code class="notranslate">step</code> (或 <code class="notranslate">s</code>)：单步进入函数，执行当前行，并进入函数调用内部。</li>
+<li><code class="notranslate">next</code> (或 <code class="notranslate">n</code>)：单步执行，但如果当前行有函数调用，则不进入该函数。</li>
+<li><code class="notranslate">finish</code>：继续执行直到当前函数返回。</li>
+<li><code class="notranslate">break &lt;location&gt;</code> (或 <code class="notranslate">b &lt;location&gt;</code>)：设置断点。<code class="notranslate">&lt;location&gt;</code> 可以是函数名、文件名行号等。</li>
+<li><code class="notranslate">delete</code>：删除当前所有断点，或者通过指定断点编号删除特定断点。</li>
+<li><code class="notranslate">info break</code>：查看当前所有的断点及其状态。</li>
+</ul>
+<h3>2. <strong>查看和打印变量</strong></h3>
+<ul>
+<li><code class="notranslate">print &lt;expression&gt;</code> (或 <code class="notranslate">p &lt;expression&gt;</code>)：打印当前变量的值或表达式的值。</li>
+<li><code class="notranslate">display &lt;expression&gt;</code>：在每次停下来时自动显示某个表达式的值。</li>
+<li><code class="notranslate">info locals</code>：查看当前函数中所有局部变量的值。</li>
+<li><code class="notranslate">info args</code>：查看当前函数的参数值。</li>
+<li><code class="notranslate">info registers</code>：查看所有寄存器的值。</li>
+</ul>
+<h3>3. <strong>调试信息</strong></h3>
+<ul>
+<li><code class="notranslate">list</code> (或 <code class="notranslate">l</code>)：列出源代码，默认会显示当前停留的函数上下文。</li>
+<li><code class="notranslate">backtrace</code> (或 <code class="notranslate">bt</code>)：查看函数调用栈，显示从程序开始到当前停留点的调用路径。</li>
+<li><code class="notranslate">frame &lt;n&gt;</code>：切换到指定的调用栈帧（<code class="notranslate">n</code> 是栈帧的编号）。</li>
+<li><code class="notranslate">up</code>：向上移动到上一级调用栈。</li>
+<li><code class="notranslate">down</code>：向下移动到下一级调用栈。</li>
+<li><code class="notranslate">info source</code>：显示当前源文件的相关信息。</li>
+</ul>
+<h3>4. <strong>内存和堆栈</strong></h3>
+<ul>
+<li><code class="notranslate">x /&lt;n&gt;&lt;format&gt; &lt;address&gt;</code>：查看内存内容。<code class="notranslate">&lt;n&gt;</code> 是读取多少单元，<code class="notranslate">&lt;format&gt;</code> 是输出格式（例如：<code class="notranslate">x/10x</code> 打印 10 个十六进制数）。</li>
+<li><code class="notranslate">set &lt;variable&gt; = &lt;value&gt;</code>：修改变量的值。</li>
+</ul>
+<h3>5. <strong>条件断点</strong></h3>
+<ul>
+<li><code class="notranslate">break &lt;location&gt; if &lt;condition&gt;</code>：设置一个条件断点，只有满足特定条件时，程序才会停下来。</li>
+<li><code class="notranslate">condition &lt;breakpoint-number&gt; &lt;condition&gt;</code>：为已有的断点添加条件。</li>
+</ul>
+<h3>6. <strong>程序运行控制</strong></h3>
+<ul>
+<li><code class="notranslate">start</code>：启动程序，并在主函数的第一行暂停。</li>
+<li><code class="notranslate">stepi</code>：逐条指令单步执行（适用于汇编代码调试）。</li>
+<li><code class="notranslate">nexti</code>：逐条指令执行，跳过函数调用。</li>
+<li><code class="notranslate">until &lt;location&gt;</code>：继续运行直到指定的位置。</li>
+</ul>
+<h3>7. <strong>调试共享库</strong></h3>
+<ul>
+<li><code class="notranslate">set solib-search-path &lt;path&gt;</code>：设置共享库的搜索路径。</li>
+<li><code class="notranslate">info sharedlibrary</code>：列出当前加载的所有共享库。</li>
+</ul>
+<h3>8. <strong>其它</strong></h3>
+<ul>
+<li><code class="notranslate">watch &lt;expression&gt;</code>：设置观察点，当表达式的值发生变化时停下来。</li>
+<li><code class="notranslate">catch &lt;event&gt;</code>：设置事件监视器，例如：<code class="notranslate">catch throw</code> 监视 C++ 异常抛出。</li>
+<li><code class="notranslate">target</code>：用于指定远程调试或调试目标，通常用于嵌入式开发。</li>
+<li><code class="notranslate">set pagination off</code>：禁用分页，使得输出不分页显示。</li>
+</ul>
+<h3>9. <strong>调试多线程程序</strong></h3>
+<ul>
+<li><code class="notranslate">info threads</code>：查看当前所有线程的信息。</li>
+<li><code class="notranslate">thread &lt;n&gt;</code>：切换到指定线程进行调试。</li>
+<li><code class="notranslate">thread apply all &lt;command&gt;</code>：对所有线程执行指定命令。</li>
+</ul>
+<hr>
+<h3>附加：</h3>
+<p>进入 gdb （GNU 调试器）有多种方式，主要取决于你的目标和程序的调试方式。以下是几种常见的进入 gdb 的方式：</p>
+<ol>
+<li>从命令行启动 gdb 调试已编译的程序</li>
+</ol>
+<p>最常见的方式是直接在终端中启动 gdb，并加载要调试的程序。</p>
+<p>gdb </p>
+<pre class="notranslate"><code class="notranslate">•	&lt;executable-file&gt; 是你要调试的程序的可执行文件路径。
+•	例如，如果你有一个名为 a.out 的程序，可以使用以下命令：
+</code></pre>
+<p>gdb a.out</p>
+<p>启动 gdb 后，程序会暂停在程序的入口处，你可以使用 run 或 r 命令来启动程序。</p>
+<ol start="2">
+<li>通过调试时指定命令行参数</li>
+</ol>
+<p>如果你需要给程序传递命令行参数，可以在进入 gdb 后通过 set args 命令指定参数。例如：</p>
+<p>gdb a.out<br>
+(gdb) set args arg1 arg2<br>
+(gdb) run</p>
+<p>这会将 arg1 和 arg2 作为命令行参数传递给 a.out。</p>
+<ol start="3">
+<li>直接从命令行运行程序并进入 gdb</li>
+</ol>
+<p>你也可以直接在命令行中使用 gdb 启动程序并直接进入调试模式，无需手动进入 gdb 后再输入 run 命令：</p>
+<p>gdb --args  </p>
+<p>例如：</p>
+<p>gdb --args ./a.out arg1 arg2</p>
+<p>此命令会启动 gdb 并加载 a.out 可执行文件，并传递命令行参数 arg1 和 arg2。</p>
+<ol start="4">
+<li>在运行时附加到已运行的程序</li>
+</ol>
+<p>如果你已经有一个正在运行的程序，并希望在其运行时附加调试，可以使用 gdb 附加到该进程：</p>
+<p>gdb attach </p>
+<pre class="notranslate"><code class="notranslate">•	&lt;pid&gt; 是你要调试的进程的进程 ID。
+•	你可以通过命令 ps aux | grep &lt;program-name&gt; 查找正在运行的进程的 PID。
+</code></pre>
+<ol start="5">
+<li>远程调试</li>
+</ol>
+<p>如果你需要调试远程主机上的程序，可以使用 gdb 的远程调试功能。通常这涉及到在目标机器上运行 gdbserver，然后在本地机器上通过 gdb 连接。<br>
+1.	在目标机器上启动 gdbserver：</p>
+<p>gdbserver : </p>
+<pre class="notranslate"><code class="notranslate">2.	在本地机器上使用 gdb 连接到远程目标：
+</code></pre>
+<p>gdb <br>
+(gdb) target remote :</p>
+<ol start="6">
+<li>使用 core dump 文件调试</li>
+</ol>
+<p>如果程序崩溃并生成了 core dump 文件，你可以通过 gdb 来加载这个文件进行分析。假设 core 文件和程序名是 a.out：</p>
+<p>gdb a.out core</p>
+<p>这将加载崩溃时的内存状态，并允许你查看崩溃原因。</p>
+<ol start="7">
+<li>在启动时加载特定的符号文件</li>
+</ol>
+<p>如果你没有源代码但有调试符号文件（.debug 文件），可以通过以下命令启动 gdb 并加载符号文件：</p>
+<p>gdb  </p>
+<p>例如：</p>
+<p>gdb myprogram /path/to/myprogram.debug</p>
+<ol start="8">
+<li>在启动时执行脚本</li>
+</ol>
+<p>你还可以在启动 gdb 时指定一个脚本，自动执行一系列调试命令。例如：</p>
+<p>gdb -x script.gdb </p>
+<p>其中，script.gdb 是一个包含调试命令的脚本文件。这样可以在启动时自动设置断点、变量、条件等。</p>
+<hr>
+<p>gdb 的 -p 选项是用于 附加到一个正在运行的进程 进行调试的方式。使用 -p 参数，你可以将 gdb 连接到一个指定的进程 ID (PID)，从而在该进程正在运行时对其进行调试。</p>
+<p>gdb -p  命令</p>
+<p>gdb -p  用于将 gdb 附加到一个已经运行的进程。通过这个命令，gdb 会连接到指定的进程，并允许你在不中断进程执行的情况下进行调试。</p>
+<p>使用方法<br>
+1.	首先，找出你想要调试的进程 ID (PID)，可以使用命令如 ps 或 top 来列出正在运行的进程及其 PID。例如：</p>
+<p>ps aux | grep &lt;your_program&gt;</p>
+<pre class="notranslate"><code class="notranslate">2.	然后使用 gdb -p 命令附加到该进程。例如，假设 PID 是 12345：
+</code></pre>
+<p>gdb -p 12345</p>
+<p>这会启动 gdb 并将其附加到 PID 为 12345 的进程上。</p>
+<p>附加过程中的常见行为：<br>
+•	进程暂停：当你附加到一个正在运行的进程时，进程会被暂停（即 gdb 会暂停进程的执行）。你需要手动使用 continue 命令继续执行进程。<br>
+•	调试操作：在附加到进程后，你可以像调试本地程序一样设置断点、查看变量、跟踪调用栈等。<br>
+•	信号处理：在一些系统中，附加进程时会发送信号给该进程（通常是 SIGSTOP），并且在开始调试之前需要恢复进程。</p>
+<p>示例</p>
+<p>假设你有一个名为 my_program 的程序正在运行，并且它的 PID 是 12345：<br>
+1.	启动 gdb 并附加到该进程：</p>
+<p>gdb -p 12345</p>
+<pre class="notranslate"><code class="notranslate">2.	一旦 gdb 连接到进程，进程会被暂停。你可以使用以下命令来调试：
+•	continue (或 c)：继续程序的执行。
+•	backtrace (或 bt)：查看调用栈。
+•	info locals：查看局部变量。
+3.	在调试完成后，退出 gdb 使用命令 quit，如果需要，可以继续让进程执行。
+</code></pre>
+<p>退出和恢复<br>
+•	当你通过 gdb 附加到进程并完成调试时，你可以使用 quit 命令退出 gdb。如果你希望在退出时让程序继续运行，可以使用：</p>
+<p>(gdb) detach</p>
+<p>这会让 gdb 从进程中分离，并允许该进程继续运行。</p>
+<p>适用场景</p>
+<p>gdb -p 特别适用于以下场景：<br>
+•	你希望调试一个已经在生产环境中运行的进程。<br>
+•	你想调试一个崩溃的进程或在死锁状态下的进程。<br>
+•	在远程调试时，目标程序已在目标主机上启动并运行。</p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
