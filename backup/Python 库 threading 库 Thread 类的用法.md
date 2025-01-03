@@ -198,3 +198,89 @@ asyncio.run(main())
 - `Thread` 类可以通过多线程实现并发执行，模拟异步行为。
 - 如果需要真正的异步编程（单线程非阻塞），建议使用 `asyncio`。
 - 选择多线程还是异步编程取决于具体场景：I/O 密集型任务适合多线程，而高并发网络请求等场景更适合异步编程。
+
+---
+
+### 为什么说 `Threading` 适合 I/O 密集型任务，而不适合 CPU 密集型任务？
+
+#### 1. **适合 I/O 密集型任务**
+   - **I/O 密集型任务**是指任务的主要时间花费在等待 I/O 操作（如文件读写、网络请求、数据库查询等）上，而不是在 CPU 计算上。
+   - 在 I/O 操作期间，线程会进入阻塞状态，释放 CPU 资源，此时其他线程可以继续执行。
+   - Python 的 `threading` 库通过多线程可以实现并发执行，即使一个线程在等待 I/O，其他线程仍然可以运行，从而提高程序的效率。
+   - 例如：
+     ```python
+     import threading
+     import requests
+
+     def fetch_url(url):
+         response = requests.get(url)
+         print(f"Fetched {url}, status code: {response.status_code}")
+
+     urls = ["https://example.com", "https://example.org", "https://example.net"]
+     threads = []
+
+     for url in urls:
+         thread = threading.Thread(target=fetch_url, args=(url,))
+         threads.append(thread)
+         thread.start()
+
+     for thread in threads:
+         thread.join()
+     ```
+     在这个例子中，多个线程可以同时发起网络请求，等待响应的过程中不会阻塞其他线程的执行。
+
+#### 2. **不适合 CPU 密集型任务**
+   - **CPU 密集型任务**是指任务的主要时间花费在 CPU 计算上（如数学运算、图像处理、加密解密等）。
+   - Python 的全局解释器锁（GIL，Global Interpreter Lock）会限制同一时间只有一个线程执行 Python 字节码。即使有多个线程，它们也无法真正并行执行 CPU 密集型任务。
+   - 由于 GIL 的存在，多线程在 CPU 密集型任务中并不能提升性能，甚至可能因为线程切换的开销而降低性能。
+   - 例如：
+     ```python
+     import threading
+
+     def compute():
+         result = 0
+         for _ in range(10**7):
+             result += 1
+
+     threads = []
+     for _ in range(4):
+         thread = threading.Thread(target=compute)
+         threads.append(thread)
+         thread.start()
+
+     for thread in threads:
+         thread.join()
+     ```
+     在这个例子中，即使有多个线程，由于 GIL 的存在，它们无法真正并行执行计算任务，性能可能还不如单线程。
+
+   - 对于 CPU 密集型任务，建议使用 `multiprocessing` 模块，它通过多进程的方式绕过 GIL 的限制，充分利用多核 CPU 的并行计算能力。
+
+---
+
+### `threading` 库的底层实现
+
+#### 1. **底层实现**
+   - Python 的 `threading` 库是基于操作系统的原生线程（如 POSIX 线程 `pthread` 或 Windows 线程）实现的。
+   - 在底层，`threading` 库调用了操作系统的线程 API，这些 API 通常是用 C/C++ 实现的。
+   - 例如：
+     - 在 Linux 和 macOS 上，`threading` 库使用了 POSIX 线程（`pthread`）。
+     - 在 Windows 上，`threading` 库使用了 Windows 线程 API。
+
+#### 2. **GIL 的作用**
+   - GIL 是 Python 解释器（CPython）中的一个全局锁，用于保护 Python 对象的内存管理。
+   - 由于 Python 的内存管理不是线程安全的，GIL 确保同一时间只有一个线程执行 Python 字节码。
+   - 尽管 GIL 限制了多线程的并行性能，但它简化了 CPython 的实现，并提高了单线程的性能。
+
+#### 3. **绕过 GIL 的方法**
+   - 如果需要真正的并行计算，可以使用以下方法绕过 GIL：
+     1. **`multiprocessing` 模块**：通过多进程实现并行计算，每个进程有独立的 Python 解释器和内存空间。
+     2. **使用其他 Python 实现**：如 Jython 或 IronPython，它们没有 GIL。
+     3. **使用 C/C++ 扩展**：在 C/C++ 扩展中释放 GIL，实现真正的并行计算。
+
+---
+
+### 总结
+- **适合 I/O 密集型任务**：因为线程在等待 I/O 时可以释放 CPU 资源，其他线程可以继续执行。
+- **不适合 CPU 密集型任务**：由于 GIL 的存在，多线程无法真正并行执行 CPU 密集型任务。
+- **`threading` 库的底层**：基于操作系统的原生线程（如 `pthread` 或 Windows 线程），通常是用 C/C++ 实现的。
+- **GIL 的影响**：限制了多线程的并行性能，但可以通过多进程或其他方法绕过。
