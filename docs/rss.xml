@@ -1,5 +1,32 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Wed, 12 Feb 2025 05:41:19 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>Protobuf 序列化</title><link>https://jibinghu.github.io/post/Protobuf%20-xu-lie-hua.html</link><description>### Protocol Buffers (protobuf)
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Wed, 12 Feb 2025 09:24:59 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>多头注意力（MHA）和分组查询注意力（GQA）的伪代码实现</title><link>https://jibinghu.github.io/post/duo-tou-zhu-yi-li-%EF%BC%88MHA%EF%BC%89-he-fen-zu-cha-xun-zhu-yi-li-%EF%BC%88GQA%EF%BC%89-de-wei-dai-ma-shi-xian.html</link><description>多头注意力（MHA）和分组查询注意力（GQA）的伪代码实现：
+
+---
+
+### **1. 多头注意力（Multi-Head Attention, MHA）**
+```python
+def MultiHeadAttention(Q, K, V, num_heads, d_model):
+    batch_size, seq_len = Q.size(0), Q.size(1)
+    d_k = d_model // num_heads  # 每个头的维度
+    
+    # 1. 线性投影并分割头
+    Q = linear(Q).view(batch_size, seq_len, num_heads, d_k).transpose(1, 2)
+    K = linear(K).view(batch_size, seq_len, num_heads, d_k).transpose(1, 2)
+    V = linear(V).view(batch_size, seq_len, num_heads, d_k).transpose(1, 2)
+    
+    # 2. 计算缩放点积注意力
+    scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(d_k)
+    attn = softmax(scores, dim=-1)
+    context = torch.matmul(attn, V)
+    
+    # 3. 合并所有头并线性变换
+    context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, d_model)
+    output = linear(context)
+    return output
+```
+
+**关键步骤说明**：
+1. 将输入 `Q/K/V` 分别投影到 `num_heads` 个独立的头。</description><guid isPermaLink="true">https://jibinghu.github.io/post/duo-tou-zhu-yi-li-%EF%BC%88MHA%EF%BC%89-he-fen-zu-cha-xun-zhu-yi-li-%EF%BC%88GQA%EF%BC%89-de-wei-dai-ma-shi-xian.html</guid><pubDate>Wed, 12 Feb 2025 09:24:31 +0000</pubDate></item><item><title>Protobuf 序列化</title><link>https://jibinghu.github.io/post/Protobuf%20-xu-lie-hua.html</link><description>### Protocol Buffers (protobuf)
 
 **Protocol Buffers (protobuf)** 是一种由 Google 开发的用于数据序列化的轻量级、高效的机制。</description><guid isPermaLink="true">https://jibinghu.github.io/post/Protobuf%20-xu-lie-hua.html</guid><pubDate>Wed, 12 Feb 2025 05:40:52 +0000</pubDate></item><item><title>ps | pkill | killall COMMAND</title><link>https://jibinghu.github.io/post/ps%20-%20pkill%20-%20killall%20COMMAND.html</link><description>1. 使用 pkill 命令
 
