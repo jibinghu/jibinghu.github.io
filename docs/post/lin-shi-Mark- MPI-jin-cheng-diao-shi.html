@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="为了跟踪MPI程序中的变量变化并分析调用流程，以下是几种详细的方法和步骤：
+
+1. 使用调试器（GDB）附加MPI进程
+方法说明
+通过GDB直接调试MPI进程，设置断点或观察点（watchpoint）跟踪变量变化，适合精准调试但需要手动操作。">
+<meta property="og:title" content="临时Mark: MPI进程调试">
+<meta property="og:description" content="为了跟踪MPI程序中的变量变化并分析调用流程，以下是几种详细的方法和步骤：
+
+1. 使用调试器（GDB）附加MPI进程
+方法说明
+通过GDB直接调试MPI进程，设置断点或观察点（watchpoint）跟踪变量变化，适合精准调试但需要手动操作。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/lin-shi-Mark-%20MPI-jin-cheng-diao-shi.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>临时Mark: MPI进程调试</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">临时Mark: MPI进程调试</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/125" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p>为了跟踪MPI程序中的变量变化并分析调用流程，以下是几种详细的方法和步骤：</p>
+<ol>
+<li>使用调试器（GDB）附加MPI进程<br>
+方法说明<br>
+通过GDB直接调试MPI进程，设置断点或观察点（watchpoint）跟踪变量变化，适合精准调试但需要手动操作。</li>
+</ol>
+<p>操作步骤<br>
+启动MPI程序并附加GDB</p>
+<p>mpirun -np 24 xterm -e gdb --args ./fms.x</p>
+<p>每个进程会弹出独立的xterm窗口运行GDB（需图形界面支持）。</p>
+<p>自动化调试脚本<br>
+若需批量调试，编写GDB脚本（如gdb_script.gdb）：</p>
+<p>break filename.c:line_number   # 在变量所在行设置断点<br>
+watch variable_name            # 监视变量变化<br>
+commands<br>
+where                        # 打印堆栈<br>
+print variable_name          # 打印变量值<br>
+continue<br>
+end</p>
+<p>启动时加载脚本：</p>
+<p>mpirun -np 24 gdb -x gdb_script.gdb --args ./fms.x</p>
+<p>仅调试特定进程<br>
+使用条件断点（如只在rank=0时暂停）：</p>
+<p>break filename.c:123 if my_rank == 0</p>
+<ol start="2">
+<li>代码插桩（Printf调试）<br>
+方法说明<br>
+在代码中添加打印语句，输出变量值和MPI通信上下文，适合快速验证但需修改代码。</li>
+</ol>
+<p>操作步骤<br>
+插入带进程上下文的打印<br>
+int my_rank;<br>
+MPI_Comm_rank(MPI_COMM_WORLD, &amp;my_rank);<br>
+printf("Rank %d: variable=%d at %s:%d\n", my_rank, variable, <strong>FILE</strong>, <strong>LINE</strong>);</p>
+<p>重定向输出到文件<br>
+mpirun -np 24 ./fms.x &gt; output_rank_%q{OMPI_COMM_WORLD_RANK}.log 2&gt;&amp;1</p>
+<p>每个进程的输出会保存到单独文件（OpenMPI）中。<br>
+3. 使用MPI-Aware调试工具（TotalView/DTT）<br>
+方法说明<br>
+商业工具如TotalView或Arm DDT提供图形化界面，支持多进程同步调试、变量监控和通信可视化。</p>
+<p>操作步骤<br>
+启动TotalView：<br>
+mpirun -np 24 totalview ./fms.x</p>
+<p>在界面中设置全局断点，同步查看所有进程的变量状态。<br>
+4. 动态跟踪工具（SystemTap/DTrace）<br>
+方法说明<br>
+无需修改代码，通过探针跟踪变量读写事件，适合复杂场景但需学习成本。</p>
+<p>示例脚本（SystemTap）<br>
+probe process("fms.x").statement("<a href="mailto:func@file.c">func@file.c</a>:123") {<br>
+printf("Rank %d: variable=%d\n", <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/var/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/var">@var</a>("my_rank"), <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/var/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/var">@var</a>("variable"))<br>
+}</p>
+<p>运行：</p>
+<p>stap -v script.stp -c "mpirun -np 24 ./fms.x"</p>
+<ol start="5">
+<li>MPI通信日志与性能分析工具<br>
+方法说明<br>
+结合MPI通信日志和变量日志，分析通信与变量变化的关系。</li>
+</ol>
+<p>操作步骤<br>
+生成MPI通信日志<br>
+使用MPI_Log或PMPI接口记录通信事件：<br>
+MPI_Pcontrol(1); // 开启日志</p>
+<p>或通过环境变量（OpenMPI）：<br>
+export MPICH_DBG_CLASS=ALL<br>
+export MPICH_DBG_LEVEL=VERBOSE<br>
+mpirun -np 24 ./fms.x</p>
+<p>使用可视化工具<br>
+将日志导入Vampir或Paraver，观察通信时间线与变量变化的关联。<br>
+6. 编译器插桩与调用图生成<br>
+方法说明<br>
+通过编译器插桩生成函数调用流程，辅助理解程序执行路径。</p>
+<p>操作步骤<br>
+使用GCC插桩<br>
+编译时添加-finstrument-functions，编写回调函数记录调用栈：<br>
+void __cyg_profile_func_enter(void *func, void *caller) {<br>
+log_function_entry(func);<br>
+}</p>
+<p>生成调用图<br>
+使用gprof或Callgrind生成分析报告。<br>
+总结建议<br>
+快速验证：优先使用printf插桩，配合进程号过滤输出。<br>
+精准调试：用GDB设置条件断点或观察点，配合脚本自动化。<br>
+复杂场景：使用TotalView或动态跟踪工具（如SystemTap）。<br>
+通信关联分析：结合MPI日志（Vampir）和变量日志。<br>
+确保编译时启用调试信息（-g -O0），避免优化干扰变量跟踪。</p>
+<hr>
+<p>嗯，我现在需要跟踪一个MPI程序中的变量变化，这个程序是FV3大气动力核心，用24个进程运行的。我需要找到方法来详细查看程序的调用流程和这个变量的变化过程。首先，我应该考虑有哪些工具或方法可以实现这个目标呢？</p>
+<p>首先，MPI程序调试通常会用专门的调试工具，比如GDB，但MPI是多进程的，每个进程都是独立的，所以可能需要同时调试多个进程。我记得GDB有一个--args参数可以用来指定程序，但如果是多进程的话，可能需要启动多个GDB实例，或者使用像mpirun的调试选项。比如，mpirun有--debug或--gdb这样的参数吗？或者可能需要用xterm之类的终端来启动每个进程的调试器。例如，mpirun -np 24 xterm -e gdb ./fms.x。不过这样可能会有24个窗口弹出，这显然不太现实。那有没有其他办法？</p>
+<p>另外，是否可以使用集成MPI支持的调试器，比如TotalView或者DDT？不过这些可能是商业软件，可能没有免费授权。或者有没有其他开源工具？比如Valgrind的某些工具，或者专门针对MPI的检查工具？</p>
+<p>另外，可能需要在代码中插入打印语句，这样每个进程在变量变化时输出相关信息。不过这样做需要修改代码，重新编译，但可能更直接。不过因为MPI进程是并行的，输出的信息可能会混乱，需要将每个进程的rank信息也打印出来。比如，在每个printf语句中加入MPI_Comm_rank得到的进程号，这样就能区分不同进程的输出。例如：</p>
+<div class="highlight highlight-source-c"><pre class="notranslate"><span class="pl-smi">int</span> <span class="pl-s1">rank</span>;
+<span class="pl-en">MPI_Comm_rank</span>(<span class="pl-c1">MPI_COMM_WORLD</span>, <span class="pl-c1">&amp;</span><span class="pl-s1">rank</span>);
+<span class="pl-en">printf</span>(<span class="pl-s">"Rank %d: variable value is %d\n"</span>, <span class="pl-s1">rank</span>, <span class="pl-s1">variable</span>);</pre></div>
+<p>不过这样可能会产生大量输出，尤其是当变量频繁变化时。可能需要重定向输出到不同的文件，比如每个进程写入自己的文件，或者用某种方式合并输出并加上时间戳。不过这会增加处理的复杂度。</p>
+<p>另外，可以考虑使用MPI的日志功能，比如MPE（MPI Parallel Environment）或者类似工具来生成日志，然后使用可视化工具如Jumpshot来分析通信和事件。但不确定是否适用于跟踪变量变化，可能更适合分析通信模式。</p>
+<p>另外，GDB的分布式调试可能是一个方法。比如，使用GDB附加到每个MPI进程上，设置断点，并在断点处检查变量值。但如何同时管理多个GDB会话呢？可能需要编写脚本或者使用GDB的批处理模式。或者使用像vgdb这样的工具，但不确定是否适用于MPI。</p>
+<p>或者，使用MPI的特定调试库，例如记录所有MPI调用的参数和顺序，这可能帮助理解程序的流程，但变量的变化可能还需要结合代码逻辑。</p>
+<p>另一个思路是使用动态插桩工具，如SystemTap或DTrace，在变量被修改或访问时触发事件，并记录相关信息。这需要对程序的内存布局和变量地址有一定的了解，可能比较复杂，尤其是如果变量是动态分配或在堆栈中的。</p>
+<p>或者，使用静态分析工具，在编译时插入跟踪代码。比如，使用编译器选项或预处理宏来在每次变量被修改时记录信息。这可能需要修改构建过程，但可以精确跟踪变量的变化。</p>
+<p>还有可能使用性能分析工具，如Score-P或TAU，它们可以收集程序执行期间的数据，包括函数调用和变量值，但可能需要特定的插桩。</p>
+<p>另外，可以考虑将程序运行在单进程模式下，通过关闭MPI并行来简化调试，但这样可能无法复现问题，因为变量可能在并行通信中才会变化。所以这可能不是一个可行的方案。</p>
+<p>总结一下，可能的选项包括：</p>
+<ol>
+<li>使用GDB多进程调试：比如，用mpirun启动时，每个进程都附加到GDB，但需要管理多个实例。</li>
+<li>插入打印语句：在每个进程中加入带有rank的输出，跟踪变量变化。</li>
+<li>使用专门的MPI调试工具：如TotalView、DDT等。</li>
+<li>动态插桩工具：如SystemTap、DTrace。</li>
+<li>日志记录和分析工具：如MPE，Jumpshot。</li>
+<li>编译器辅助的插桩：如使用-g -O0编译，结合GDB的watchpoints。</li>
+</ol>
+<p>对于GDB调试多进程的情况，可能需要设置follow-fork-mode或处理多进程。但MPI通常使用spawn的方式启动进程，所以可能需要为每个进程单独调试。例如，在运行mpirun时，使用--debug或--launch选项让每个进程启动时暂停，等待调试器附加。例如，OpenMPI的--mpi=debug选项，或者使用-x选项设置环境变量，让进程在开始执行前暂停，比如通过设置一个睡眠，然后手动附加GDB。</p>
+<p>例如，可以在程序开始时插入一个循环，检查某个环境变量，并等待，例如：</p>
+<div class="highlight highlight-source-c"><pre class="notranslate"><span class="pl-smi">int</span> <span class="pl-en">main</span>(<span class="pl-smi">int</span> <span class="pl-s1">argc</span>, <span class="pl-smi">char</span> <span class="pl-c1">*</span><span class="pl-c1">*</span><span class="pl-s1">argv</span>) {
+    <span class="pl-smi">char</span> <span class="pl-c1">*</span><span class="pl-s1">env</span> <span class="pl-c1">=</span> <span class="pl-en">getenv</span>(<span class="pl-s">"WAIT_FOR_DEBUGGER"</span>);
+    <span class="pl-k">if</span> (<span class="pl-s1">env</span> <span class="pl-c1">!=</span> <span class="pl-c1">NULL</span> <span class="pl-c1">&amp;&amp;</span> <span class="pl-en">strcmp</span>(<span class="pl-s1">env</span>, <span class="pl-s">"1"</span>) <span class="pl-c1">==</span> <span class="pl-c1">0</span>) {
+        <span class="pl-k">volatile</span> <span class="pl-smi">int</span> <span class="pl-s1">wait</span> <span class="pl-c1">=</span> <span class="pl-c1">1</span>;
+        <span class="pl-k">while</span> (<span class="pl-s1">wait</span>); <span class="pl-c">// 在此处设置断点，或者通过gdb修改wait的值继续执行</span>
+    }
+    <span class="pl-en">MPI_Init</span>(<span class="pl-c1">&amp;</span><span class="pl-s1">argc</span>, <span class="pl-c1">&amp;</span><span class="pl-s1">argv</span>);
+    <span class="pl-c">// ... 其余代码</span>
+}</pre></div>
+<p>然后，在运行mpirun时，设置环境变量WAIT_FOR_DEBUGGER=1，这样每个进程都会进入循环。然后，用gdb附加到每个进程，设置变量wait为0，继续执行。这可能需要手动操作每个进程，但如果是24个进程的话，显然不可行。不过可以编写脚本自动附加。</p>
+<p>另一个方法是使用GDB的non-stop模式，或者在GDB脚本中自动化断点设置和继续执行。</p>
+<p>或者，使用OpenMPI的--mca参数，例如：</p>
+<p>mpirun -np 24 --mca orte_base_help_aggregate 0 --mca orte_submit_ports 0 ./fms.x</p>
+<p>这可能允许每个进程在启动时等待调试器连接。或者使用特定的参数如--debug-daemons，但需要具体查阅OpenMPI的文档。</p>
+<p>假设使用的是OpenMPI，那么可以这样启动：</p>
+<p>mpirun -np 24 --mca mpi_leave_pinned 1 --bind-to none --tag-output --timestamp-output -x LD_PRELOAD=libvt.so -x VT_PID=-1 ./fms.x</p>
+<p>但可能不太相关。或者，使用gdbserver：</p>
+<p>对于每个MPI进程，用gdbserver启动，然后远程连接。但如何将mpirun与gdbserver结合？</p>
+<p>例如，可以编写一个包装脚本，比如：</p>
+<p>#!/bin/bash<br>
+gdbserver localhost:1234 $@</p>
+<p>然后，运行mpirun -np 24 ./wrapper.sh ./fms.x，这样每个进程都会在gdbserver的监听端口1234上启动。不过每个进程需要不同的端口，否则会有冲突。可能需要动态分配端口，或者让每个进程使用不同的端口，例如基于MPI rank的端口号。例如，在wrapper.sh中，根据PMI_RANK或OMPI_COMM_WORLD_RANK环境变量来确定端口号，比如1234 + RANK。然后，可以通过GDB远程连接到不同的端口，但这样操作起来可能非常麻烦，尤其是24个进程。</p>
+<p>可能更好的方法是使用GDB的inferior管理多个调试会话，或者使用像cgdb这样的工具，但需要较多配置。</p>
+<p>另一个思路是使用并行调试器，比如TotalView。TotalView可以附加到整个MPI作业，并同时调试所有进程。用户可以在变量上设置观察点，查看其变化，并检查调用栈。但TotalView是商业软件，可能需要许可证。</p>
+<p>对于开源选项，DDD（Data Display Debugger）可能也可以结合GDB进行多进程调试，但同样可能操作复杂。</p>
+<p>回到问题本身，用户希望清晰地查看程序的调用流程和变量的变化过程。可能最直接的方式是使用打印语句，但需要处理多进程输出的混乱。或者，使用GDB对特定进程进行跟踪，但需要确定问题是否在所有进程中出现，还是特定于某些进程。</p>
+<p>比如，如果变量是在通信过程中变化的，可能需要在MPI通信函数附近设置断点，例如MPI_Send或MPI_Recv，然后检查变量的值。但需要知道具体在哪个代码位置。</p>
+<p>此外，GDB的watchpoint功能可以监视变量的变化，当变量被修改时暂停程序。但如果在多个进程中设置，可能会导致大量中断。不过可以针对特定进程进行设置。</p>
+<p>可能的步骤：</p>
+<ol>
+<li>编译程序时带有调试符号（-g），关闭优化（-O0），以便准确跟踪变量。</li>
+<li>运行MPI程序，例如使用mpirun -np 24 ./fms.x。</li>
+<li>使用GDB附加到其中一个或多个进程，设置观察点（watch variable），当变量变化时暂停，并打印堆栈跟踪。</li>
+</ol>
+<p>例如，找到进程的PID：</p>
+<p>使用ps aux | grep fms.x 查找对应的进程ID，然后gdb -p PID。</p>
+<p>但是手动附加到24个进程可能不现实，特别是当进程启动后立即执行。可能需要自动化脚本，或者使用调试器支持的MPI集成。</p>
+<p>另外，某些MPI实现允许在启动时暂停进程以便调试。例如，OpenMPI的--debug选项，或者使用--mca mpi_yield_when_idle 0之类的参数，不过可能需要具体查阅文档。</p>
+<p>或者，在代码中插入调试代码，例如：</p>
+<p>在每个进程开始时，输出其PID，然后暂停一段时间，让用户有时间附加GDB。</p>
+<p>例如：</p>
+<p>#include &lt;unistd.h&gt;<br>
+...<br>
+int rank;<br>
+MPI_Init(&amp;argc, &amp;argv);<br>
+MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);<br>
+printf("Rank %d PID: %d\n", rank, getpid());<br>
+fflush(stdout);<br>
+sleep(30); // 等待30秒，让用户附加GDB</p>
+<p>这样，当程序启动时，每个进程都会打印PID并等待30秒，在这段时间内，用户可以运行gdb -p PID来附加到对应的进程，并在sleep之后继续执行。</p>
+<p>这种方法需要修改代码，但相对简单，并且允许用户选择需要跟踪的特定进程。</p>
+<p>例如，用户可能只需要关注某一个或几个进程中的变量变化，尤其是当问题可能只出现在特定进程的情况下。</p>
+<p>此外，使用条件断点可能有助于减少调试的复杂性。例如，在变量被修改的地方设置断点，但只有当满足某些条件（如特定rank的进程）时才触发。</p>
+<p>总结可能的解决方案：</p>
+<ol>
+<li><strong>插入打印语句</strong>：在每个修改变量的地方打印变量值和进程rank，输出到不同文件或带有标记的日志中。</li>
+<li><strong>使用GDB附加到进程</strong>：通过暂停进程或利用MPI的调试选项，附加GDB并设置观察点或断点。</li>
+<li><strong>使用并行调试器</strong>：如TotalView或DDT，这些工具专为并行程序设计，可以同时管理多个进程的调试。</li>
+<li><strong>动态插桩工具</strong>：如SystemTap或DTrace，在变量访问时触发事件，记录调用栈和值。</li>
+<li><strong>MPI日志和可视化工具</strong>：记录MPI通信事件，结合变量日志分析流程。</li>
+</ol>
+<p>如果用户没有商业调试器，可能更倾向于使用GDB或打印语句的方法。例如，针对关键代码区域插入打印，并运行程序，将各进程的输出重定向到单独的文件：</p>
+<p>mpirun -np 24 ./fms.x &gt; output_rank_%r.log 2&gt;&amp;1</p>
+<p>其中%r可能被替换为实际的rank，但需要MPI运行时的支持，例如OpenMPI的--output-filename选项。</p>
+<p>例如：</p>
+<p>mpirun -np 24 --output-filename output ./fms.x</p>
+<p>这会将每个进程的输出写入单独的文件，如output.1, output.2等。</p>
+<p>然后，可以在这些日志中搜索变量的变化情况。</p>
+<p>此外，GDB的watchpoints可能非常有用，但需要注意，观察点的数量有限，且可能影响性能。但对于调试目的，这是可以接受的。</p>
+<p>例如，在GDB中，可以：</p>
+<ul>
+<li>附加到进程</li>
+<li>设置断点或watchpoint在变量地址</li>
+<li>当变量被修改时，打印堆栈跟踪和值</li>
+</ul>
+<p>但需要知道变量的地址或名称。对于局部变量，可能需要设置在特定的函数中。</p>
+<p>另外，如果变量是全局变量或静态变量，可能在GDB中更容易设置watchpoints。</p>
+<p>假设变量是全局的，可以在GDB中执行：</p>
+<p>watch variable</p>
+<p>然后，每当变量被修改时，GDB就会中断，并显示旧值和新值，以及调用堆栈。</p>
+<p>对于多进程的情况，可能需要对每个关注的进程单独执行此操作。</p>
+<p>综上，可能用户需要结合打印语句和GDB调试。例如，首先用打印语句缩小问题范围，确定变量在哪些进程和代码位置被修改，然后针对性地使用GDB进行深入调试。</p>
+<p>为了跟踪MPI程序中变量的变化并分析调用流程，可以采取以下方法：</p>
+<h3>一、使用调试器（GDB）</h3>
+<ol>
+<li>
+<p><strong>编译时添加调试信息</strong><br>
+确保编译时使用<code class="notranslate">-g -O0</code>选项，保留符号信息并关闭优化：</p>
+<div class="highlight highlight-source-shell"><pre class="notranslate">mpicc -g -O0 -o fms.x source.c</pre></div>
+</li>
+<li>
+<p><strong>启动进程并附加调试器</strong></p>
+<ul>
+<li><strong>手动附加</strong>：插入延迟代码，使进程启动后暂停，方便附加GDB：
+<div class="highlight highlight-source-c"><pre class="notranslate"><span class="pl-smi">int</span> <span class="pl-s1">rank</span>;
+<span class="pl-en">MPI_Comm_rank</span>(<span class="pl-c1">MPI_COMM_WORLD</span>, <span class="pl-c1">&amp;</span><span class="pl-s1">rank</span>);
+<span class="pl-en">printf</span>(<span class="pl-s">"Rank %d PID: %d\n"</span>, <span class="pl-s1">rank</span>, <span class="pl-en">getpid</span>());
+<span class="pl-en">fflush</span>(<span class="pl-s1">stdout</span>);
+<span class="pl-en">sleep</span>(<span class="pl-c1">30</span>); <span class="pl-c">// 等待30秒，在此期间运行 gdb -p &lt;PID&gt;</span></pre></div>
+</li>
+<li><strong>自动附加</strong>：使用<code class="notranslate">xterm</code>为每个进程启动GDB：
+<div class="highlight highlight-source-shell"><pre class="notranslate">mpirun -np 24 xterm -e gdb --args ./fms.x</pre></div>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>设置观察点（Watchpoint）</strong><br>
+在GDB中监控变量变化：</p>
+<div class="highlight highlight-source-gdb"><pre class="notranslate">(gdb) watch <span class="pl-c1">variable</span>
+(gdb) continue</pre></div>
+</li>
+</ol>
+<h3>二、日志输出</h3>
+<ol>
+<li>
+<p><strong>插入打印语句</strong><br>
+在代码中插入带进程号的打印语句：</p>
+<div class="highlight highlight-source-c"><pre class="notranslate"><span class="pl-smi">int</span> <span class="pl-s1">rank</span>;
+<span class="pl-en">MPI_Comm_rank</span>(<span class="pl-c1">MPI_COMM_WORLD</span>, <span class="pl-c1">&amp;</span><span class="pl-s1">rank</span>);
+<span class="pl-en">printf</span>(<span class="pl-s">"Rank %d: variable = %d\n"</span>, <span class="pl-s1">rank</span>, <span class="pl-s1">variable</span>);</pre></div>
+</li>
+<li>
+<p><strong>重定向输出到文件</strong><br>
+使用MPI运行时的输出重定向功能（以OpenMPI为例）：</p>
+<div class="highlight highlight-source-shell"><pre class="notranslate">mpirun -np 24 --output-filename output.log ./fms.x</pre></div>
+<p>每个进程的输出会保存到单独文件（如<code class="notranslate">output.log.1</code>, <code class="notranslate">output.log.2</code>）。</p>
+</li>
+</ol>
+<h3>三、专用调试工具</h3>
+<ol>
+<li>
+<p><strong>TotalView/DDT</strong><br>
+使用商业并行调试器（如TotalView）直接调试MPI程序：</p>
+<div class="highlight highlight-source-shell"><pre class="notranslate">totalview mpirun -a -np 24 ./fms.x</pre></div>
+</li>
+<li>
+<p><strong>Vampir/TAU</strong><br>
+使用性能分析工具记录程序流程：</p>
+<div class="highlight highlight-source-shell"><pre class="notranslate">mpirun -np 24 tau_exec ./fms.x</pre></div>
+</li>
+</ol>
+<h3>四、动态插桩</h3>
+<ol>
+<li><strong>SystemTap/DTrace</strong><br>
+编写脚本监控变量地址的变化（需知变量内存布局）：
+<pre lang="systemtap" class="notranslate"><code class="notranslate">probe process("fms.x").statement("func@file.c:123") {
+  printf("variable changed: %d\n", $variable)
+}
+</code></pre>
+</li>
+</ol>
+<h3>五、简化调试场景</h3>
+<ol>
+<li><strong>单进程调试</strong><br>
+暂时修改代码在单进程下运行，验证逻辑：
+<div class="highlight highlight-source-c"><pre class="notranslate"><span class="pl-c">// MPI_Init(&amp;argc, &amp;argv);</span>
+<span class="pl-en">MPI_Init_thread</span>(<span class="pl-c1">&amp;</span><span class="pl-s1">argc</span>, <span class="pl-c1">&amp;</span><span class="pl-s1">argv</span>, <span class="pl-c1">MPI_THREAD_SINGLE</span>, <span class="pl-c1">NULL</span>);</pre></div>
+</li>
+</ol>
+<h3>总结步骤</h3>
+<ol>
+<li><strong>初步定位</strong>：通过日志输出缩小问题范围，确定变量在哪些进程/代码段变化。</li>
+<li><strong>针对性调试</strong>：对关键进程使用GDB设置观察点，捕获调用栈。</li>
+<li><strong>深入分析</strong>：结合MPI通信日志（如使用MPE）分析变量如何随通信变化。</li>
+</ol>
+<h3>示例命令</h3>
+<ul>
+<li><strong>运行并生成日志</strong>：
+<div class="highlight highlight-source-shell"><pre class="notranslate">mpirun -np 24 --output-filename debug_log ./fms.x</pre></div>
+</li>
+<li><strong>GDB附加单个进程</strong>：
+<div class="highlight highlight-source-shell"><pre class="notranslate">gdb -p <span class="pl-k">&lt;</span>PID<span class="pl-k">&gt;</span> -ex <span class="pl-s"><span class="pl-pds">"</span>watch variable<span class="pl-pds">"</span></span> -ex <span class="pl-s"><span class="pl-pds">"</span>continue<span class="pl-pds">"</span></span></pre></div>
+</li>
+</ul>
+<p>通过上述方法，可以系统地跟踪变量变化并理清MPI程序的执行流程。</p>
+<hr>
+<p>要跟踪MPI程序中的变量，特别是在24个进程之间的通信中，可以使用以下几种方法来清晰详细地查看程序的调用流程以及变量的变化过程：</p>
+<ol>
+<li>使用调试器（例如 gdb）</li>
+</ol>
+<p>gdb 是一个强大的调试工具，可以帮助你单步执行程序，设置断点，查看变量的值，特别是在并行计算中。你可以通过以下方式来调试MPI程序：<br>
+•	启动MPI程序的调试会话：<br>
+使用 mpirun 启动MPI程序时，添加 -g 标志来包含调试信息。</p>
+<p>mpirun -np 24 xterm -e gdb ./fms.x</p>
+<p>这样可以在每个进程启动时打开一个独立的调试窗口。</p>
+<pre class="notranslate"><code class="notranslate">•	在调试器中设置断点：
+</code></pre>
+<p>在 gdb 中设置断点来查看程序的执行流程，尤其是变量值：</p>
+<p>(gdb) break my_variable</p>
+<p>这样可以在特定位置暂停并查看变量值。</p>
+<pre class="notranslate"><code class="notranslate">•	跟踪进程之间的通信：
+</code></pre>
+<p>使用 gdb 的 backtrace 命令可以查看当前进程的调用栈，从而帮助你理解程序的执行流程。</p>
+<ol start="2">
+<li>使用MPI自带的调试工具<br>
+•	mpiexec 或 mpirun 的调试选项：<br>
+如果你运行MPI程序时使用的是 mpiexec 或 mpirun，可以通过添加一些调试选项来获取更多的调试信息：</li>
+</ol>
+<p>mpirun -np 24 -d ./fms.x</p>
+<p>其中，-d 可以打印出MPI程序的一些调试信息。</p>
+<pre class="notranslate"><code class="notranslate">•	MPI的通信跟踪工具：
+</code></pre>
+<p>MPI通常会有一些跟踪工具或日志记录功能，你可以利用它们来查看进程之间的通信。例如，可以设置通信的详细日志，了解每个进程的消息发送和接收。</p>
+<ol start="3">
+<li>使用性能分析工具（如 mpiP 或 TAU）</li>
+</ol>
+<p>如果你想详细查看MPI程序的性能以及进程间的通信情况，可以使用一些专门的性能分析工具：<br>
+•	mpiP：<br>
+这是一个轻量级的MPI性能分析工具，可以帮助你收集MPI通信的性能数据。使用 mpiP 可以跟踪每个进程的通信模式、时间消耗等信息。</p>
+<p>mpirun -np 24 mpip ./fms.x</p>
+<pre class="notranslate"><code class="notranslate">•	TAU：
+</code></pre>
+<p>TAU 是一个更为全面的性能分析工具，可以帮助你查看并行计算中各个进程的调用堆栈、通信模式以及变量变化。它提供了详细的报告，帮助你分析程序的性能瓶颈。</p>
+<p>mpirun -np 24 tau_exec -T serial mpi ./fms.x</p>
+<ol start="4">
+<li>插入日志输出</li>
+</ol>
+<p>最直接的方式是在代码中插入日志输出语句，尤其是在变量更新和通信发生的地方。你可以在程序的关键位置（如发送和接收消息的地方）添加日志输出，记录该变量的值以及程序的执行状态。<br>
+•	使用 MPI 的 MPI_Send 和 MPI_Recv 调试信息：<br>
+你可以在每个进程发送或接收数据时插入日志输出，输出当前进程的通信数据：</p>
+<p>MPI_Send(&amp;variable, 1, MPI_FLOAT, dest, tag, MPI_COMM_WORLD);<br>
+printf("Process %d sending variable %f to process %d\n", rank, variable, dest);</p>
+<p>这样可以帮助你追踪数据在各进程之间的流动。</p>
+<ol start="5">
+<li>使用专业的性能分析软件（如 Allinea DDT, Intel Trace Analyzer）</li>
+</ol>
+<p>一些专用的调试和分析工具如 Allinea DDT 或 Intel Trace Analyzer 可以帮助你分析MPI程序的调用流程。这些工具通常提供图形界面，允许你查看各进程之间的交互、变量变化和通信延迟。</p>
+<ol start="6">
+<li>查看MPI库日志（如果支持）</li>
+</ol>
+<p>某些MPI实现（如OpenMPI或MPICH）可能会有内建的调试和日志功能。你可以通过启用MPI的调试模式来查看通信过程中更详细的信息：<br>
+•	对于OpenMPI，使用以下命令启用日志输出：</p>
+<p>mpirun -np 24 --mca btl_base_verbose 100 ./fms.x</p>
+<p>通过结合以上方法，你可以详细跟踪MPI程序中各进程间的通信和变量的变化过程，从而更好地理解程序的执行流程和潜在的问题。</p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
