@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="以下是一些 Docker 的常用命令，涵盖了从容器管理、镜像操作到网络管理等各个方面：
+
+1. 容器管理命令
+	•	启动一个容器
+docker run <镜像名>
+启动并运行一个新的容器。">
+<meta property="og:title" content="Docker 的常用命令">
+<meta property="og:description" content="以下是一些 Docker 的常用命令，涵盖了从容器管理、镜像操作到网络管理等各个方面：
+
+1. 容器管理命令
+	•	启动一个容器
+docker run <镜像名>
+启动并运行一个新的容器。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/Docker%20-de-chang-yong-ming-ling.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>Docker 的常用命令</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">Docker 的常用命令</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/129" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p>以下是一些 Docker 的常用命令，涵盖了从容器管理、镜像操作到网络管理等各个方面：</p>
+<ol>
+<li>
+<p>容器管理命令<br>
+•	启动一个容器<br>
+docker run &lt;镜像名&gt;<br>
+启动并运行一个新的容器。如果镜像不存在，则会自动拉取。<br>
+•	启动容器并在后台运行<br>
+docker run -d &lt;镜像名&gt;<br>
+-d 参数让容器在后台运行。<br>
+•	查看正在运行的容器<br>
+docker ps<br>
+查看当前正在运行的容器。<br>
+•	查看所有容器（包括停止的容器）<br>
+docker ps -a<br>
+•	停止容器<br>
+docker stop &lt;容器ID或容器名&gt;<br>
+停止一个正在运行的容器。<br>
+•	启动已经停止的容器<br>
+docker start &lt;容器ID或容器名&gt;<br>
+•	重启容器<br>
+docker restart &lt;容器ID或容器名&gt;<br>
+•	删除容器<br>
+docker rm &lt;容器ID或容器名&gt;<br>
+删除已停止的容器。<br>
+•	查看容器的日志<br>
+docker logs &lt;容器ID或容器名&gt;<br>
+•	进入容器内<br>
+docker exec -it &lt;容器ID或容器名&gt; bash<br>
+使用 bash 进入容器内部。</p>
+</li>
+<li>
+<p>镜像管理命令<br>
+•	查看本地镜像<br>
+docker images<br>
+列出所有本地存在的镜像。<br>
+•	拉取镜像<br>
+docker pull &lt;镜像名&gt;<br>
+从 Docker Hub 或其他仓库拉取镜像。<br>
+•	构建镜像<br>
+docker build -t &lt;镜像名&gt;:&lt;标签&gt; &lt;路径&gt;<br>
+从指定路径（通常是 Dockerfile 所在目录）构建镜像。<br>
+•	删除镜像<br>
+docker rmi &lt;镜像ID或镜像名&gt;<br>
+删除一个镜像。</p>
+</li>
+<li>
+<p>网络管理命令<br>
+•	查看 Docker 网络<br>
+docker network ls<br>
+列出所有 Docker 网络。<br>
+•	创建 Docker 网络<br>
+docker network create &lt;网络名&gt;<br>
+创建一个新的网络。<br>
+•	连接容器到网络<br>
+docker network connect &lt;网络名&gt; &lt;容器名或容器ID&gt;<br>
+将一个容器连接到指定的网络。<br>
+•	断开容器与网络的连接<br>
+docker network disconnect &lt;网络名&gt; &lt;容器名或容器ID&gt;<br>
+断开容器与指定网络的连接。</p>
+</li>
+<li>
+<p>容器数据卷管理命令<br>
+•	查看本地卷<br>
+docker volume ls<br>
+列出所有 Docker 卷。<br>
+•	创建卷<br>
+docker volume create &lt;卷名&gt;<br>
+创建一个新的数据卷。<br>
+•	删除卷<br>
+docker volume rm &lt;卷名&gt;<br>
+删除一个数据卷。<br>
+•	查看卷的详细信息<br>
+docker volume inspect &lt;卷名&gt;<br>
+获取卷的详细信息，如挂载位置。</p>
+</li>
+<li>
+<p>容器镜像操作<br>
+•	导出容器为镜像<br>
+docker export &lt;容器ID或容器名&gt; &gt; &lt;镜像.tar&gt;<br>
+将容器导出为 tar 包。<br>
+•	导入 tar 包为镜像<br>
+docker import &lt;镜像.tar&gt;<br>
+从 tar 包导入镜像。</p>
+</li>
+<li>
+<p>Docker 配置和其他命令<br>
+•	查看 Docker 版本<br>
+docker version<br>
+显示 Docker 客户端和服务器的版本信息。<br>
+•	查看 Docker 系统信息<br>
+docker info<br>
+显示 Docker 的系统信息（包括镜像、容器数量、存储驱动等）。<br>
+•	检查容器状态和诊断<br>
+docker inspect &lt;容器ID或容器名&gt;<br>
+返回一个 JSON 格式的容器详细信息。</p>
+</li>
+<li>
+<p>Docker Compose 命令（如果使用 Compose 管理多个容器）<br>
+•	启动 Compose 项目<br>
+docker-compose up<br>
+启动并创建 Compose 文件中的所有服务容器。<br>
+•	后台启动 Compose 项目<br>
+docker-compose up -d<br>
+在后台启动服务。<br>
+•	停止 Compose 项目<br>
+docker-compose down<br>
+停止并删除 Compose 项目中的容器和网络。<br>
+•	查看 Compose 项目日志<br>
+docker-compose logs<br>
+查看 Compose 项目中各个服务的日志。</p>
+</li>
+</ol>
+<p>这些命令涵盖了 Docker 的常见操作，可以帮助你高效地管理容器、镜像和网络等。如果你需要更深入的了解或其他特定命令，Docker 的<a href="https://docs.docker.com/" rel="nofollow">官方文档</a>提供了详细的解释。</p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+
+
+</script>
+
+
+</html>
