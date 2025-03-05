@@ -75,4 +75,10 @@ FP精度和特殊精度加上，位数总结如下表：
 [混合精度计算](https://zhida.zhihu.com/search?content_id=246744417&content_type=Article&match_order=1&q=%E6%B7%B7%E5%90%88%E7%B2%BE%E5%BA%A6%E8%AE%A1%E7%AE%97&zhida_source=entity)，是在单个操作中使用不同的精度级别，从而在不牺牲精度的情况下实现计算效率，减少运行所需的内存、时间和功耗
 
 ---
+
+Tensor Core 支持的精度：
+
+![Image](https://github.com/user-attachments/assets/992474ff-4d96-44f0-a34c-ba30ada6ac68)
+
+---
 https://zhuanlan.zhihu.com/p/713763703
