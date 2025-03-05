@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="
+---
+
+kv cache 以及 casual mask 演示
+
+![Image](https://github.com/user-attachments/assets/53697fd5-e62f-4a07-95d2-c33fa0265279)
+
+MHA 的多头注意力是在权重矩阵阶段就切分的，同理，MQA/GQA的多头注意力的共享也是在权重矩阵阶段就共享的。">
+<meta property="og:title" content="Attention 补充说明">
+<meta property="og:description" content="
+---
+
+kv cache 以及 casual mask 演示
+
+![Image](https://github.com/user-attachments/assets/53697fd5-e62f-4a07-95d2-c33fa0265279)
+
+MHA 的多头注意力是在权重矩阵阶段就切分的，同理，MQA/GQA的多头注意力的共享也是在权重矩阵阶段就共享的。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/Attention%20-bu-chong-shuo-ming.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>Attention 补充说明</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">Attention 补充说明</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/133" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><hr>
+<p>kv cache 以及 casual mask 演示</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/53697fd5-e62f-4a07-95d2-c33fa0265279"><img src="https://github.com/user-attachments/assets/53697fd5-e62f-4a07-95d2-c33fa0265279" alt="Image" style="max-width: 100%;"></a></p>
+<p>MHA 的多头注意力是在权重矩阵阶段就切分的，同理，MQA/GQA的多头注意力的共享也是在权重矩阵阶段就共享的。</p>
+<h3>问题一：多头注意力（MHA）中的权重划分</h3>
+<p>在标准的**多头注意力（MHA）**中，权重矩阵 ( W_Q, W_K, W_V ) 的划分确实从矩阵级别就开始进行。具体来说：</p>
+<ol>
+<li>
+<p><strong>参数划分方式</strong>：<br>
+假设模型的隐藏维度为 ( d_{\text{model}} )，头数为 ( h )，每个头的维度为 ( d_k = d_{\text{model}} / h )。此时：<br>
+• 每个头 ( i ) 的权重矩阵 ( W_Q^{(i)}, W_K^{(i)}, W_V^{(i)} ) 的维度为 ( d_{\text{model}} \times d_k )，即 [ [\text{hidden_size}, \text{hidden_size}/\text{num_heads}] ]。<br>
+• 多头注意力的核心实现是将输入 ( X ) 同时投影到 ( h ) 组独立的查询（Q）、键（K）、值（V）子空间，每组子空间对应一个注意力头。</p>
+</li>
+<li>
+<p><strong>计算过程示例</strong>：<br>
+输入 ( X \in \mathbb{R}^{n \times d_{\text{model}}} )（序列长度 ( n )）经过投影：<br>
+[<br>
+Q_i = X W_Q^{(i)}, \quad K_i = X W_K^{(i)}, \quad V_i = X W_V^{(i)} \quad (\forall i \in {1,2,...,h})<br>
+]<br>
+每个头独立计算注意力权重后，结果会拼接并通过线性层融合。</p>
+</li>
+</ol>
+<hr>
+<h3>问题二：多查询注意力（MQA）的权重共享</h3>
+<p>在**多查询注意力（MQA）**中，共享的权重主要集中在键（K）和值（V）的投影矩阵上，具体如下：</p>
+<ol>
+<li>
+<p><strong>参数共享机制</strong>：<br>
+• <strong>K 和 V 共享</strong>：所有注意力头共享同一组权重矩阵 ( W_K ) 和 ( W_V )，即：<br>
+[<br>
+K = X W_K, \quad V = X W_V \quad (\text{全局共享})<br>
+]<br>
+这两个矩阵的维度仍为 ( d_{\text{model}} \times d_k )，但与 MHA 不同，所有头复用相同的 K 和 V。<br>
+• <strong>Q 独立</strong>：每个头保留独立的查询投影矩阵 ( W_Q^{(i)} )，即每个头生成自己的 Q：<br>
+[<br>
+Q_i = X W_Q^{(i)} \quad (\forall i \in {1,2,...,h})<br>
+]</p>
+</li>
+<li>
+<p><strong>计算优势与影响</strong>：<br>
+• <strong>参数减少</strong>：K 和 V 的参数量从 ( 2h \cdot d_{\text{model}} \cdot d_k ) 降至 ( 2 \cdot d_{\text{model}} \cdot d_k )，显著节省内存。<br>
+• <strong>计算效率</strong>：在解码阶段（如自回归生成），共享的 K 和 V 可避免重复计算，提升推理速度。例如，在生成第 ( t ) 个 token 时，历史 K 和 V 可缓存复用。</p>
+</li>
+<li>
+<p><strong>维度匹配示例</strong>：<br>
+假设 ( d_{\text{model}}=768 )，头数 ( h=12 )，则每个头的 ( d_k=64 )：<br>
+• MQA 的 ( W_K, W_V ) 维度为 ( 768 \times 64 )，与 MHA 中每个头的 K/V 投影维度一致，但被所有头共享。<br>
+• 每个头的 ( W_Q^{(i)} ) 仍为 ( 768 \times 64 )，独立生成不同的 Q。</p>
+</li>
+</ol>
+<hr>
+<h3>对比总结</h3>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th><strong>特性</strong></th>
+<th><strong>多头注意力（MHA）</strong></th>
+<th><strong>多查询注意力（MQA）</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Q/K/V 投影</strong></td>
+<td>每个头独立投影 Q, K, V</td>
+<td>每个头独立投影 Q，共享 K 和 V</td>
+</tr>
+<tr>
+<td><strong>参数量</strong></td>
+<td>( 3h \cdot d_{\text{model}} \cdot d_k )</td>
+<td>( (h + 2) \cdot d_{\text{model}} \cdot d_k )</td>
+</tr>
+<tr>
+<td><strong>适用场景</strong></td>
+<td>对精度敏感的任务（如预训练）</td>
+<td>资源受限场景（如边缘设备推理、长序列生成）</td>
+</tr>
+<tr>
+<td><strong>注意力多样性</strong></td>
+<td>高（独立 K/V 捕捉不同模式）</td>
+<td>较低（共享 K/V 可能限制多样性）</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<hr>
+<h3>代码示例（PyTorch）</h3>
+<p><strong>MHA 实现片段</strong>：</p>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span> <span class="pl-k">as</span> <span class="pl-s1">nn</span>
+
+<span class="pl-k">class</span> <span class="pl-v">MultiHeadAttention</span>(<span class="pl-s1">nn</span>.<span class="pl-c1">Module</span>):
+    <span class="pl-k">def</span> <span class="pl-en">__init__</span>(<span class="pl-s1">self</span>, <span class="pl-s1">d_model</span>, <span class="pl-s1">num_heads</span>):
+        <span class="pl-en">super</span>().<span class="pl-c1">__init__</span>()
+        <span class="pl-s1">self</span>.<span class="pl-c1">d_model</span> <span class="pl-c1">=</span> <span class="pl-s1">d_model</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">num_heads</span> <span class="pl-c1">=</span> <span class="pl-s1">num_heads</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">d_k</span> <span class="pl-c1">=</span> <span class="pl-s1">d_model</span> <span class="pl-c1">//</span> <span class="pl-s1">num_heads</span>
+        
+        <span class="pl-c"># 每个头独立的 Q/K/V 投影矩阵</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">W_Q</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)  <span class="pl-c"># 实际实现中会拆分为 h 个子矩阵</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">W_K</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
+        <span class="pl-s1">self</span>.<span class="pl-c1">W_V</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">d_model</span>)
+    
+    <span class="pl-k">def</span> <span class="pl-en">forward</span>(<span class="pl-s1">self</span>, <span class="pl-s1">x</span>):
+        <span class="pl-c"># 输入 x: [batch, seq_len, d_model]</span>
+        <span class="pl-c1">Q</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">W_Q</span>(<span class="pl-s1">x</span>)  <span class="pl-c"># 拆分为 h 个 [batch, seq_len, d_k]</span>
+        <span class="pl-c1">K</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">W_K</span>(<span class="pl-s1">x</span>)
+        <span class="pl-c1">V</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">W_V</span>(<span class="pl-s1">x</span>)
+        <span class="pl-c"># ... 后续计算注意力 ...</span></pre></div>
+<p><strong>MQA 实现片段</strong>：</p>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-v">MultiQueryAttention</span>(<span class="pl-s1">nn</span>.<span class="pl-c1">Module</span>):
+    <span class="pl-k">def</span> <span class="pl-en">__init__</span>(<span class="pl-s1">self</span>, <span class="pl-s1">d_model</span>, <span class="pl-s1">num_heads</span>):
+        <span class="pl-en">super</span>().<span class="pl-c1">__init__</span>()
+        <span class="pl-s1">self</span>.<span class="pl-c1">d_model</span> <span class="pl-c1">=</span> <span class="pl-s1">d_model</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">num_heads</span> <span class="pl-c1">=</span> <span class="pl-s1">num_heads</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">d_k</span> <span class="pl-c1">=</span> <span class="pl-s1">d_model</span> <span class="pl-c1">//</span> <span class="pl-s1">num_heads</span>
+        
+        <span class="pl-c"># 独立的 Q 投影，共享的 K/V 投影</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">W_Q</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">ModuleList</span>([<span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">self</span>.<span class="pl-c1">d_k</span>) <span class="pl-k">for</span> <span class="pl-s1">_</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-s1">num_heads</span>)])
+        <span class="pl-s1">self</span>.<span class="pl-c1">W_K</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">self</span>.<span class="pl-c1">d_k</span>)  <span class="pl-c"># 全局共享</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">W_V</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">d_model</span>, <span class="pl-s1">self</span>.<span class="pl-c1">d_k</span>)  <span class="pl-c"># 全局共享</span>
+    
+    <span class="pl-k">def</span> <span class="pl-en">forward</span>(<span class="pl-s1">self</span>, <span class="pl-s1">x</span>):
+        <span class="pl-c"># 输入 x: [batch, seq_len, d_model]</span>
+        <span class="pl-c1">K</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">W_K</span>(<span class="pl-s1">x</span>)  <span class="pl-c"># 共享的 K</span>
+        <span class="pl-c1">V</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">W_V</span>(<span class="pl-s1">x</span>)  <span class="pl-c"># 共享的 V</span>
+        <span class="pl-v">Q_heads</span> <span class="pl-c1">=</span> [<span class="pl-en">W_Q_i</span>(<span class="pl-s1">x</span>) <span class="pl-k">for</span> <span class="pl-v">W_Q_i</span> <span class="pl-c1">in</span> <span class="pl-s1">self</span>.<span class="pl-c1">W_Q</span>]  <span class="pl-c"># 每个头独立的 Q</span>
+        <span class="pl-c"># ... 后续计算注意力 ...</span></pre></div>
+<hr>
+<h3>深入思考</h3>
+<ol>
+<li>
+<p><strong>MQA 的局限性</strong>：<br>
+共享 K/V 可能导致模型无法充分捕捉输入的不同交互模式，尤其在需要细粒度语义区分的任务（如机器翻译）中，可能影响性能。可通过实验验证：在 T5 或 GPT 架构中，将 MHA 替换为 MQA 后，观察验证集损失和生成质量的变化。</p>
+</li>
+<li>
+<p><strong>变体扩展</strong>：<br>
+• <strong>分组查询注意力（GQA）</strong>：折中方案，将头分为 ( g ) 组，组内共享 K/V，平衡参数量与表达能力。<br>
+• <strong>动态投影</strong>：根据输入内容动态生成 K/V 投影参数，缓解共享带来的信息损失。</p>
+</li>
+</ol>
+<hr>
+<p>文章已经写的非常好了，这里就不赘述了。</p>
+<p><a href="https://zhuanlan.zhihu.com/p/21799412936" rel="nofollow">https://zhuanlan.zhihu.com/p/21799412936</a></p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
