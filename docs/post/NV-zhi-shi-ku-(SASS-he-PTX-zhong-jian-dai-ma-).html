@@ -358,7 +358,7 @@ Error:
 <span class="pl-en">        ld.param.u64    %rd1</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">test2(</span><span class="pl-c1">float</span><span class="pl-en">&amp;)_param_0</span><span class="pl-s1">]</span><span class="pl-c">;</span>
 <span class="pl-en">        cvta.to.</span><span class="pl-c1">global</span><span class="pl-en">.u64      %rd2</span><span class="pl-s1">,</span><span class="pl-en"> %rd1</span><span class="pl-c">;</span>
 <span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.u32         %r1</span><span class="pl-s1">,</span><span class="pl-en"> %ctaid.x</span><span class="pl-c">;</span>
-<span class="pl-en">        </span><span class="pl-k">cvt</span><span class="pl-en">.rn.f32.u32  %f1</span><span class="pl-s1">,</span><span class="pl-en"> %r1</span><span class="pl-c">;</span>
+<span class="pl-en">        cvt.rn.f32.u32  %f1</span><span class="pl-s1">,</span><span class="pl-en"> %r1</span><span class="pl-c">;</span>
 <span class="pl-en">        sqrt.rn.f32     %f2</span><span class="pl-s1">,</span><span class="pl-en"> %f1</span><span class="pl-c">;</span>
 <span class="pl-en">        st.</span><span class="pl-c1">global</span><span class="pl-en">.f32   </span><span class="pl-s1">[</span><span class="pl-en">%rd2</span><span class="pl-s1">],</span><span class="pl-en"> %f2</span><span class="pl-c">;</span>
 <span class="pl-en">        </span><span class="pl-k">ret</span><span class="pl-c">;</span>
@@ -437,7 +437,7 @@ Error:
 <span class="pl-en">        </span><span class="pl-k">and</span><span class="pl-en">.b32         %r3</span><span class="pl-s1">,</span><span class="pl-en"> %r2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">8388608</span><span class="pl-c">;</span>
 <span class="pl-en">        </span><span class="pl-k">sub</span><span class="pl-en">.s32         %r4</span><span class="pl-s1">,</span><span class="pl-en"> %r1</span><span class="pl-s1">,</span><span class="pl-en"> %r3</span><span class="pl-c">;</span>
 <span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.b32         %f8</span><span class="pl-s1">,</span><span class="pl-en"> %r4</span><span class="pl-c">;</span>
-<span class="pl-en">        </span><span class="pl-k">cvt</span><span class="pl-en">.rn.f32.s32  %f9</span><span class="pl-s1">,</span><span class="pl-en"> %r3</span><span class="pl-c">;</span>
+<span class="pl-en">        cvt.rn.f32.s32  %f9</span><span class="pl-s1">,</span><span class="pl-en"> %r3</span><span class="pl-c">;</span>
 <span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f10</span><span class="pl-s1">,</span><span class="pl-en"> 0f34000000</span><span class="pl-c">;</span>
 <span class="pl-en">        fma.rn.f32      %f11</span><span class="pl-s1">,</span><span class="pl-en"> %f9</span><span class="pl-s1">,</span><span class="pl-en"> %f10</span><span class="pl-s1">,</span><span class="pl-en"> %f7</span><span class="pl-c">;</span>
 <span class="pl-en">        </span><span class="pl-k">add</span><span class="pl-en">.f32         %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f8</span><span class="pl-s1">,</span><span class="pl-en"> 0fBF800000</span><span class="pl-c">;</span>
@@ -580,9 +580,9 @@ Error:
 
 <span class="pl-c1">$</span><span class="pl-en">L__BB4_1:</span>
 <span class="pl-en">        </span><span class="pl-k">mul</span><span class="pl-en">.f64         %fd13</span><span class="pl-s1">,</span><span class="pl-en"> %fd1</span><span class="pl-s1">,</span><span class="pl-en"> 0d3FE45F306DC9C883</span><span class="pl-c">;</span>
-<span class="pl-en">        </span><span class="pl-k">cvt</span><span class="pl-en">.rni.s32.f64         %</span><span class="pl-v">r12</span><span class="pl-s1">,</span><span class="pl-en"> %fd13</span><span class="pl-c">;</span>
+<span class="pl-en">        cvt.rni.s32.f64         %</span><span class="pl-v">r12</span><span class="pl-s1">,</span><span class="pl-en"> %fd13</span><span class="pl-c">;</span>
 <span class="pl-en">        st.local.u32    </span><span class="pl-s1">[</span><span class="pl-en">%rd2</span><span class="pl-s1">],</span><span class="pl-en"> %</span><span class="pl-v">r12</span><span class="pl-c">;</span>
-<span class="pl-en">        </span><span class="pl-k">cvt</span><span class="pl-en">.rn.f64.s32  %fd14</span><span class="pl-s1">,</span><span class="pl-en"> %</span><span class="pl-v">r12</span><span class="pl-c">;</span>
+<span class="pl-en">        cvt.rn.f64.s32  %fd14</span><span class="pl-s1">,</span><span class="pl-en"> %</span><span class="pl-v">r12</span><span class="pl-c">;</span>
 <span class="pl-en">        </span><span class="pl-k">neg</span><span class="pl-en">.f64         %fd15</span><span class="pl-s1">,</span><span class="pl-en"> %fd14</span><span class="pl-c">;</span>
 <span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f64         %fd16</span><span class="pl-s1">,</span><span class="pl-en"> 0d3FF921FB54442D18</span><span class="pl-c">;</span>
 <span class="pl-en">        fma.rn.f64      %fd17</span><span class="pl-s1">,</span><span class="pl-en"> %fd15</span><span class="pl-s1">,</span><span class="pl-en"> %fd16</span><span class="pl-s1">,</span><span class="pl-en"> %fd1</span><span class="pl-c">;</span>
