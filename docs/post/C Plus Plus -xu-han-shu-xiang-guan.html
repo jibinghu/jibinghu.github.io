@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="## final和override的作用？final为什么能提高代码执行效率？
+
+> override：保证在派生类中声明的重载函数，与基类的虚函数有相同的签名，作用就是用于编译期代码检查。">
+<meta property="og:title" content="C Plus Plus 虚函数相关">
+<meta property="og:description" content="## final和override的作用？final为什么能提高代码执行效率？
+
+> override：保证在派生类中声明的重载函数，与基类的虚函数有相同的签名，作用就是用于编译期代码检查。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/C%20Plus%20Plus%20-xu-han-shu-xiang-guan.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>C Plus Plus 虚函数相关</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">C Plus Plus 虚函数相关</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/140" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h2>final和override的作用？final为什么能提高代码执行效率？</h2>
+<blockquote>
+<p>override：保证在派生类中声明的重载函数，与基类的虚函数有相同的签名，作用就是用于编译期代码检查。<br>
+final：阻止类的进一步派生和虚函数的进一步重写，同时也是一种名为去虚拟化的优化技巧，相当于把运行期多态转换为了编译期多态，提高了执行效率。</p>
+</blockquote>
+<h3><code class="notranslate">final</code> 和 <code class="notranslate">override</code> 的作用：</h3>
+<ol>
+<li>
+<p><strong><code class="notranslate">final</code></strong>：</p>
+<ul>
+<li>在 C++11 引入了 <code class="notranslate">final</code> 关键字，它有两个主要作用：
+<ul>
+<li><strong>防止继承</strong>：当 <code class="notranslate">final</code> 修饰一个类时，表示这个类不能被继承。例如：
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-en">Base</span> {
+    <span class="pl-c"><span class="pl-c">//</span> 基类</span>
+};
+
+<span class="pl-k">class</span> <span class="pl-en">Derived</span> <span class="pl-k">final</span> : public Base { <span class="pl-c"><span class="pl-c">//</span> 错误，不能从 `Derived` 类继承</span>
+};</pre></div>
+</li>
+<li><strong>防止重写</strong>：当 <code class="notranslate">final</code> 修饰一个虚函数时，表示该函数不能在派生类中被重写。例如：
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">final</span> { <span class="pl-c"><span class="pl-c">//</span> 不能被重写</span>
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    }
+};
+
+<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-c"><span class="pl-c">//</span> 错误：无法重写 `func` 因为它被标记为 `final`</span>
+    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> {
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    }
+};</pre></div>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong><code class="notranslate">override</code></strong>：</p>
+<ul>
+<li><code class="notranslate">override</code> 是用于显式标明某个函数是重写基类的虚函数。这样做可以让编译器检查这个函数是否确实重写了一个虚函数。</li>
+<li>如果函数没有正确重写基类中的虚函数（比如拼写错误、签名不匹配等），编译器会报错。
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() { std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base func<span class="pl-pds">"</span></span> &lt;&lt; std::endl; }
+};
+
+<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> { <span class="pl-c"><span class="pl-c">//</span> 明确表示重写了 `Base` 类的 `func` 方法</span>
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    }
+};</pre></div>
+</li>
+</ul>
+</li>
+</ol>
+<h3>为什么 <code class="notranslate">final</code> 能提高代码执行效率？</h3>
+<ol>
+<li>
+<p><strong>避免虚函数查找</strong>：</p>
+<ul>
+<li><code class="notranslate">final</code> 表示该类或虚函数不允许被继承或重写。这样编译器在生成代码时，可以使用更高效的方式来调用函数，而不需要进行虚函数查找。</li>
+<li>对于一个类中的虚函数，编译器通常会使用虚函数表（VTable）来动态查找对应的函数。而 <code class="notranslate">final</code> 标记的类或函数，编译器知道它不会再被继承或重写，因此可以直接调用函数，而不需要查找虚函数表，从而提高了运行时效率。</li>
+</ul>
+</li>
+<li>
+<p><strong>优化机会</strong>：</p>
+<ul>
+<li>对于 <code class="notranslate">final</code> 类，编译器可以进行更激进的优化，因为它知道该类无法被扩展。</li>
+<li>对于 <code class="notranslate">final</code> 虚函数，编译器可以直接调用函数而不使用虚表查找。也就是说，函数调用会变成普通的静态函数调用，从而去除了虚拟调用的开销。</li>
+</ul>
+</li>
+</ol>
+<h3>示例代码：</h3>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+
+<span class="pl-k">class</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">final</span> { <span class="pl-c"><span class="pl-c">//</span> `final` 防止重写</span>
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    }
+};
+
+<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-c"><span class="pl-c">//</span> 错误：不能重写 `func` 因为它是 `final`</span>
+    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> {
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    }
+};
+
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    Base* obj = <span class="pl-k">new</span> <span class="pl-c1">Base</span>();
+    obj-&gt;<span class="pl-c1">func</span>(); <span class="pl-c"><span class="pl-c">//</span> 调用 Base 类的 func，虚函数调用会被优化为静态调用</span>
+
+    <span class="pl-k">delete</span> obj;
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
+<p>总结：<code class="notranslate">final</code> 可以减少继承和重写的开销，使得编译器可以进行更多优化，从而提高代码执行效率。</p>
+<hr>
+<p>在 C++ 中，虚函数的实现依赖于 <strong>虚函数表（VTable）</strong> 和 <strong>虚函数指针（VPtr）</strong> 机制。这个机制是 C++ 支持多态性和动态绑定的关键。</p>
+<h3>虚函数在内存中的实现：</h3>
+<ol>
+<li>
+<p><strong>虚函数表（VTable）</strong>：</p>
+<ul>
+<li>每个含有虚函数的类都会有一个虚函数表（VTable）。虚函数表是一个指向类的虚函数的指针数组。它包含了该类所有虚函数的地址。每个类只有一张虚函数表，除非它有虚函数被重写。</li>
+<li>如果一个类没有虚函数，编译器就不会创建虚函数表。</li>
+</ul>
+</li>
+<li>
+<p><strong>虚函数指针（VPtr）</strong>：</p>
+<ul>
+<li>每个对象实例都有一个指向虚函数表的指针（VPtr）。这个指针通常作为对象的一个隐藏成员存储在对象的内存布局中。每个对象实例会有自己的 VPtr，指向其类的虚函数表。</li>
+</ul>
+</li>
+</ol>
+<h3>内存布局：</h3>
+<ul>
+<li>假设我们有一个类 <code class="notranslate">Base</code>，它含有一个虚函数 <code class="notranslate">func</code>。每个 <code class="notranslate">Base</code> 对象都含有一个虚函数指针（VPtr），指向该类的虚函数表（VTable）。如果类 <code class="notranslate">Derived</code> 继承自 <code class="notranslate">Base</code> 并重写了 <code class="notranslate">func</code>，则 <code class="notranslate">Derived</code> 对象也会包含自己的 VPtr，但该 VPtr 会指向 <code class="notranslate">Derived</code> 类的虚函数表。</li>
+</ul>
+<h3>示例：</h3>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+
+<span class="pl-k">class</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() {
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    }
+};
+
+<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> {
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    }
+};
+
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    Base* base = <span class="pl-k">new</span> <span class="pl-c1">Derived</span>();
+    base-&gt;<span class="pl-c1">func</span>();  <span class="pl-c"><span class="pl-c">//</span> 调用 Derived::func，使用虚函数机制</span>
+    <span class="pl-k">delete</span> base;
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
+<h3>内存分析：</h3>
+<ol>
+<li>
+<p><strong>虚函数表（VTable）</strong>：</p>
+<ul>
+<li><code class="notranslate">Base</code> 类的虚函数表会包含指向 <code class="notranslate">Base::func</code> 的指针。</li>
+<li><code class="notranslate">Derived</code> 类的虚函数表会包含指向 <code class="notranslate">Derived::func</code> 的指针（即使 <code class="notranslate">Derived</code> 类重写了 <code class="notranslate">func</code>，它会覆盖 <code class="notranslate">Base</code> 类的虚函数）。</li>
+</ul>
+</li>
+<li>
+<p><strong>虚函数指针（VPtr）</strong>：</p>
+<ul>
+<li>对于 <code class="notranslate">Base</code> 类型的指针 <code class="notranslate">base</code> 指向 <code class="notranslate">Derived</code> 类对象时，<code class="notranslate">base</code> 对象的 VPtr 会指向 <code class="notranslate">Derived</code> 类的虚函数表，而不是 <code class="notranslate">Base</code> 类的虚函数表。</li>
+<li>这样，当调用 <code class="notranslate">base-&gt;func()</code> 时，实际调用的是 <code class="notranslate">Derived::func</code>，而不是 <code class="notranslate">Base::func</code>，这是因为 <code class="notranslate">base</code> 的 VPtr 指向的是 <code class="notranslate">Derived</code> 类的虚函数表。</li>
+</ul>
+</li>
+</ol>
+<h3>内存结构示意：</h3>
+<p>假设我们有如下类结构：</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() {
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    }
+};
+
+<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> {
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    }
+};</pre></div>
+<ul>
+<li><code class="notranslate">Base</code> 类的虚函数表（VTable）：
+<ul>
+<li><code class="notranslate">Base::func</code> 的地址。</li>
+</ul>
+</li>
+<li><code class="notranslate">Derived</code> 类的虚函数表（VTable）：
+<ul>
+<li><code class="notranslate">Derived::func</code> 的地址。</li>
+</ul>
+</li>
+</ul>
+<p>对于一个 <code class="notranslate">Derived</code> 对象：</p>
+<ul>
+<li>它的内存结构可能是：
+<ol>
+<li><strong>VPtr</strong>（指向 <code class="notranslate">Derived</code> 类的虚函数表）。</li>
+<li><strong>成员变量</strong>（如果有的话）。</li>
+</ol>
+</li>
+</ul>
+<p>在 <code class="notranslate">main</code> 函数中，创建了一个 <code class="notranslate">Base*</code> 类型的指针 <code class="notranslate">base</code>，指向一个 <code class="notranslate">Derived</code> 对象。在调用 <code class="notranslate">base-&gt;func()</code> 时，实际执行的是 <code class="notranslate">Derived::func()</code>，而不是 <code class="notranslate">Base::func()</code>，因为 <code class="notranslate">base</code> 的 VPtr 指向的是 <code class="notranslate">Derived</code> 类的虚函数表。</p>
+<h3>为什么使用虚函数表：</h3>
+<ol>
+<li><strong>多态性</strong>：虚函数表允许动态绑定，支持在运行时决定调用哪个函数。即使你使用基类指针或引用，程序也会根据对象的实际类型来调用正确的函数。</li>
+<li><strong>性能代价</strong>：虽然虚函数提供了多态性，但它们引入了一定的性能开销，因为每次调用虚函数时，都需要通过虚函数表进行查找。</li>
+</ol>
+<h3>虚函数的内存开销：</h3>
+<ul>
+<li><strong>VTable</strong>：每个含有虚函数的类需要一个虚函数表。虚函数表的大小通常等于类中虚函数的个数，每个虚函数的表项通常是一个指向该虚函数的指针。</li>
+<li><strong>VPtr</strong>：每个包含虚函数的对象会有一个指向虚函数表的指针，通常这个指针是对象内存布局的一部分。</li>
+</ul>
+<h3>结论：</h3>
+<p>虚函数的内存实现依赖于虚函数表和虚函数指针机制。虚函数表是一个包含虚函数地址的数组，每个对象会有一个指向该表的指针。通过这种方式，C++ 实现了多态性和动态绑定。虽然引入了一些内存开销和执行时的查找开销，但它使得 C++ 可以支持运行时的多态性特性。</p>
+<hr>
+<h3>虚函数的定义和作用：</h3>
+<p><strong>虚函数</strong>是 C++ 中的一种成员函数，它允许在派生类中重写（覆盖）基类中的函数，并通过基类指针或引用来调用派生类的函数。这种特性是 C++ 支持 <strong>多态性</strong>（polymorphism）的核心之一。</p>
+<h4>关键点：</h4>
+<ul>
+<li><strong>虚函数</strong>是基类中的函数，通常使用 <code class="notranslate">virtual</code> 关键字标记。</li>
+<li><strong>动态绑定</strong>：虚函数调用是在运行时根据对象的实际类型决定的，而不是编译时根据指针或引用的类型决定。</li>
+<li>虚函数允许派生类对基类的函数进行 <strong>重写</strong>。</li>
+</ul>
+<h3>为什么需要虚函数？</h3>
+<p>C++ 中的多态性是通过虚函数实现的。通过虚函数，程序可以根据对象的实际类型（而非指针或引用的类型）来调用合适的函数。这使得我们可以用相同的接口（基类指针或引用）操作不同类型的对象。</p>
+<h3>语法示例：</h3>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+
+<span class="pl-k">class</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-c"><span class="pl-c">//</span> 声明虚函数</span>
+    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() {
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base class function<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    }
+
+    <span class="pl-k">virtual</span> <span class="pl-en">~Base</span>() {}  <span class="pl-c"><span class="pl-c">//</span> 虚析构函数</span>
+};
+
+<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
+<span class="pl-k">public:</span>
+    <span class="pl-c"><span class="pl-c">//</span> 重写基类的虚函数</span>
+    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> {
+        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived class function<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    }
+};
+
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    Base* basePtr = <span class="pl-k">new</span> <span class="pl-c1">Derived</span>();  <span class="pl-c"><span class="pl-c">//</span> 基类指针指向派生类对象</span>
+    basePtr-&gt;<span class="pl-c1">func</span>();  <span class="pl-c"><span class="pl-c">//</span> 调用的是 Derived 类的 func</span>
+
+    <span class="pl-k">delete</span> basePtr;  <span class="pl-c"><span class="pl-c">//</span> 动态分配内存需要手动释放</span>
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
+<h3>输出：</h3>
+<pre class="notranslate"><code class="notranslate">Derived class function
+</code></pre>
+<h3>解释：</h3>
+<ol>
+<li>
+<p><strong>虚函数的声明</strong>：</p>
+<ul>
+<li>在 <code class="notranslate">Base</code> 类中，<code class="notranslate">func</code> 函数被声明为虚函数，意味着我们可以在派生类中重写它。</li>
+</ul>
+</li>
+<li>
+<p><strong>动态绑定</strong>：</p>
+<ul>
+<li>在 <code class="notranslate">main</code> 函数中，<code class="notranslate">basePtr</code> 是一个指向 <code class="notranslate">Base</code> 类的指针，但它指向的是 <code class="notranslate">Derived</code> 类的对象。</li>
+<li>当我们调用 <code class="notranslate">basePtr-&gt;func()</code> 时，实际上调用的是 <code class="notranslate">Derived</code> 类中重写的 <code class="notranslate">func()</code> 函数，而不是 <code class="notranslate">Base</code> 类中的 <code class="notranslate">func()</code>。</li>
+<li>这种通过指针或引用来决定调用哪个函数的行为叫做 <strong>动态绑定</strong>（或称为 <strong>后期绑定</strong>）。</li>
+</ul>
+</li>
+<li>
+<p><strong>多态性</strong>：</p>
+<ul>
+<li>通过虚函数，我们可以在运行时根据对象的实际类型来选择调用哪个函数。这就是 <strong>多态性</strong> 的核心，它使得程序可以处理不同类型的对象，而不需要显式地检查对象的类型。</li>
+</ul>
+</li>
+</ol>
+<h3>为什么使用虚函数？</h3>
+<ol>
+<li>
+<p><strong>实现多态性</strong>：</p>
+<ul>
+<li>虚函数使得在使用基类指针或引用时，可以调用派生类中重写的函数。这样，我们可以写出更加通用和灵活的代码。例如，在处理不同类型的对象时，可以通过基类接口统一进行操作，而不关心对象的具体类型。</li>
+</ul>
+</li>
+<li>
+<p><strong>允许派生类扩展和修改基类的行为</strong>：</p>
+<ul>
+<li>通过虚函数，派生类可以修改基类中方法的行为（即重写基类的虚函数）。这使得我们能够通过继承和重写的方式，定制对象的行为。</li>
+</ul>
+</li>
+</ol>
+<h3>虚函数的内存开销：</h3>
+<ul>
+<li>每个类（如果它有虚函数）都需要一张 <strong>虚函数表（VTable）</strong>，它是一个包含指向虚函数的指针的数组。虚函数表存储了该类的虚函数的地址。</li>
+<li>每个对象实例（如果是含有虚函数的类）会包含一个指向虚函数表的指针（即虚函数指针，VPtr）。这个指针指向类的虚函数表。</li>
+<li>这样，每次调用虚函数时，程序会通过虚函数指针查找虚函数表，并在运行时决定调用哪个版本的函数。</li>
+</ul>
+<h3>虚函数的总结：</h3>
+<ol>
+<li><strong>定义</strong>：虚函数是基类中的函数，用 <code class="notranslate">virtual</code> 关键字声明，允许在派生类中被重写。</li>
+<li><strong>动态绑定</strong>：虚函数支持动态绑定，即在运行时根据对象的实际类型来选择调用哪个版本的函数。</li>
+<li><strong>多态性</strong>：虚函数是实现 C++ 中多态性的关键。它使得基类指针或引用可以用于操作不同类型的对象，并自动调用正确的函数。</li>
+<li><strong>内存开销</strong>：虚函数机制需要虚函数表和虚函数指针，这会带来一些内存开销和运行时性能损耗。</li>
+</ol>
+<p>虚函数是面向对象编程中实现多态性、继承和扩展行为的基础工具，使得代码更具通用性和灵活性。</p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
