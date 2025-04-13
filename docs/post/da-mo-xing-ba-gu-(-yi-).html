@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="# Activate Func
+
+Sigmoid and Tanh:
+
+![Image](https://github.com/user-attachments/assets/d8dfdbfb-64b6-45f5-9242-7c432c7862f4)
+
+ReLu and The Others:
+
+![Image](https://github.com/user-attachments/assets/ef1f067e-c438-4b29-ab2d-f98308010b94)
+
+ReLu's Trans:
+
+![Image](https://github.com/user-attachments/assets/d46727b0-0da5-491f-81f9-8b9d67646fa8)
+
+GeLU:
+
+![Image](https://github.com/user-attachments/assets/9d8d3a79-873b-446d-b1a0-eec8810152ee)
+
+Swish:
+
+![Image](https://github.com/user-attachments/assets/c637a853-dac9-405c-bf40-41826e726694)
+
+
+---
+
+KL Divergence And L1/2 Regularization
+
+### 1. **KL 散度**
+- **英文名称**：KL Divergence
+- **全称**：Kullback-Leibler Divergence
+- **简要解释**：KL 散度是一种衡量两个概率分布之间差异的非对称性度量。">
+<meta property="og:title" content="大模型八股(一)">
+<meta property="og:description" content="# Activate Func
+
+Sigmoid and Tanh:
+
+![Image](https://github.com/user-attachments/assets/d8dfdbfb-64b6-45f5-9242-7c432c7862f4)
+
+ReLu and The Others:
+
+![Image](https://github.com/user-attachments/assets/ef1f067e-c438-4b29-ab2d-f98308010b94)
+
+ReLu's Trans:
+
+![Image](https://github.com/user-attachments/assets/d46727b0-0da5-491f-81f9-8b9d67646fa8)
+
+GeLU:
+
+![Image](https://github.com/user-attachments/assets/9d8d3a79-873b-446d-b1a0-eec8810152ee)
+
+Swish:
+
+![Image](https://github.com/user-attachments/assets/c637a853-dac9-405c-bf40-41826e726694)
+
+
+---
+
+KL Divergence And L1/2 Regularization
+
+### 1. **KL 散度**
+- **英文名称**：KL Divergence
+- **全称**：Kullback-Leibler Divergence
+- **简要解释**：KL 散度是一种衡量两个概率分布之间差异的非对称性度量。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/da-mo-xing-ba-gu-%28-yi-%29.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>大模型八股(一)</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">大模型八股(一)</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/141" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h1>Activate Func</h1>
+<p>Sigmoid and Tanh:</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/d8dfdbfb-64b6-45f5-9242-7c432c7862f4"><img src="https://github.com/user-attachments/assets/d8dfdbfb-64b6-45f5-9242-7c432c7862f4" alt="Image" style="max-width: 100%;"></a></p>
+<p>ReLu and The Others:</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/ef1f067e-c438-4b29-ab2d-f98308010b94"><img src="https://github.com/user-attachments/assets/ef1f067e-c438-4b29-ab2d-f98308010b94" alt="Image" style="max-width: 100%;"></a></p>
+<p>ReLu's Trans:</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/d46727b0-0da5-491f-81f9-8b9d67646fa8"><img src="https://github.com/user-attachments/assets/d46727b0-0da5-491f-81f9-8b9d67646fa8" alt="Image" style="max-width: 100%;"></a></p>
+<p>GeLU:</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/9d8d3a79-873b-446d-b1a0-eec8810152ee"><img src="https://github.com/user-attachments/assets/9d8d3a79-873b-446d-b1a0-eec8810152ee" alt="Image" style="max-width: 100%;"></a></p>
+<p>Swish:</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/c637a853-dac9-405c-bf40-41826e726694"><img src="https://github.com/user-attachments/assets/c637a853-dac9-405c-bf40-41826e726694" alt="Image" style="max-width: 100%;"></a></p>
+<hr>
+<p>KL Divergence And L1/2 Regularization</p>
+<h3>1. <strong>KL 散度</strong></h3>
+<ul>
+<li><strong>英文名称</strong>：KL Divergence</li>
+<li><strong>全称</strong>：Kullback-Leibler Divergence</li>
+<li><strong>简要解释</strong>：KL 散度是一种衡量两个概率分布之间差异的非对称性度量。它用于比较两个概率分布 (P) 和 (Q)，计算 (P) 相对于 (Q) 的信息增益。公式为：<br>
+[<br>
+D_{\text{KL}}(P \parallel Q) = \sum_{x} P(x) \log \frac{P(x)}{Q(x)}<br>
+]<br>
+KL 散度在机器学习中常用于生成模型（如变分自编码器）和自然语言处理中的语言模型。</li>
+</ul>
+<h3>2. <strong>L1 正则化</strong></h3>
+<ul>
+<li><strong>英文名称</strong>：L1 Regularization</li>
+<li><strong>全称</strong>：L1 Regularization 或 Lasso Regularization</li>
+<li><strong>简要解释</strong>：L1 正则化通过在损失函数中添加参数的绝对值之和来惩罚模型的复杂度。其数学形式为：<br>
+[<br>
+\text{Loss} = \text{Original Loss} + \lambda \sum_{i |}w_i|<br>
+]<br>
+L1 正则化倾向于使某些参数变为零，从而实现稀疏性，常用于特征选择。</li>
+</ul>
+<h3>3. <strong>L2 正则化</strong></h3>
+<ul>
+<li><strong>英文名称</strong>：L2 Regularization</li>
+<li><strong>全称</strong>：L2 Regularization 或 Ridge Regularization</li>
+<li><strong>简要解释</strong>：L2 正则化通过在损失函数中添加参数的平方和来惩罚模型的复杂度。其数学形式为：<br>
+[<br>
+\text{Loss} = \text{Original Loss} + \lambda \sum_{i} w_i^2<br>
+]<br>
+L2 正则化使参数的值更小且更平滑，从而减少过拟合，常用于线性回归和神经网络。</li>
+</ul>
+<hr>
+<p>在深度学习模型中，正则化和分布相似性度量是两个常见但用途不同的概念。用户的查询主要围绕以下问题：能否用L1或L2范数替代KL散度来衡量两个分布的相似性，尤其是在一致性训练（如半监督方法UDA）中，并且将L1/L2与KL散度放入损失函数时，学习过程有何区别。以下是对这些问题的详细回答。</p>
+<hr>
+<h3><strong>L1、L2与KL散度的基本定义与用途</strong></h3>
+<p>首先，我们明确这三种度量的含义和典型应用场景：</p>
+<ul>
+<li><strong>L1范数</strong>（Lasso正则化）：计算向量各元素绝对值之和。在正则化中，L1通过将权重绝对值加到损失函数中，倾向于产生稀疏解（部分权重变为0），用于防止过拟合。</li>
+<li><strong>L2范数</strong>（Ridge正则化）：计算向量各元素平方和的平方根（即欧几里得距离）。在正则化中，L2通过惩罚权重平方和，使权重变小但不一定为0，同样用于控制模型复杂度。</li>
+<li><strong>KL散度</strong>（Kullback-Leibler散度）：衡量两个概率分布之间的差异，公式为 ( KL(P||Q) = \sum P(x) \log \frac{P(x)}{Q(x)} )。它在信息论中有重要意义，表示用基于Q的编码表示P分布时所需的额外信息量，常用于比较分布相似性，例如在变分自编码器或一致性训练中。</li>
+</ul>
+<p>在半监督方法UDA（Unsupervised Data Augmentation）中，KL散度被用来确保模型对原始数据和增强数据的预测分布一致。具体来说，损失函数通常包含 ( KL(P_{\text{original}} || P_{\text{augmented}}) )，目标是让增强数据的预测分布接近原始数据的预测分布。</p>
+<hr>
+<h3><strong>能否用L1或L2衡量两个分布的相似性？</strong></h3>
+<p>答案是<strong>可以</strong>，但需要将分布转化为向量形式。例如，假设有两个离散概率分布 ( P = [p_1, p_2, ..., p_n] ) 和 ( Q = [q_1, q_2, ..., q_n] )，表示对 ( n ) 个类别的预测概率，我们可以：</p>
+<ul>
+<li>计算 <strong>L1距离</strong>：( L1(P, Q) = \sum_{i=1}^n |p_i - q_i| )，即概率差的绝对值之和。</li>
+<li>计算 <strong>L2距离</strong>：( L2(P, Q) = \sqrt{\sum_{i=1}^n (p_i - q_i)^2} )，即概率差的欧几里得距离。</li>
+</ul>
+<p>在这两种情况下，当 ( P = Q ) 时，L1和L2距离均为0；当分布差异越大，距离值越大。因此，从技术上讲，L1和L2确实可以用来衡量两个分布的相似性，并作为一致性训练的损失函数。</p>
+<hr>
+<h3><strong>将L1/L2与KL散度放入损失函数的区别</strong></h3>
+<p>虽然L1和L2可以衡量分布相似性，但与KL散度相比，它们在学习过程中的行为有显著差异。以下从几个关键方面进行对比：</p>
+<h4>1. <strong>对称性</strong></h4>
+<ul>
+<li><strong>KL散度</strong>：非对称的，即 ( KL(P||Q) \neq KL(Q||P) )。在UDA中，通常选择 ( KL(P_{\text{original}} || P_{\text{augmented}}) )，强调增强数据预测应接近原始数据预测，具有明确的方向性。</li>
+<li><strong>L1/L2</strong>：对称的，即 ( L1(P, Q) = L1(Q, P) ) 和 ( L2(P, Q) = L2(Q, P) )。这意味着它们平等对待两个分布的差异，可能无法体现一致性训练中“以原始分布为基准”的意图。</li>
+</ul>
+<h4>2. <strong>对分布差异的敏感性</strong></h4>
+<ul>
+<li><strong>KL散度</strong>：对分布尾部（低概率区域）的差异更敏感。例如，若 ( P = [0.9, 0.1] )（高置信度），( Q = [0.5, 0.5] )（不确定），( KL(P||Q) ) 会显著惩罚Q的不确定性。</li>
+<li><strong>L1/L2</strong>：更关注分布的整体差异（“几何距离”）。对于上述例子，( L2(P, Q) \approx 0.566 )，值较温和，且不会特别强调置信度的差异。</li>
+</ul>
+<h4>3. <strong>学习目标与置信度</strong></h4>
+<ul>
+<li><strong>KL散度</strong>：在一致性训练中，最小化 ( KL(P_{\text{original}} || P_{\text{augmented}}) ) 会鼓励 ( P_{\text{augmented}} ) 不仅与 ( P_{\text{original}} ) 一致，还保持高置信度（接近one-hot分布）。这与熵正则化的效果类似。</li>
+<li><strong>L1/L2</strong>：最小化L1或L2距离仅要求两个分布接近，但对预测的置信度没有强约束。例如，( P_{\text{augmented}} ) 可能趋向于平滑分布（如 ( [0.5, 0.5] )），而不是匹配 ( P_{\text{original}} ) 的高置信度。</li>
+</ul>
+<h4>4. <strong>优化动态</strong></h4>
+<ul>
+<li><strong>KL散度</strong>：其梯度与模型logits（softmax前的输出）的关系与交叉熵损失类似，易于优化，且在概率模型中有理论依据（如最大似然估计）。</li>
+<li><strong>L1/L2</strong>：梯度计算基于概率差，可能导致不同的优化路径，尤其在神经网络中，可能不如KL散度与softmax输出自然契合。</li>
+</ul>
+<h4>5. <strong>概率解释与实际效果</strong></h4>
+<ul>
+<li><strong>KL散度</strong>：源于信息论，与概率分布的建模紧密相关，常用于需要良好概率校准的场景（如UDA），实践效果经过广泛验证。</li>
+<li><strong>L1/L2</strong>：作为通用距离度量，缺乏概率上的特定解释，在一致性训练中可能不如KL散度有效，尤其在强调预测一致性和置信度的任务中。</li>
+</ul>
+<hr>
+<h3><strong>举例说明</strong></h3>
+<p>假设有两个预测分布：</p>
+<ul>
+<li>
+<p>( P_{\text{original}} = [0.9, 0.1] )（高置信度）</p>
+</li>
+<li>
+<p>( P_{\text{augmented}} = [0.5, 0.5] )（不确定）</p>
+</li>
+<li>
+<p><strong>KL散度</strong>：( KL(P_{\text{original}} || P_{\text{augmented}}) = 0.9 \log \frac{0.9}{0.5} + 0.1 \log \frac{0.1}{0.5} \approx 0.51 )，惩罚较大，促使 ( P_{\text{augmented}} ) 提高置信度并接近 ( P_{\text{original}} )。</p>
+</li>
+<li>
+<p><strong>L2距离</strong>：( L2(P_{\text{original}}, P_{\text{augmented}}) = \sqrt{(0.9-0.5)^2 + (0.1-0.5)^2} \approx 0.566 )，值较小，仅反映几何距离，未突出置信度差异。</p>
+</li>
+</ul>
+<p>若换成 ( P_{\text{augmented}} = [0.8, 0.2] )：</p>
+<ul>
+<li><strong>KL散度</strong>：( KL(P_{\text{original}} || P_{\text{augmented}}) \approx 0.02 )，很小，表示分布已较接近。</li>
+<li><strong>L2距离</strong>：( L2(P_{\text{original}}, P_{\text{augmented}}) \approx 0.141 )，也减小，但不体现置信度惩罚。</li>
+</ul>
+<hr>
+<h3><strong>结论</strong></h3>
+<ul>
+<li><strong>能否使用L1/L2</strong>：可以，通过将分布视为向量，计算L1或L2距离来衡量相似性，并将其放入损失函数。</li>
+<li><strong>与KL散度的区别</strong>：KL散度因其非对称性、对尾部敏感性及概率意义，在一致性训练中更能鼓励高置信度和方向性一致的预测；而L1/L2作为对称的几何距离，可能导致模型优化方向不同，置信度约束较弱，效果可能不如KL散度，尤其在如UDA的场景中。</li>
+</ul>
+<p>因此，在深度学习一致性训练中，虽然L1和L2理论上可行，但KL散度通常是更优选择，因其学习动态更符合任务需求。使用L1或L2可能影响性能，需根据具体应用场景实验验证。</p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+
+
+</script>
+
+
+</html>

@@ -1,5 +1,35 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Wed, 09 Apr 2025 14:49:35 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>C Plus Plus 虚函数相关</title><link>https://jibinghu.github.io/post/C%20Plus%20Plus%20-xu-han-shu-xiang-guan.html</link><description>## final和override的作用？final为什么能提高代码执行效率？
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Sun, 13 Apr 2025 08:47:31 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>大模型八股(一)</title><link>https://jibinghu.github.io/post/da-mo-xing-ba-gu-%28-yi-%29.html</link><description># Activate Func
+
+Sigmoid and Tanh:
+
+![Image](https://github.com/user-attachments/assets/d8dfdbfb-64b6-45f5-9242-7c432c7862f4)
+
+ReLu and The Others:
+
+![Image](https://github.com/user-attachments/assets/ef1f067e-c438-4b29-ab2d-f98308010b94)
+
+ReLu's Trans:
+
+![Image](https://github.com/user-attachments/assets/d46727b0-0da5-491f-81f9-8b9d67646fa8)
+
+GeLU:
+
+![Image](https://github.com/user-attachments/assets/9d8d3a79-873b-446d-b1a0-eec8810152ee)
+
+Swish:
+
+![Image](https://github.com/user-attachments/assets/c637a853-dac9-405c-bf40-41826e726694)
+
+
+---
+
+KL Divergence And L1/2 Regularization
+
+### 1. **KL 散度**
+- **英文名称**：KL Divergence
+- **全称**：Kullback-Leibler Divergence
+- **简要解释**：KL 散度是一种衡量两个概率分布之间差异的非对称性度量。</description><guid isPermaLink="true">https://jibinghu.github.io/post/da-mo-xing-ba-gu-%28-yi-%29.html</guid><pubDate>Sun, 13 Apr 2025 08:47:08 +0000</pubDate></item><item><title>C Plus Plus 虚函数相关</title><link>https://jibinghu.github.io/post/C%20Plus%20Plus%20-xu-han-shu-xiang-guan.html</link><description>## final和override的作用？final为什么能提高代码执行效率？
 
 &gt; override：保证在派生类中声明的重载函数，与基类的虚函数有相同的签名，作用就是用于编译期代码检查。</description><guid isPermaLink="true">https://jibinghu.github.io/post/C%20Plus%20Plus%20-xu-han-shu-xiang-guan.html</guid><pubDate>Wed, 09 Apr 2025 14:49:06 +0000</pubDate></item><item><title>CUTLASS 学习</title><link>https://jibinghu.github.io/post/CUTLASS%20-xue-xi.html</link><description>reference：
 CUTLASS学习资料汇总 - CUDA矩阵乘法库：https://blog.csdn.net/m0_75126181/article/details/142567933
