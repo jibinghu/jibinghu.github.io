@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="---
+
+大气层的高度并不是直接以“0.01 hPa”来描述的，但“0.01 hPa”常用于表示大气层的极高层（即大约 80 公里以上）。">
+<meta property="og:title" content="大气层描述">
+<meta property="og:description" content="---
+
+大气层的高度并不是直接以“0.01 hPa”来描述的，但“0.01 hPa”常用于表示大气层的极高层（即大约 80 公里以上）。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/da-qi-ceng-miao-shu.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>大气层描述</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">大气层描述</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/160" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><hr>
+<p>大气层的高度并不是直接以“0.01 hPa”来描述的，但“0.01 hPa”常用于表示大气层的极高层（即大约 80 公里以上）。大气层的划分通常是通过压力层（如 hPa、mb）或者高度来进行的。大气层的高度划分并没有统一的标准，不同的气象模型和领域可能采用不同的层次结构。以下是常见的划分方式：</p>
+<p>常见的大气层划分：</p>
+<ul>
+<li>
+<p>对流层（Troposphere）：从地面到大约10-15 km，包含了地球大气的绝大多数天气现象和气候变化。</p>
+</li>
+<li>
+<p>平流层（Stratosphere）：从10-15 km延伸到约50 km，主要特征是气温随高度增加而升高。</p>
+</li>
+<li>
+<p>中间层（Mesosphere）：从50 km到大约85 km，气温随高度增加而下降。</p>
+</li>
+<li>
+<p>热层（Thermosphere）：从85 km延伸至大约500-1,000 km，气温上升至非常高。</p>
+</li>
+<li>
+<p>外层（Exosphere）：从500-1,000 km开始，延伸到太空，气体非常稀薄。</p>
+</li>
+</ul>
+<p>大气层的划分通常是基于高度（km）或气压（hPa），而“0.01 hPa”通常对应于极高的层次，接近地球的大气层边界（约 80 km）。在数值天气预报中，垂直分层的标准压力水平一般是在几十百帕（hPa）到几百百帕之间。</p>
+<hr>
+<p>目前主流的天气预报模式是<strong>数值天气预报模式（Numerical Weather Prediction, NWP）</strong>，虽然<strong>AI模式</strong>（例如深度学习）在某些领域取得了突破，但它更多是作为传统数值模式的补充和优化，而非完全替代。</p>
+<h3>1. <strong>主流的数值天气预报模式（NWP）</strong></h3>
+<p>数值天气预报模式一直是天气预报的主流方法。这些模式通常基于大气物理方程，如Navier-Stokes方程、热力学方程等，结合初始条件和边界条件进行数值求解，以预测大气状态的演变。当前，许多全球和区域气象预报系统都依赖于<strong>物理驱动的数值天气预报模式</strong>。以下是几个典型的例子：</p>
+<h4>1.1 <strong>欧洲中期天气预报中心（ECMWF）</strong></h4>
+<ul>
+<li>
+<p>**IFS（Integrated Forecasting System）**是ECMWF的核心数值预报模式，采用高分辨率的物理过程模拟和数据同化技术进行全球天气预报。</p>
+</li>
+<li>
+<p><strong>特点</strong>：</p>
+<ul>
+<li>高分辨率：水平分辨率为9 km（高分辨率模式），垂直层数为137层。</li>
+<li>预报范围：通常提供10天的确定性预报和15天的概率预报。</li>
+<li>物理过程：包括对流、辐射、云、降水等复杂的物理过程。</li>
+<li><strong>数据同化</strong>：采用4D-Var同化方法，对实时观测数据进行优化，提高预报精度。</li>
+</ul>
+</li>
+</ul>
+<h4>1.2 <strong>美国国家气象局（NOAA）的GFS和NGFS</strong></h4>
+<ul>
+<li>
+<p><strong>GFS（Global Forecast System）</strong>：这是美国国家气象局（NOAA）开发的全球数值天气预报系统，广泛应用于中短期天气预报。</p>
+<ul>
+<li><strong>分辨率</strong>：最新的GFS系统具有更高的分辨率，约为13 km。</li>
+<li><strong>物理过程</strong>：包括大气动力学、云物理、辐射过程等。</li>
+</ul>
+</li>
+<li>
+<p><strong>NGFS（Next-Generation Global Prediction System）</strong>：是NOAA正在开发的下一代全球预报系统，采用了FV3作为其核心大气动力学模型，并结合人工智能（AI）和机器学习技术优化预报结果。</p>
+</li>
+</ul>
+<h4>1.3 <strong>日本气象厅（JMA）</strong></h4>
+<ul>
+<li><strong>JMA的全球气象预报系统</strong>（GSM）使用了数值天气预报核心，结合数据同化和高分辨率的物理模型进行天气预报。</li>
+</ul>
+<p>这些数值天气预报模式依赖强大的计算资源和物理学原理，对全球范围内的天气进行模拟和预报。</p>
+<h3>2. <strong>AI驱动的天气预报模式</strong></h3>
+<p>AI驱动的天气预报模式目前还在发展阶段，但在某些特定任务上展现出与传统数值模式相结合的潜力。AI特别适用于以下几个领域：</p>
+<ul>
+<li><strong>极端天气事件预测</strong>：AI可以通过大量历史数据进行训练，识别复杂的气象模式，尤其是在预测极端天气（如台风、暴雨、干旱等）方面表现突出。</li>
+<li><strong>短期预报优化</strong>：AI可以对数值天气预报结果进行后处理，优化短期预测的精度。</li>
+</ul>
+<h4>2.1 <strong>Google DeepMind的WeatherFormer</strong></h4>
+<ul>
+<li><strong>WeatherFormer</strong>是基于Transformer架构的AI天气预报模型，采用深度学习对全球天气数据进行预测。</li>
+<li>该模型表现出了高效性和准确性，尤其在处理短期气象变化时，能够更快速地生成天气预报。它在极端天气（如暴雨、台风等）的预测中展现了优势。</li>
+</ul>
+<h4>2.2 <strong>Pangu-Weather（华为）</strong></h4>
+<ul>
+<li>
+<p>华为推出的<strong>Pangu-Weather</strong>是基于深度学习的全球天气预报模型，采用了3D Transformer架构（3DEST），能够高效处理大气层的复杂结构。</p>
+</li>
+<li>
+<p><strong>特点</strong>：</p>
+<ul>
+<li>精度高，能够优化传统物理驱动模型的短期预报准确性。</li>
+<li>计算效率高，能够在更短的时间内提供精确的天气预报。</li>
+</ul>
+</li>
+</ul>
+<h4>2.3 <strong>FourCastNet（NVIDIA）</strong></h4>
+<ul>
+<li><strong>FourCastNet</strong>是NVIDIA基于深度学习的天气预报系统，采用自适应傅里叶神经算子（AFNO）架构。它能够在极短时间内生成高精度的天气预报，尤其在计算效率上优于传统数值天气预报系统。</li>
+</ul>
+<h3>3. <strong>AI与数值天气预报的结合</strong></h3>
+<p>尽管AI驱动的天气预报系统在特定领域（如极端天气预测、短期预报优化等）表现出优势，但传统的物理驱动数值天气预报系统依然在整体预报精度、长期气候模拟等方面保持优势。AI在天气预报中的角色更多是作为一种<strong>补充和优化工具</strong>，而非完全替代传统的数值天气预报模式。</p>
+<p><strong>例如：</strong></p>
+<ul>
+<li><strong>ECMWF的IFS</strong>和<strong>NOAA的GFS</strong>依然是全球数值天气预报的主力工具，但它们已经开始融合AI技术，如利用机器学习来优化物理参数化方案、提高数据同化的精度等。</li>
+<li><strong>AI与传统模式结合</strong>：一些系统（如NGFS）在数值模式的基础上引入了AI技术，增强了极端天气预报的准确性。</li>
+</ul>
+<h3>总结：</h3>
+<ul>
+<li><strong>主流模式</strong>：目前，全球的天气预报主要依赖传统的<strong>数值天气预报模式（NWP）</strong>，如ECMWF的IFS、NOAA的GFS等。</li>
+<li><strong>AI的作用</strong>：AI在天气预报中仍处于辅助和补充的角色，特别是在<strong>短期预报</strong>、<strong>极端天气预测</strong>和<strong>计算效率</strong>上具有优势。</li>
+<li><strong>未来趋势</strong>：随着技术的进步，AI与传统数值天气预报系统的结合可能会成为未来的趋势，优化现有模型的性能并提高预报的准确性。</li>
+</ul>
+<hr>
+<p><strong>NGFS</strong>（Next-Generation Global Prediction System）是美国国家气象局（NOAA）开发的下一代全球预报系统。它被设计为替代<strong>GFS</strong>（Global Forecast System），旨在提供更高精度、更高分辨率、更高效的天气预报。虽然NGFS仍在开发过程中，但它已经在当前的主流天气预报模式中处于<strong>非常重要</strong>的位置，尤其是在美国和全球天气预报体系中。以下是NGFS在当前主流天气预报模式中的水平和特点：</p>
+<h3>1. <strong>NGFS的核心技术和优势</strong></h3>
+<h4>1.1 <strong>FV3核心大气动力学模型</strong></h4>
+<p>NGFS的核心采用了<strong>FV3（Finite Volume Cubed Sphere）大气动力学模型，这是NOAA最新开发的数值天气预报核心。FV3是一种基于有限体积法</strong>（Finite Volume Method）并使用<strong>立方体球体网格</strong>（Cubed-Sphere Grid）的模型，这种设计避免了传统球面网格的极点问题，并且在并行计算时更高效。</p>
+<ul>
+<li><strong>网格结构</strong>：使用立方体球体网格，能够均匀分布计算资源，特别适合全球大气模拟。</li>
+<li><strong>高分辨率</strong>：NGFS系统的高分辨率模式能够提供比传统GFS更细致的天气预报。</li>
+</ul>
+<h4>1.2 <strong>改进的数据同化系统</strong></h4>
+<p>NGFS将结合<strong>高级数据同化技术</strong>（如4D-Var等），通过不断吸收全球天气观测数据来优化预报。与传统的GFS相比，NGFS能够更好地整合来自卫星、气象雷达、气象浮标等各类观测数据，从而提供更加准确的初始条件和预报结果。</p>
+<ul>
+<li><strong>4D-Var同化</strong>：通过考虑时间维度的变化来优化模型初始状态，提高预报的准确性。</li>
+</ul>
+<h4>1.3 <strong>人工智能与机器学习的融合</strong></h4>
+<p>NGFS还将**人工智能（AI）<strong>和</strong>机器学习（ML）**技术与传统的数值天气预报方法结合，用于模型优化、参数化方案的调整和极端天气事件的预测。AI技术在数据处理、模式识别和预报准确性提升方面展现出巨大的潜力，特别是在对短期天气和极端天气的预测上。</p>
+<ul>
+<li><strong>AI优化</strong>：NGFS可以结合AI算法来提高气象模型的性能，尤其在极端天气预测和短期预测方面。</li>
+</ul>
+<h3>2. <strong>NGFS的预报能力与优势</strong></h3>
+<h4>2.1 <strong>精度与分辨率提升</strong></h4>
+<p>与传统的<strong>GFS</strong>相比，NGFS在<strong>分辨率和精度</strong>上有显著提升。NGFS的高分辨率模式提供了<strong>更细致的天气预报</strong>，并且能够更好地捕捉细微的气象变化。</p>
+<ul>
+<li><strong>水平分辨率</strong>：NGFS支持比传统GFS更高的分辨率，甚至可以达到<strong>全球 13 km 的分辨率</strong>，大大提高了对局部天气和区域气候现象的预测能力。</li>
+<li><strong>垂直分层</strong>：NGFS的垂直层数大幅增加，能够更精细地模拟大气层的垂直结构，特别是对低层大气和高层对流过程的捕捉。</li>
+</ul>
+<h4>2.2 <strong>更长时间范围的预报</strong></h4>
+<p>NGFS支持<strong>中长期预报</strong>，能够提供比传统GFS更远期的天气预报。尽管传统的数值天气预报系统通常只提供10-15天的预测，NGFS可以扩展到15天甚至更长的时间范围，并对这些预报提供概率性预测。</p>
+<h4>2.3 <strong>气候变化与极端天气预测</strong></h4>
+<p>NGFS的高精度模拟能力特别适用于<strong>气候变化研究</strong>和<strong>极端天气事件预测</strong>。它不仅能对常规天气进行预报，还能更好地预测极端气候事件，如热带风暴、暴雨、大规模气旋等。</p>
+<h3>3. <strong>NGFS在当前天气预报系统中的地位</strong></h3>
+<p>NGFS作为NOAA开发的下一代全球天气预报系统，其主要目的是提升天气预报的准确性和时效性。它是<strong>GFS</strong>的继任者，代表了数值天气预报技术的最新发展。当前，NGFS的具体应用与实现仍在不断推进，但它的水平在以下几个方面具有显著优势：</p>
+<ul>
+<li><strong>精度和分辨率</strong>：在高分辨率、全球范围内的天气预报中，NGFS提供了更高的精度，尤其是在短期和中期预报方面。</li>
+<li><strong>计算能力</strong>：NGFS的高效计算能力使得它可以在更短时间内完成高分辨率天气预报任务，满足高性能计算需求。</li>
+<li><strong>与AI的融合</strong>：NGFS借助AI优化模型的预测能力，提升了对极端天气事件的敏感性。</li>
+</ul>
+<h3>4. <strong>NGFS与其他主流天气预报模式的对比</strong></h3>
+<ul>
+<li><strong>与ECMWF的IFS相比</strong>：ECMWF的IFS是全球最先进的数值天气预报系统之一，具有极高的精度和广泛的应用。但NGFS在<strong>分辨率、数据同化</strong>和<strong>AI融合</strong>方面具有较强的竞争力，尤其是在美国地区。</li>
+<li><strong>与GFS的对比</strong>：GFS作为NGFS的前身，虽然仍是全球天气预报的核心系统，但NGFS在分辨率和计算效率上有明显提升，能够提供更精细和准确的预报。</li>
+</ul>
+<h3>总结</h3>
+<p><strong>NGFS</strong>在当前主流天气预报系统中具有非常高的水平，是NOAA下一代的全球预报系统。它的核心优势在于高分辨率的天气预报、改进的数据同化、AI和机器学习的融合以及对极端天气和长期气候变化的精确预测。随着系统逐步投入使用，NGFS有望在全球天气预报和气候变化研究中扮演越来越重要的角色。</p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+
+
+</script>
+
+
+</html>

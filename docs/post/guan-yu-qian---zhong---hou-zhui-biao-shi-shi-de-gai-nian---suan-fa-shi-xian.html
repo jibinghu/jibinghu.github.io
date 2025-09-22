@@ -155,12 +155,12 @@ std::string <span class="pl-en">infixToPostfix</span>(<span class="pl-k">const</
 
 <span class="pl-c"><span class="pl-c">//</span> 根据后缀表达式构建表达式二叉树</span>
 TreeNode* <span class="pl-en">constructTree</span>(<span class="pl-k">const</span> std::string&amp; postfix, <span class="pl-k">int</span>&amp; index) {
-    <span class="pl-k">if</span> (<span class="pl-c1">index</span> &lt; <span class="pl-c1">0</span>) <span class="pl-k">return</span> <span class="pl-c1">nullptr</span>;
-    <span class="pl-k">char</span> ch = postfix[<span class="pl-c1">index</span>--];
+    <span class="pl-k">if</span> (index &lt; <span class="pl-c1">0</span>) <span class="pl-k">return</span> <span class="pl-c1">nullptr</span>;
+    <span class="pl-k">char</span> ch = postfix[index--];
     TreeNode* node = <span class="pl-k">new</span> <span class="pl-c1">TreeNode</span>(ch);
     <span class="pl-k">if</span> (<span class="pl-c1">isOperator</span>(ch)) {
-        node-&gt;<span class="pl-smi">right</span> = <span class="pl-c1">constructTree</span>(postfix, <span class="pl-c1">index</span>);
-        node-&gt;<span class="pl-smi">left</span> = <span class="pl-c1">constructTree</span>(postfix, <span class="pl-c1">index</span>);
+        node-&gt;<span class="pl-smi">right</span> = <span class="pl-c1">constructTree</span>(postfix, index);
+        node-&gt;<span class="pl-smi">left</span> = <span class="pl-c1">constructTree</span>(postfix, index);
     }
     <span class="pl-k">return</span> node;
 }
@@ -168,8 +168,8 @@ TreeNode* <span class="pl-en">constructTree</span>(<span class="pl-k">const</spa
 <span class="pl-c"><span class="pl-c">//</span> 构建表达式二叉树的接口函数</span>
 TreeNode* <span class="pl-en">buildExpressionTree</span>(<span class="pl-k">const</span> std::string&amp; infix) {
     std::string postfix = <span class="pl-c1">infixToPostfix</span>(infix);
-    <span class="pl-k">int</span> <span class="pl-c1">index</span> = postfix.<span class="pl-c1">size</span>() - <span class="pl-c1">1</span>;
-    <span class="pl-k">return</span> <span class="pl-c1">constructTree</span>(postfix, <span class="pl-c1">index</span>);
+    <span class="pl-k">int</span> index = postfix.<span class="pl-c1">size</span>() - <span class="pl-c1">1</span>;
+    <span class="pl-k">return</span> <span class="pl-c1">constructTree</span>(postfix, index);
 }
 
 <span class="pl-c"><span class="pl-c">//</span> 中序遍历表达式二叉树</span>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="在 **CUDA** 中，`warp` 是由 **32 个线程** 组成的基本执行单元。">
+<meta property="og:title" content="warp 分支串行执行">
+<meta property="og:description" content="在 **CUDA** 中，`warp` 是由 **32 个线程** 组成的基本执行单元。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/warp%20-fen-zhi-chuan-xing-zhi-xing.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>warp 分支串行执行</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">warp 分支串行执行</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/163" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p>在 <strong>CUDA</strong> 中，<code class="notranslate">warp</code> 是由 <strong>32 个线程</strong> 组成的基本执行单元。每个 <code class="notranslate">warp</code> 中的线程执行相同的指令，这就是所谓的 <strong>SIMT（Single Instruction Multiple Thread）</strong> 模型。但是，当线程遇到分支（例如 <code class="notranslate">if</code> 语句或 <code class="notranslate">switch</code> 语句）时，情况会变得更加复杂，因为不同的线程可能会按照不同的路径执行。</p>
+<h3>线程分支时的执行方式：<strong>分支分歧（Branch Divergence）</strong></h3>
+<p>当一个 <code class="notranslate">warp</code> 中的线程遇到条件分支时，可能会导致 <strong>分支分歧</strong>，即不同线程执行不同的分支路径。具体来说，CUDA 使用以下机制来处理这种情况：</p>
+<ol>
+<li>
+<p><strong>分支分歧的发生</strong>：</p>
+<ul>
+<li>如果同一个 <code class="notranslate">warp</code> 中的不同线程需要执行不同的分支（例如，某些线程执行 <code class="notranslate">if</code> 分支，而其他线程执行 <code class="notranslate">else</code> 分支），则会发生 <strong>分支分歧</strong>。</li>
+<li><code class="notranslate">warp</code> 中的所有线程仍然会按顺序执行相同的指令，但 <strong>不同路径的执行是串行的</strong>，即需要依次执行所有分支路径。</li>
+</ul>
+</li>
+<li>
+<p><strong>如何执行</strong>：</p>
+<ul>
+<li><strong>串行执行分支</strong>：在执行时，所有线程会 <strong>先执行一个分支路径</strong>，然后再执行 <strong>另一个分支路径</strong>。在执行过程中，其他不在该分支路径中的线程会被 <strong>“屏蔽”</strong>，即它们的执行会被推迟，直到当前路径执行完毕。</li>
+<li><strong>掩码机制</strong>：CUDA 使用 <strong>掩码</strong> 来确保每个线程在当前路径中是否执行。执行完当前路径后，线程会跳到下一条路径，然后继续执行。</li>
+</ul>
+</li>
+<li>
+<p><strong>执行流程</strong>：</p>
+<ul>
+<li><strong>步骤 1</strong>：如果 <code class="notranslate">warp</code> 中的线程遇到一个分支，CUDA 会首先确定哪些线程需要执行 <code class="notranslate">if</code> 语句中的代码，哪些线程需要执行 <code class="notranslate">else</code> 语句中的代码。</li>
+<li><strong>步骤 2</strong>：CUDA 会 <strong>首先执行一个分支</strong>，此时只有需要执行该分支的线程会被激活，其他线程会被“屏蔽”。</li>
+<li><strong>步骤 3</strong>：执行完当前分支后，CUDA 会 <strong>切换到另一个分支</strong>，然后重新激活那些应该执行该分支的线程。</li>
+<li><strong>步骤 4</strong>：这两次路径的执行分别按照序列化的方式完成，但每次执行时，线程数量始终是 32 个，只是某些线程会被“屏蔽”，它们的计算结果不会被使用。</li>
+</ul>
+</li>
+<li>
+<p><strong>性能影响</strong>：</p>
+<ul>
+<li><strong>性能下降</strong>：分支分歧会导致性能下降，因为线程需要等待执行不同分支的路径，导致 <strong>线程的同步延迟</strong>。理想情况下，所有线程应该沿着相同的路径执行，以便充分利用 SIMT 模型的并行能力。</li>
+<li><strong>编译器优化</strong>：编译器通常会尽量避免分支分歧，或者优化线程的执行路径，以减少分支导致的性能损失。</li>
+</ul>
+</li>
+</ol>
+<h3>举个例子：</h3>
+<p>考虑以下代码片段：</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate">__global__ <span class="pl-k">void</span> <span class="pl-en">example_kernel</span>(<span class="pl-k">int</span> *arr) {
+    <span class="pl-k">int</span> id = threadIdx.<span class="pl-smi">x</span> + blockIdx.<span class="pl-smi">x</span> * blockDim.<span class="pl-smi">x</span>;
+    <span class="pl-k">if</span> (id % <span class="pl-c1">2</span> == <span class="pl-c1">0</span>) {
+        arr[id] = <span class="pl-c1">100</span>;  <span class="pl-c"><span class="pl-c">//</span> 执行这条语句的线程将是 id 为偶数的线程</span>
+    } <span class="pl-k">else</span> {
+        arr[id] = <span class="pl-c1">200</span>;  <span class="pl-c"><span class="pl-c">//</span> 执行这条语句的线程将是 id 为奇数的线程</span>
+    }
+}</pre></div>
+<ul>
+<li>
+<p>假设 <code class="notranslate">warp</code> 中的 32 个线程执行此代码，其中 16 个线程的 <code class="notranslate">id</code> 为偶数，另外 16 个线程的 <code class="notranslate">id</code> 为奇数。</p>
+</li>
+<li>
+<p>当 <code class="notranslate">warp</code> 遇到这个 <code class="notranslate">if</code> 语句时，CUDA 会执行以下步骤：</p>
+<ol>
+<li><strong>执行偶数路径</strong>：16 个偶数线程会按预期执行 <code class="notranslate">arr[id] = 100</code>，而剩余的 16 个线程（奇数线程）被屏蔽，不执行。</li>
+<li><strong>执行奇数路径</strong>：执行完偶数路径后，CUDA 会跳到 <code class="notranslate">else</code> 分支，16 个奇数线程会执行 <code class="notranslate">arr[id] = 200</code>，而偶数线程将被屏蔽。</li>
+</ol>
+</li>
+</ul>
+<p>这种情况下，虽然 <code class="notranslate">warp</code> 中有 32 个线程，实际上执行了两次序列化的路径：一次偶数路径、一次奇数路径。</p>
+<h3>分支分歧带来的问题</h3>
+<ol>
+<li><strong>执行时间延长</strong>：由于每个 <code class="notranslate">warp</code> 都必须按顺序执行每个分支路径，分支分歧会导致相同 <code class="notranslate">warp</code> 内的线程执行顺序受到限制，降低并行执行效率。</li>
+<li><strong>带宽和缓存效率下降</strong>：分支分歧可能导致不同的内存访问模式，这可能影响内存带宽利用率和缓存命中率，从而进一步影响性能。</li>
+</ol>
+<h3>如何优化分支分歧</h3>
+<ol>
+<li><strong>减少分支数量</strong>：尽量避免在同一个 <code class="notranslate">warp</code> 内存在多个分支。可以通过设计更为简洁的控制流或者使用 <strong>掩码</strong> 来控制线程的执行。</li>
+<li><strong>线程同步</strong>：在某些情况下，可以通过线程同步来减少分支分歧的影响，例如在不同线程需要按相同方式执行的情况下，使用线程同步来确保一致的执行路径。</li>
+<li><strong>使用条件变量</strong>：通过条件语句来确保分支路径尽量不在同一个 <code class="notranslate">warp</code> 内分歧，例如将分支尽可能均匀地分布到多个 <code class="notranslate">warp</code> 中。</li>
+</ol>
+<h3>总结</h3>
+<ul>
+<li><strong>CUDA 中的分支分歧</strong> 是当 <code class="notranslate">warp</code> 内的线程按照不同路径执行时的现象。</li>
+<li>当分支发生时，CUDA 会先执行一个分支路径，屏蔽不在该路径中的线程，然后再执行另一个分支路径。</li>
+<li>分支分歧可能导致性能下降，因为它会阻止线程同时执行相同的指令，导致延迟和低效的执行。</li>
+<li>为了避免分支分歧，应该尽量设计无分支或尽量减少同一 <code class="notranslate">warp</code> 中的分支数量。</li>
+</ul></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>

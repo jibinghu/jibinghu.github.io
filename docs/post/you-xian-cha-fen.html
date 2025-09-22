@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="### 回顾泰勒展开：
+
+泰勒展开（Taylor expansion）是将一个在某点可导的无穷次的函数表示为该点的导数的无穷级数。">
+<meta property="og:title" content="有限差分">
+<meta property="og:description" content="### 回顾泰勒展开：
+
+泰勒展开（Taylor expansion）是将一个在某点可导的无穷次的函数表示为该点的导数的无穷级数。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/you-xian-cha-fen.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>有限差分</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">有限差分</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/147" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h3>回顾泰勒展开：</h3>
+<p>泰勒展开（Taylor expansion）是将一个在某点可导的无穷次的函数表示为该点的导数的无穷级数。对于函数 $f(x)$ ，在点 $a$ 处的泰勒展开式为：</p>
+<p>$$
+f(x) = f(a) + f'(a)(x-a) + \frac{f''(a)}{2!}(x-a)^2 + \frac{f'''(a)}{3!}(x-a)^3 + \cdots + \frac{f^{(n)}(a)}{n!}(x-a)^n + \cdots
+$$</p>
+<p>其中， $f^{(n)}(a)$ 表示函数 $f(x)$ 在点 $a$ 处的第 $n$ 阶导数， $n!$ 表示 $n$ 的阶乘。</p>
+<p>如果点 $a = 0$，则泰勒展开式称为麦克劳林展开（Maclaurin expansion），其形式为：</p>
+<p>$$
+f(x) = f(0) + f'(0)x + \frac{f''(0)}{2!}x^2 + \frac{f'''(0)}{3!}x^3 + \cdots + \frac{f^{(n)}(0)}{n!}x^n + \cdots
+$$</p>
+<h3>泰勒展开与有限差分：</h3>
+<hr>
+<p><strong>一、为什么用中心差分近似二阶导数？离散方程怎么来的？</strong></p>
+<p><strong>1. 从物理直观理解导数</strong><br>
+二阶导数 ( y''(x) ) 在物理上可以理解为“曲率”，即函数在某点的弯曲程度。想象一条曲线，如果在某点附近弯曲剧烈（曲率大），对应的二阶导数绝对值就大。</p>
+<p><strong>2. 如何用离散点近似曲率？</strong><br>
+有限差分法的核心思想：用相邻点的函数值，构造导数的近似值。对于二阶导数，我们取当前点 ( x_i ) 及其左右两个邻居点 ( x_{i-1} ) 和 ( x_{i+1} )，构造一个“曲率”的近似公式。</p>
+<p><strong>3. 泰勒展开推导二阶导数公式</strong><br>
+假设步长为 ( h )，对 ( y(x_{i+1}) ) 和 ( y(x_{i-1}) ) 做泰勒展开：<br>
+• 向右展开到二阶：</p>
+<p>$$
+y(x_{i+1}) = y(x_i) + h y'(x_i) + \frac{h^2}{2} y''(x_i) + O(h^3)
+$$</p>
+<p>• 向左展开到二阶：</p>
+<p>$$
+y(x_{i-1}) = y(x_i) - h y'(x_i) + \frac{h^2}{2} y''(x_i) + O(h^3)
+$$</p>
+<p>将两式相加，消去一阶导数项 ( y'(x_i) )：</p>
+<p>$$
+y(x_{i+1}) + y(x_{i-1}) = 2y(x_i) + h^2 y''(x_i) + O(h^4)
+$$</p>
+<p>整理得到二阶导数的中心差分公式：</p>
+<p>$$
+y''(x_i) \approx \frac{y(x_{i+1}) - 2y(x_i) + y(x_{i-1})}{h^2}
+$$</p>
+<p>这就是离散方程的来源！ 将微分方程中的 ( y''(x) ) 替换为此近似，方程就变成了关于离散点 ( y_{i-1}, y_i, y_{i+1} ) 的代数方程。</p>
+<hr>
+<p><strong>二、为什么已经有解析解，还要用离散方程求解？</strong></p>
+<p><strong>1. 例子中的解析解是“教学工具”</strong><br>
+你提到的例子非常简单（( y''=2 )），解析解确实容易求得。但实际工程和科学问题中，微分方程往往复杂得多，例如：<br>
+• 非线性方程：如 ( y'' + y^3 = \sin(x) )，解析解可能不存在。</p>
+<p>• 变系数方程：如 ( y'' + x y' = 0 )，解析解需要特殊函数。</p>
+<p>• 复杂边界条件：如非均匀网格或混合边界条件。</p>
+<p>数值方法（如有限差分法）的威力在于：无论方程多复杂，只要你能写出导数近似公式，就能求解。</p>
+<p><strong>2. 为什么要用这个简单例子？</strong><br>
+• 验证方法正确性：已知解析解的情况下，可以验证数值解是否准确。</p>
+<p>• 理解算法流程：通过简单问题，学习如何离散方程、建立线性方程组、编程实现。</p>
+<p>• 推广到复杂问题：掌握了简单问题的解法后，才能处理更复杂的方程。</p>
+<hr>
+<p><strong>三、实例的完整推导（补充细节）</strong></p>
+<p><strong>1. 离散方程的建立</strong><br>
+原方程 ( y''=2 ) 在离散点 ( x_i ) 处变为：</p>
+<p>$$
+\frac{y_{i+1} - 2y_i + y_{i-1}}{h^2} = 2
+$$</p>
+<p>两边乘以 ( h^2 ) 后得到：</p>
+<p>$$
+y_{i+1} - 2y_i + y_{i-1} = 2h^2
+$$</p>
+<p>这就是离散方程，每个内部点 ( i=1,2,3 ) 对应一个方程。</p>
+<p><strong>2. 边界条件的处理</strong><br>
+• ( y(0)=0 \Rightarrow y_0 = 0 )</p>
+<p>• ( y(1)=0 \Rightarrow y_4 = 0 )</p>
+<p>边界条件直接代入离散方程，例如：<br>
+• 对 ( i=1 )，方程变为 ( y_2 - 2y_1 + y_0 = 2h^2 )，代入 ( y_0=0 ) 后简化为 ( -2y_1 + y_2 = 2h^2 )。</p>
+<p>• 同理处理 ( i=3 )。</p>
+<hr>
+<p><strong>四、有限差分法的意义</strong></p>
+<p><strong>1. 从连续到离散的桥梁</strong><br>
+• 连续问题：微分方程在无限多个点 ( x \in [0,1] ) 上定义。</p>
+<p>• 离散问题：有限差分法将问题转化为有限个点 ( x_0, x_1, \dots, x_N ) 上的线性方程组。</p>
+<p><strong>2. 数值方法的普适性</strong><br>
+无论方程是线性、非线性、齐次或非齐次，只要能用差分近似导数，就能求解。例如：<br>
+• 热传导方程 ( \frac{\partial u}{\partial t} = \alpha \frac{\partial^2 u}{\partial x^2} )</p>
+<p>• 波动方程 ( \frac{\partial^2 u}{\partial t^2} = c^2 \frac{\partial^2 u}{\partial x^2} )</p>
+<hr>
+<p>有限差分法常用于数值求解微分方程。以下是一个求解二阶常微分方程边值问题的例子：</p>
+<p>问题描述：<br>
+求解方程 ( y''(x) = 2 )，边界条件为 ( y(0) = 0 ) 和 ( y(1) = 0 )。</p>
+<hr>
+<p><strong>步骤 1：解析解</strong><br>
+首先求解析解，便于后续验证数值解：</p>
+<ol>
+<li>
+<p>积分一次：( y'(x) = 2x + C_1 )</p>
+</li>
+<li>
+<p>再次积分：( y(x) = x^2 + C_1 x + C_2 )</p>
+</li>
+<li>
+<p>代入边界条件：<br>
+• ( y(0) = 0 \Rightarrow C_2 = 0 )</p>
+<p>• ( y(1) = 0 \Rightarrow 1 + C_1 = 0 \Rightarrow C_1 = -1 )</p>
+</li>
+<li>
+<p>最终解析解：( y(x) = x^2 - x )</p>
+</li>
+</ol>
+<hr>
+<p><strong>步骤 2：网格划分</strong><br>
+将区间 ([0, 1]) 划分为 4 等份（步长 ( h = 0.25 )），得到内部节点：<br>
+• ( x_1 = 0.25 )</p>
+<p>• ( x_2 = 0.5 )</p>
+<p>• ( x_3 = 0.75 )</p>
+<p>边界点 ( x_0 = 0 ) 和 ( x_4 = 1 ) 的值已知（均为 0）。</p>
+<hr>
+<p><strong>步骤 3：离散方程</strong><br>
+用中心差分近似二阶导数：</p>
+<p>$$
+y''(x_i) \approx \frac{y_{i+1} - 2y_i + y_{i-1}}{h^2}
+$$</p>
+<p>代入原方程 ( y'' = 2 )，得到离散方程：</p>
+<p>$$
+\frac{y_{i+1} - 2y_i + y_{i-1}}{h^2} = 2 \quad (i = 1, 2, 3)
+$$</p>
+<p>整理后：</p>
+<p>$$
+y_{i+1} - 2y_i + y_{i-1} = 2h^2
+$$</p>
+<p>其中 ( h = 0.25 )，故 ( 2h^2 = 0.125 )。</p>
+<hr>
+<p><strong>步骤 4：建立线性方程组</strong></p>
+<ol>
+<li>对于 ( i = 1 ):</li>
+</ol>
+<p>$$
+y_2 - 2y_1 + y_0 = 0.125 \quad \text{（因 ( y_0 = 0 \））} \Rightarrow -2y_1 + y_2 = 0.125
+$$</p>
+<ol start="2">
+<li>对于 ( i = 2 ):</li>
+</ol>
+<p>$$
+y_3 - 2y_2 + y_1 = 0.125
+$$</p>
+<ol start="3">
+<li>对于 ( i = 3 ):</li>
+</ol>
+<p>$$
+y_4 - 2y_3 + y_2 = 0.125 \quad \text{（因 ( y_4 = 0 \））} \Rightarrow y_2 - 2y_3 = 0.125
+$$</p>
+<p>方程组为：</p>
+<p>$$
+\begin{cases}
+-2y_1 + y_2 = 0.125 \\
+y_1 - 2y_2 + y_3 = 0.125 \\
+y_2 - 2y_3 = 0.125
+\end{cases}
+$$</p>
+<hr>
+<p><strong>步骤 5：求解线性方程组</strong><br>
+写成矩阵形式 ( A\mathbf{y} = \mathbf{b} )：</p>
+<h1>$$<br>
+\begin{bmatrix}<br>
+-2 &amp; 1 &amp; 0 \<br>
+1 &amp; -2 &amp; 1 \<br>
+0 &amp; 1 &amp; -2<br>
+\end{bmatrix}<br>
+\begin{bmatrix}<br>
+y_1 \ y_2 \ y_3<br>
+\end{bmatrix}</h1>
+<p>\begin{bmatrix}<br>
+0.125 \ 0.125 \ 0.125<br>
+\end{bmatrix}<br>
+$$</p>
+<p>通过高斯消元法或代入法解得：</p>
+<p>$$
+y_1 = -0.1875, \quad y_2 = -0.25, \quad y_3 = -0.1875
+$$</p>
+<hr>
+<p><strong>步骤 6：对比数值解与解析解</strong><br>
+在内部节点处的解析解为：<br>
+• ( y(0.25) = (0.25)^2 - 0.25 = -0.1875 )</p>
+<p>• ( y(0.5) = (0.5)^2 - 0.5 = -0.25 )</p>
+<p>• ( y(0.75) = (0.75)^2 - 0.75 = -0.1875 )</p>
+<p>结果完全一致，验证了有限差分法的准确性。</p>
+<hr>
+<p><strong>结论</strong><br>
+通过离散化二阶导数并建立线性方程组，有限差分法成功求解了微分方程。此方法适用于更复杂的方程和边界条件，是工程和科学计算中的重要工具。</p>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-c"># 验证代码（可选）</span>
+<span class="pl-k">import</span> <span class="pl-s1">numpy</span> <span class="pl-k">as</span> <span class="pl-s1">np</span>
+
+<span class="pl-c1">A</span> <span class="pl-c1">=</span> <span class="pl-s1">np</span>.<span class="pl-c1">array</span>([[<span class="pl-c1">-</span><span class="pl-c1">2</span>, <span class="pl-c1">1</span>, <span class="pl-c1">0</span>],
+              [<span class="pl-c1">1</span>, <span class="pl-c1">-</span><span class="pl-c1">2</span>, <span class="pl-c1">1</span>],
+              [<span class="pl-c1">0</span>, <span class="pl-c1">1</span>, <span class="pl-c1">-</span><span class="pl-c1">2</span>]])
+<span class="pl-s1">b</span> <span class="pl-c1">=</span> <span class="pl-s1">np</span>.<span class="pl-c1">array</span>([<span class="pl-c1">0.125</span>, <span class="pl-c1">0.125</span>, <span class="pl-c1">0.125</span>])
+<span class="pl-s1">y</span> <span class="pl-c1">=</span> <span class="pl-s1">np</span>.<span class="pl-c1">linalg</span>.<span class="pl-c1">solve</span>(<span class="pl-c1">A</span>, <span class="pl-s1">b</span>)
+<span class="pl-en">print</span>(<span class="pl-s">"数值解:"</span>, <span class="pl-s1">y</span>)
+<span class="pl-c"># 输出: [-0.1875 -0.25   -0.1875]</span></pre></div></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+<script>MathJax = {tex: {inlineMath: [["$", "$"]]}};</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</html>

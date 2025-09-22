@@ -135,17 +135,17 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <li><strong>模块化设计</strong>：支持多种模块扩展功能，如缓存、SSL等。</li>
 </ul>
 <p><strong>示例配置：</strong></p>
-<div class="highlight highlight-source-nginx"><pre class="notranslate"><span class="pl-k">server</span> {
-    <span class="pl-k">listen</span> <span class="pl-s">80</span>;
-    <span class="pl-k">server_name</span> example.com;
+<div class="highlight highlight-source-nginx"><pre class="notranslate"><span class="pl-c1">server</span> <span class="pl-c1">{</span>
+    <span class="pl-c1">listen</span> <span class="pl-c1">80</span><span class="pl-c1">;</span>
+    <span class="pl-c1">server_name</span> example.com<span class="pl-c1">;</span>
 
-    <span class="pl-k">location</span> <span class="pl-en">/ </span>{
-        <span class="pl-k">proxy_pass</span> http://localhost:8080;
-        <span class="pl-k">proxy_set_header</span> Host <span class="pl-smi">$host</span>;
-        <span class="pl-k">proxy_set_header</span> X-Real-IP <span class="pl-smi">$remote_addr</span>;
-        <span class="pl-k">proxy_set_header</span> X-Forwarded-For <span class="pl-smi">$proxy_add_x_forwarded_for</span>;
-    }
-}</pre></div>
+    <span class="pl-c1">location</span> / <span class="pl-c1">{</span>
+        <span class="pl-c1">proxy_pass</span> <span class="pl-c1">http</span>://localhost:<span class="pl-c1">8080</span><span class="pl-c1">;</span>
+        <span class="pl-c1">proxy_set_header</span> Host <span class="pl-v">$host</span><span class="pl-c1">;</span>
+        <span class="pl-c1">proxy_set_header</span> X-Real-IP <span class="pl-v">$remote_addr</span><span class="pl-c1">;</span>
+        <span class="pl-c1">proxy_set_header</span> X-Forwarded-For <span class="pl-v">$proxy_add_x_forwarded_for</span><span class="pl-c1">;</span>
+    <span class="pl-c1">}</span>
+<span class="pl-c1">}</span></pre></div>
 <h3>3. MongoDB</h3>
 <p><strong>MongoDB</strong>是一种基于文档的NoSQL数据库，使用JSON风格的文档存储数据。它提供了高性能、可扩展性和灵活的数据模型。</p>
 <p><strong>特点：</strong></p>

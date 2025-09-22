@@ -1,5 +1,78 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 15 Apr 2025 08:46:19 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>内网网段</title><link>https://jibinghu.github.io/post/nei-wang-wang-duan.html</link><description>根据 [RFC 1918](https://tools.ietf.org/html/rfc1918) 的定义，以下三个 IP 地址范围被保留为私有（内网）地址，这些地址不会在互联网上路由，只能在本地网络中使用：
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 22 Sep 2025 07:22:48 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>warp 分支串行执行</title><link>https://jibinghu.github.io/post/warp%20-fen-zhi-chuan-xing-zhi-xing.html</link><description>在 **CUDA** 中，`warp` 是由 **32 个线程** 组成的基本执行单元。</description><guid isPermaLink="true">https://jibinghu.github.io/post/warp%20-fen-zhi-chuan-xing-zhi-xing.html</guid><pubDate>Tue, 15 Jul 2025 05:57:28 +0000</pubDate></item><item><title>Numba JIT ToolKit</title><link>https://jibinghu.github.io/post/Numba%20JIT%20ToolKit.html</link><description>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Numba 是一个开源的即时编译（JIT, Just-In-Time compilation）工具，它通过将标注过的 Python 函数在运行时编译成高效的机器码，显著加速数值计算代码，尤其在对 NumPy 数组的操作上优势突出。</description><guid isPermaLink="true">https://jibinghu.github.io/post/Numba%20JIT%20ToolKit.html</guid><pubDate>Mon, 09 Jun 2025 02:31:21 +0000</pubDate></item><item><title>源码修改 pip site-package</title><link>https://jibinghu.github.io/post/yuan-ma-xiu-gai-%20pip%20site-package.html</link><description>在 Python 中，所有通过 pip 安装的包都会被放到某个 “site-packages” 目录下，这个目录位于 Python 的安装路径或虚拟环境目录里。</description><guid isPermaLink="true">https://jibinghu.github.io/post/yuan-ma-xiu-gai-%20pip%20site-package.html</guid><pubDate>Mon, 09 Jun 2025 02:29:35 +0000</pubDate></item><item><title>大气层描述</title><link>https://jibinghu.github.io/post/da-qi-ceng-miao-shu.html</link><description>---
+
+大气层的高度并不是直接以“0.01 hPa”来描述的，但“0.01 hPa”常用于表示大气层的极高层（即大约 80 公里以上）。</description><guid isPermaLink="true">https://jibinghu.github.io/post/da-qi-ceng-miao-shu.html</guid><pubDate>Sat, 07 Jun 2025 09:02:21 +0000</pubDate></item><item><title>自动机</title><link>https://jibinghu.github.io/post/zi-dong-ji.html</link><description>以下是一个简单的自动机（Finite Automaton）的代码示例，它实现了一个确定性有限自动机（DFA）。</description><guid isPermaLink="true">https://jibinghu.github.io/post/zi-dong-ji.html</guid><pubDate>Wed, 04 Jun 2025 06:45:12 +0000</pubDate></item><item><title>dabang 记录 shipinfangdou</title><link>https://jibinghu.github.io/post/dabang%20-ji-lu-%20shipinfangdou.html</link><description># 资源受限环境下的视频防抖方案
+
+在仅有2核CPU、5GB内存且无GPU的离线环境中，对智能眼镜拍摄的视频进行防抖，需要采用高效轻量的算法。</description><guid isPermaLink="true">https://jibinghu.github.io/post/dabang%20-ji-lu-%20shipinfangdou.html</guid><pubDate>Wed, 04 Jun 2025 06:39:44 +0000</pubDate></item><item><title>c++ 随手记录 isdigit()</title><link>https://jibinghu.github.io/post/c%2B%2B%20-sui-shou-ji-lu-%20isdigit%28%29.html</link><description>在 C++ 中，`isdigit()` 是一个用于判断字符是否为十进制数字（即 `'0'` 到 `'9'`）的标准函数。</description><guid isPermaLink="true">https://jibinghu.github.io/post/c%2B%2B%20-sui-shou-ji-lu-%20isdigit%28%29.html</guid><pubDate>Wed, 04 Jun 2025 03:14:39 +0000</pubDate></item><item><title>断言 assert</title><link>https://jibinghu.github.io/post/duan-yan-%20assert.html</link><description>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;在C++中，&lt;code inline=''&gt;assert&lt;/code&gt;是一个宏，用于在程序运行时进行条件检查。</description><guid isPermaLink="true">https://jibinghu.github.io/post/duan-yan-%20assert.html</guid><pubDate>Tue, 03 Jun 2025 13:49:58 +0000</pubDate></item><item><title>全参数训练qwen3-0.5b</title><link>https://jibinghu.github.io/post/quan-can-shu-xun-lian-qwen3-0.5b.html</link><description>``` python 
+import json
+import pandas as pd
+import torch
+from datasets import Dataset
+from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer, DataCollatorForSeq2Seq
+import os
+import swanlab
+
+# 设置 SwanLab 项目名称
+os.environ['SWANLAB_PROJECT'] = 'qwen3-sft-dialog'
+
+# 定义提示（PROMPT）和最大序列长度
+PROMPT = '你是一个对话助手，你需要根据用户的问题，给出相应的回答。</description><guid isPermaLink="true">https://jibinghu.github.io/post/quan-can-shu-xun-lian-qwen3-0.5b.html</guid><pubDate>Tue, 03 Jun 2025 02:21:42 +0000</pubDate></item><item><title>libcusparse.so.12: undefined symbol: __nvJitLinkComplete_12_4, version libnvJitLink.so.12 报错解决</title><link>https://jibinghu.github.io/post/libcusparse.so.12-%20undefined%20symbol-%20__nvJitLinkComplete_12_4%2C%20version%20libnvJitLink.so.12%20-bao-cuo-jie-jue.html</link><description>参考 https://github.com/pytorch/pytorch/issues/134929
+
+``` bash
+# Install nightly version of pytorch
+pip3 install -U --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu126
+```。</description><guid isPermaLink="true">https://jibinghu.github.io/post/libcusparse.so.12-%20undefined%20symbol-%20__nvJitLinkComplete_12_4%2C%20version%20libnvJitLink.so.12%20-bao-cuo-jie-jue.html</guid><pubDate>Wed, 28 May 2025 15:34:19 +0000</pubDate></item><item><title>记录Docker环境劫持/影响宿主机代理的问题</title><link>https://jibinghu.github.io/post/ji-lu-Docker-huan-jing-jie-chi---ying-xiang-su-zhu-ji-dai-li-de-wen-ti.html</link><description>``` bash
+User@ubuntu:~$ wget www.baidu.com
+--2025-05-28 15:15:03--  http://www.baidu.com/
+Connecting to 172.26.1.45:3128... failed: No route to host.
+```
+在使用docker发现路由不可达，ping跳板机也遇到问题：
+``` bash 
+User@ubuntu:~$ ping 172.26.1.45
+PING 172.26.1.45 (172.26.1.45) 56(84) bytes of data.
+From 172.26.0.1 icmp_seq=1 Destination Host Unreachable
+```
+且服务器内有很多Docker Container运行历史时，要考虑是不是Docker占用了网络。</description><guid isPermaLink="true">https://jibinghu.github.io/post/ji-lu-Docker-huan-jing-jie-chi---ying-xiang-su-zhu-ji-dai-li-de-wen-ti.html</guid><pubDate>Wed, 28 May 2025 07:37:13 +0000</pubDate></item><item><title>WindowsOS 公钥流程</title><link>https://jibinghu.github.io/post/WindowsOS%20-gong-yao-liu-cheng.html</link><description>``` bash
+# 如果已有key，忽略第一行命令
+ssh-keygen -t rsa -b 2048 -C '&lt;comment&gt;' # comment可以是当前电脑的备注，方便你识别自己的设备
+# 随后可以按默认配置一路回车，直至成功生成key
+# 跳转到密钥文件所在目录
+cd C:\Users\&lt;username&gt;\.ssh
+# 查看并复制id_rsa.pub
+type id_rsa.pub | clip
+```。</description><guid isPermaLink="true">https://jibinghu.github.io/post/WindowsOS%20-gong-yao-liu-cheng.html</guid><pubDate>Wed, 28 May 2025 02:24:09 +0000</pubDate></item><item><title>Vision Language 模型方向</title><link>https://jibinghu.github.io/post/Vision%20Language%20-mo-xing-fang-xiang.html</link><description>目前，**VL（Vision-Language）模型**的设计理念有两种主要的思路：一种是将 **视觉模型** 和 **语言模型** 融合成一个统一的模型（类似于 **VLM**，Vision-Language Models），另一种是采用 **先训练计算机视觉（CV）模型，再加上语言模型（LLM）** 的方法。</description><guid isPermaLink="true">https://jibinghu.github.io/post/Vision%20Language%20-mo-xing-fang-xiang.html</guid><pubDate>Mon, 19 May 2025 13:22:20 +0000</pubDate></item><item><title>CUDA Graph Demo</title><link>https://jibinghu.github.io/post/CUDA%20Graph%20Demo.html</link><description>### 背景
+
+假设我们有一个深度学习的训练过程，其中包含了多个计算操作，比如：
+
+1. 从主机内存（CPU）传输数据到设备内存（GPU）。</description><guid isPermaLink="true">https://jibinghu.github.io/post/CUDA%20Graph%20Demo.html</guid><pubDate>Wed, 14 May 2025 10:18:46 +0000</pubDate></item><item><title>TTS(一)</title><link>https://jibinghu.github.io/post/TTS%28-yi-%29.html</link><description>文本前处理（Text Preprocessing）：文本会经过一个规范化过程，转化为适合模型输入的形式。</description><guid isPermaLink="true">https://jibinghu.github.io/post/TTS%28-yi-%29.html</guid><pubDate>Wed, 14 May 2025 09:00:38 +0000</pubDate></item><item><title>瞎看-服务器 cpu 爆满排疑</title><link>https://jibinghu.github.io/post/xia-kan---fu-wu-qi-%20cpu%20-bao-man-pai-yi.html</link><description>https://zhuanlan.zhihu.com/p/677622575?share_code=12FzRI3tKPLIq&amp;utm_psn=1903096199495541413
+
+```
+# 查到了如下两个命令可以一定程度上发现被隐藏的进程
+[sysdig](https://zhida.zhihu.com/search?content_id=238712996&amp;content_type=Article&amp;match_order=1&amp;q=sysdig&amp;zd_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ6aGlkYV9zZXJ2ZXIiLCJleHAiOjE3NDY2ODY4NDAsInEiOiJzeXNkaWciLCJ6aGlkYV9zb3VyY2UiOiJlbnRpdHkiLCJjb250ZW50X2lkIjoyMzg3MTI5OTYsImNvbnRlbnRfdHlwZSI6IkFydGljbGUiLCJtYXRjaF9vcmRlciI6MSwiemRfdG9rZW4iOm51bGx9.39UtTm5OJOKMHHlRPn7w_E3wI1xANgN0lnMfqACshcg&amp;zhida_source=entity) -c topprocs_cpu # 该命令可以输出cpu占用的排行，经测试可以显示出被隐藏的进程
+[unhide](https://zhida.zhihu.com/search?content_id=238712996&amp;content_type=Article&amp;match_order=1&amp;q=unhide&amp;zd_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ6aGlkYV9zZXJ2ZXIiLCJleHAiOjE3NDY2ODY4NDAsInEiOiJ1bmhpZGUiLCJ6aGlkYV9zb3VyY2UiOiJlbnRpdHkiLCJjb250ZW50X2lkIjoyMzg3MTI5OTYsImNvbnRlbnRfdHlwZSI6IkFydGljbGUiLCJtYXRjaF9vcmRlciI6MSwiemRfdG9rZW4iOm51bGx9.8zSX_tfrCuLHaKwRMEosYQchj0ARiIl8O0zDM2IhI_o&amp;zhida_source=entity) proc # 自助搜索隐藏进程，linux系统中一切皆文件，proc目录下保存的就是所有正在运行程序的进程ID，即PID
+```
+以上两个命令需要额外安装，不是系统自带命令
+
+```
+# sysdig可用如下命令安装，curl是类似wget的下载命令，这里下载的是一个bash脚本，下载后再通过bash执行安装
+curl -s https://s3.amazonaws.com/download.draios.com/stable/install-sysdig | bash
+# unhide 可以通过如下命令进行安装
+yum install unhide # 中毒的是[Centos7](https://zhida.zhihu.com/search?content_id=238712996&amp;content_type=Article&amp;match_order=1&amp;q=Centos7&amp;zd_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ6aGlkYV9zZXJ2ZXIiLCJleHAiOjE3NDY2ODY4NDAsInEiOiJDZW50b3M3IiwiemhpZGFfc291cmNlIjoiZW50aXR5IiwiY29udGVudF9pZCI6MjM4NzEyOTk2LCJjb250ZW50X3R5cGUiOiJBcnRpY2xlIiwibWF0Y2hfb3JkZXIiOjEsInpkX3Rva2VuIjpudWxsfQ.CnLDI7ucXXE5wALn1HfCdZ-pDPAyK2zd9quRPdnTWB0&amp;zhida_source=entity)系统，所以用的是yum
+```
+
+```
+# 至于为什么不要第一时间用kill删掉病毒进程，这是一个惨痛教训，后面会提到。</description><guid isPermaLink="true">https://jibinghu.github.io/post/xia-kan---fu-wu-qi-%20cpu%20-bao-man-pai-yi.html</guid><pubDate>Tue, 06 May 2025 08:28:23 +0000</pubDate></item><item><title>有限差分</title><link>https://jibinghu.github.io/post/you-xian-cha-fen.html</link><description>### 回顾泰勒展开：
+
+泰勒展开（Taylor expansion）是将一个在某点可导的无穷次的函数表示为该点的导数的无穷级数。</description><guid isPermaLink="true">https://jibinghu.github.io/post/you-xian-cha-fen.html</guid><pubDate>Tue, 06 May 2025 08:10:37 +0000</pubDate></item><item><title>NULL和nullptr区别？为什么要引入nullptr？</title><link>https://jibinghu.github.io/post/NULL-he-nullptr-qu-bie-%EF%BC%9F-wei-shen-me-yao-yin-ru-nullptr%EF%BC%9F.html</link><description>### 区别
+
+#### 1. 类型不同
+- **`NULL`**：在 C++ 里，`NULL` 通常被定义为 `0` 或者 `(void*)0`。</description><guid isPermaLink="true">https://jibinghu.github.io/post/NULL-he-nullptr-qu-bie-%EF%BC%9F-wei-shen-me-yao-yin-ru-nullptr%EF%BC%9F.html</guid><pubDate>Wed, 23 Apr 2025 09:48:38 +0000</pubDate></item><item><title>一个变量可以既是const又是volatile吗？</title><link>https://jibinghu.github.io/post/yi-ge-bian-liang-ke-yi-ji-shi-const-you-shi-volatile-ma-%EF%BC%9F.html</link><description>在 C++ 里，一个变量能够同时具备 `const` 和 `volatile` 这两个修饰符。</description><guid isPermaLink="true">https://jibinghu.github.io/post/yi-ge-bian-liang-ke-yi-ji-shi-const-you-shi-volatile-ma-%EF%BC%9F.html</guid><pubDate>Wed, 23 Apr 2025 09:39:28 +0000</pubDate></item><item><title>CPP 八股</title><link>https://jibinghu.github.io/post/CPP%20-ba-gu.html</link><description>### 作用
+
+在 C++ 中，`thread_local` 是一个存储类说明符，它的主要作用是为每个线程创建独立的变量实例。</description><guid isPermaLink="true">https://jibinghu.github.io/post/CPP%20-ba-gu.html</guid><pubDate>Wed, 23 Apr 2025 09:36:34 +0000</pubDate></item><item><title>C++八股（二）</title><link>https://jibinghu.github.io/post/C%2B%2B-ba-gu-%EF%BC%88-er-%EF%BC%89.html</link><description>---
+在 C++ 里，`static` 关键字有三种主要作用，下面为你详细介绍：
+
+### 1. 修饰局部变量
+当 `static` 用于修饰局部变量时，该变量的生命周期会延长至整个程序运行期间，而非局限于所在函数的执行期间。</description><guid isPermaLink="true">https://jibinghu.github.io/post/C%2B%2B-ba-gu-%EF%BC%88-er-%EF%BC%89.html</guid><pubDate>Tue, 22 Apr 2025 11:22:26 +0000</pubDate></item><item><title>内网网段</title><link>https://jibinghu.github.io/post/nei-wang-wang-duan.html</link><description>根据 [RFC 1918](https://tools.ietf.org/html/rfc1918) 的定义，以下三个 IP 地址范围被保留为私有（内网）地址，这些地址不会在互联网上路由，只能在本地网络中使用：
 10.0.0.0 - 10.255.255.255（10.0.0.0/8）
 172.16.0.0 - 172.31.255.255（172.16.0.0/12）
 192.168.0.0 - 192.168.255.255（192.168.0.0/16）。</description><guid isPermaLink="true">https://jibinghu.github.io/post/nei-wang-wang-duan.html</guid><pubDate>Tue, 15 Apr 2025 08:45:46 +0000</pubDate></item><item><title>大模型八股(一)</title><link>https://jibinghu.github.io/post/da-mo-xing-ba-gu-%28-yi-%29.html</link><description># Activate Func

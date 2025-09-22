@@ -106,15 +106,15 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 
     <span class="pl-c"><span class="pl-c">//</span> 设置数组中的值</span>
     <span class="pl-k">void</span> <span class="pl-en">set</span>(<span class="pl-c1">size_t</span> index, T value) {
-        <span class="pl-k">if</span> (<span class="pl-c1">index</span> &lt; data.<span class="pl-c1">size</span>()) {
-            data[<span class="pl-c1">index</span>] = value;
+        <span class="pl-k">if</span> (index &lt; data.<span class="pl-c1">size</span>()) {
+            data[index] = value;
         }
     }
 
     <span class="pl-c"><span class="pl-c">//</span> 获取数组中的值</span>
     T <span class="pl-en">get</span>(<span class="pl-c1">size_t</span> index) <span class="pl-k">const</span> {
-        <span class="pl-k">if</span> (<span class="pl-c1">index</span> &lt; data.<span class="pl-c1">size</span>()) {
-            <span class="pl-k">return</span> data[<span class="pl-c1">index</span>];
+        <span class="pl-k">if</span> (index &lt; data.<span class="pl-c1">size</span>()) {
+            <span class="pl-k">return</span> data[index];
         }
         <span class="pl-k">return</span> <span class="pl-c1">T</span>();  <span class="pl-c"><span class="pl-c">//</span> 默认返回类型 T 的默认值</span>
     }
@@ -141,8 +141,8 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 
     <span class="pl-c"><span class="pl-c">//</span> 设置 bool 值</span>
     <span class="pl-k">void</span> <span class="pl-en">set</span>(<span class="pl-c1">size_t</span> index, <span class="pl-k">bool</span> value) {
-        <span class="pl-c1">size_t</span> byteIndex = <span class="pl-c1">index</span> / <span class="pl-c1">8</span>;
-        <span class="pl-c1">size_t</span> bitIndex = <span class="pl-c1">index</span> % <span class="pl-c1">8</span>;
+        <span class="pl-c1">size_t</span> byteIndex = index / <span class="pl-c1">8</span>;
+        <span class="pl-c1">size_t</span> bitIndex = index % <span class="pl-c1">8</span>;
 
         <span class="pl-k">if</span> (value) {
             data[byteIndex] |= (<span class="pl-c1">1</span> &lt;&lt; bitIndex);  <span class="pl-c"><span class="pl-c">//</span> 通过位操作将对应的位设置为 1</span>
@@ -153,8 +153,8 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 
     <span class="pl-c"><span class="pl-c">//</span> 获取 bool 值</span>
     <span class="pl-k">bool</span> <span class="pl-en">get</span>(<span class="pl-c1">size_t</span> index) <span class="pl-k">const</span> {
-        <span class="pl-c1">size_t</span> byteIndex = <span class="pl-c1">index</span> / <span class="pl-c1">8</span>;
-        <span class="pl-c1">size_t</span> bitIndex = <span class="pl-c1">index</span> % <span class="pl-c1">8</span>;
+        <span class="pl-c1">size_t</span> byteIndex = index / <span class="pl-c1">8</span>;
+        <span class="pl-c1">size_t</span> bitIndex = index % <span class="pl-c1">8</span>;
 
         <span class="pl-k">return</span> (data[byteIndex] &gt;&gt; bitIndex) &amp; <span class="pl-c1">1</span>;  <span class="pl-c"><span class="pl-c">//</span> 通过位操作获取 bool 值</span>
     }

@@ -180,7 +180,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">multiply</span>(<s
 </blockquote>
 <p><em>简单理解一下，当上面两种情况发生时，硬件就可以判断（具体是硬件还是编译器的功劳，我也不确定，先归给硬件吧），单个 half warp 内，最多需要 64 bytes 的数据，那么两个 half warp 就可以合并起来，通过一次 memory transaction，拿回 128 bytes 的数据。然后线程之间怎么分都可以（broadcast 机制）. 当然，这里的前提是没有产生 bank conflict。即没有从单个 bank 请求超过 1 个 word。</em></p>
 <div>
-    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/9db0de60ed202fae6fa2c7f43914755eeecf8bde525eafe05f92df265f03dcd1/68747470733a2f2f706963322e7a68696d672e636f6d2f38302f76322d61643536363139626461633139623361373439616563643530623662353938355f31343430772e77656270"><img src="https://camo.githubusercontent.com/9db0de60ed202fae6fa2c7f43914755eeecf8bde525eafe05f92df265f03dcd1/68747470733a2f2f706963322e7a68696d672e636f6d2f38302f76322d61643536363139626461633139623361373439616563643530623662353938355f31343430772e77656270" width="700" height="200" data-canonical-src="https://pic2.zhimg.com/80/v2-ad56619bdac19b3a749aecd50b6b5985_1440w.webp" style="max-width: 100%;"></a>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/9db0de60ed202fae6fa2c7f43914755eeecf8bde525eafe05f92df265f03dcd1/68747470733a2f2f706963322e7a68696d672e636f6d2f38302f76322d61643536363139626461633139623361373439616563643530623662353938355f31343430772e77656270"><img src="https://camo.githubusercontent.com/9db0de60ed202fae6fa2c7f43914755eeecf8bde525eafe05f92df265f03dcd1/68747470733a2f2f706963322e7a68696d672e636f6d2f38302f76322d61643536363139626461633139623361373439616563643530623662353938355f31343430772e77656270" width="700" height="200" data-canonical-src="https://pic2.zhimg.com/80/v2-ad56619bdac19b3a749aecd50b6b5985_1440w.webp" style="max-width: 100%; height: auto; max-height: 200px;"></a>
     <p>情形一</p>
 </div>
 <blockquote>
@@ -215,7 +215,7 @@ float4：表示包含四个 32 位浮点数的向量。例如，一个四维向�
 <h4>矩阵乘法的 CUDA 优化 {#sector_2}</h4>
 <p><em>以单精度为例</em></p>
 <div>
-    <a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/chiemon/chiemon.github.io/master/img/cuda/1.png"><img src="https://raw.githubusercontent.com/chiemon/chiemon.github.io/master/img/cuda/1.png" width="550" height="200" style="max-width: 100%;"></a>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/chiemon/chiemon.github.io/master/img/cuda/1.png"><img src="https://raw.githubusercontent.com/chiemon/chiemon.github.io/master/img/cuda/1.png" width="550" height="200" style="max-width: 100%; height: auto; max-height: 200px;"></a>
     <p>矩阵乘</p>
 </div>
 <h5>CPU 下的矩阵乘：</h5>
@@ -254,7 +254,7 @@ float4：表示包含四个 32 位浮点数的向量。例如，一个四维向�
 <p>在上述GPU Native代码中，矩阵A需要被重复加载 $k$ 次，矩阵B需要被重复加载 $m$ 次，在不考虑全局内存访存合并的情况下，矩阵中的每个元素都需要被重复加载 $m \times n \times k$次。加之全局内存访问延迟为几百 cycles，导致 GEMM 性能很低，计算/访存比极小。于是考虑利用共享内存低延迟、高带宽的特点，对矩阵乘进行分块处理。</p>
 <h5>共享内存优化矩阵乘</h5>
 <div>
-    <a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/chiemon/chiemon.github.io/master/img/cuda/5.png"><img src="https://raw.githubusercontent.com/chiemon/chiemon.github.io/master/img/cuda/5.png" width="550" height="500" style="max-width: 100%;"></a>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://raw.githubusercontent.com/chiemon/chiemon.github.io/master/img/cuda/5.png"><img src="https://raw.githubusercontent.com/chiemon/chiemon.github.io/master/img/cuda/5.png" width="550" height="500" style="max-width: 100%; height: auto; max-height: 500px;"></a>
     <p>矩阵分块乘</p>
 </div>
 <div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> 矩阵分块乘</span>
@@ -356,7 +356,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">matrixMultiplyShar
     }</pre></div>
 <p>上述伪代码程序中每次访存向量化达到提高计算/访存比的效果。</p>
 <div>
-    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/bc6ab81c751eee299354221f4707bfc10ce11f2707da281550957b78559bebd6/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303631303230343135323432352d34343235343032312e706e67"><img src="https://camo.githubusercontent.com/bc6ab81c751eee299354221f4707bfc10ce11f2707da281550957b78559bebd6/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303631303230343135323432352d34343235343032312e706e67" width="550" height="500" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240610204152425-44254021.png" style="max-width: 100%;"></a>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/bc6ab81c751eee299354221f4707bfc10ce11f2707da281550957b78559bebd6/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303631303230343135323432352d34343235343032312e706e67"><img src="https://camo.githubusercontent.com/bc6ab81c751eee299354221f4707bfc10ce11f2707da281550957b78559bebd6/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303631303230343135323432352d34343235343032312e706e67" width="550" height="500" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240610204152425-44254021.png" style="max-width: 100%; height: auto; max-height: 500px;"></a>
     <p>矩阵分块乘策略</p>
 </div>
 <blockquote>
