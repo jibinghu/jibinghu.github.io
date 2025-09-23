@@ -1,5 +1,15 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 23 Sep 2025 03:54:05 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>NetCDF Fortran API 及其使用</title><link>https://jibinghu.github.io/post/NetCDF%20Fortran%20API%20-ji-qi-shi-yong.html</link><description>NetCDF（Network Common Data Form）是一种用于科学数据存储和共享的自描述、网络透明、直接访问和可扩展的文件格式。</description><guid isPermaLink="true">https://jibinghu.github.io/post/NetCDF%20Fortran%20API%20-ji-qi-shi-yong.html</guid><pubDate>Tue, 23 Sep 2025 03:53:35 +0000</pubDate></item><item><title>Nsys/TorchProfiler/NCU 使用</title><link>https://jibinghu.github.io/post/Nsys-TorchProfiler-NCU%20-shi-yong.html</link><description>主要参考：https://zhuanlan.zhihu.com/p/1945304372545291742
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 23 Sep 2025 15:17:18 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>ulimit 命令</title><link>https://jibinghu.github.io/post/ulimit%20-ming-ling.html</link><description>用了很长时间ulimit命令，还没认真看这个命令的作用：
+
+---
+
+下面详细解释一下 **`ulimit -s unlimited`** 这个命令：
+
+---
+
+## 1. `ulimit` 是什么
+
+* `ulimit` 是 Linux/Unix 系统里的 **shell 内置命令**，用于控制当前 shell 进程及其子进程所能使用的系统资源上限。</description><guid isPermaLink="true">https://jibinghu.github.io/post/ulimit%20-ming-ling.html</guid><pubDate>Tue, 23 Sep 2025 15:16:42 +0000</pubDate></item><item><title>NetCDF Fortran API 及其使用</title><link>https://jibinghu.github.io/post/NetCDF%20Fortran%20API%20-ji-qi-shi-yong.html</link><description>NetCDF（Network Common Data Form）是一种用于科学数据存储和共享的自描述、网络透明、直接访问和可扩展的文件格式。</description><guid isPermaLink="true">https://jibinghu.github.io/post/NetCDF%20Fortran%20API%20-ji-qi-shi-yong.html</guid><pubDate>Tue, 23 Sep 2025 03:53:35 +0000</pubDate></item><item><title>Nsys/TorchProfiler/NCU 使用</title><link>https://jibinghu.github.io/post/Nsys-TorchProfiler-NCU%20-shi-yong.html</link><description>主要参考：https://zhuanlan.zhihu.com/p/1945304372545291742
 
 ---
 
