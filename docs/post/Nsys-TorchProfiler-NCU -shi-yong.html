@@ -25,7 +25,7 @@ Blog 中有很多基础的知识，这里不做过多赘述。">
 <meta property="og:url" content="https://jibinghu.github.io/post/Nsys-TorchProfiler-NCU%20-shi-yong.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>Nsys/TorchProfiler/NCU 使用</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -49,7 +49,17 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     body {padding: 8px;}
     .postTitle{font-size:24px;}
 }
-
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
 </style>
 
 
@@ -101,7 +111,353 @@ Memcpy_D2D（设备到设备）<br>
 Memset…<br>
 现代 GPU（如 NVIDIA A100）支持多内核并发执行，可通过内核重叠技术缩短执行时间。常用实现方式是多 CUDA 流——不同 CUDA 流可以交错或并发运行，实现计算、通信和内存操作的重叠。</li>
 </ul>
-<hr></div>
+<hr>
+<p>Nsight System -&gt; nsys 使用：</p>
+<p>Nsight Systems (nsys) 作为 CUDA Toolkit 的标准组件之一，随其一同安装。 其可执行文件路径为 ${CUDA_HOME}/bin/nsys。 nsys 的功能集与支持的 API 追踪范围随 CUDA 版本迭代而更新，建议使用较新版本以获得更全面的分析能力。</p>
+<p>原理：</p>
+<p>nsys 采用动态插桩（Dynamic Instrumentation）技术。它通过劫持链接器调用（Linker Interception），在程序运行时为关键的库函数（如 CUDA API、OS API）动态插入性能采集探针（Probes）。 此机制无需修改或重新编译<a href="https://zhida.zhihu.com/search?content_id=262463237&amp;content_type=Article&amp;match_order=1&amp;q=%E6%BA%90%E4%BB%A3%E7%A0%81&amp;zhida_source=entity" rel="nofollow">源代码</a>，即可非侵入式地捕获函数调用、执行时间等<a href="https://zhida.zhihu.com/search?content_id=262463237&amp;content_type=Article&amp;match_order=1&amp;q=%E7%B3%BB%E7%BB%9F%E7%BA%A7&amp;zhida_source=entity" rel="nofollow">系统级</a>事件。</p>
+<p>用法</p>
+<blockquote>
+<p>nsys 的核心功能通过其命令行接口暴露，尤其适用于服务器环境。<br>
+nsys 的主要子命令是 profile，用于执行并分析目标应用程序。</p>
+</blockquote>
+<div class="highlight highlight-source-shell"><pre class="notranslate">nsys profile [options] <span class="pl-k">&lt;</span>application<span class="pl-k">&gt;</span> [application_args]
+[options]: 控制分析行为的选项，如追踪内容、采样频率等。
+<span class="pl-k">&lt;</span>application<span class="pl-k">&gt;</span>: 待分析的可执行文件或脚本。
+[application_args]: 传递给应用程序的参数。</pre></div>
+<p>执行后，nsys 会生成一个 .nsys-rep 报告文件，该文件可由 Nsight Systems GUI 进行[可视化]分析。 其核心参数如下：</p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>参数</th>
+<th>功能描述</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>--output=</td>
+<td>指定输出报告的文件名。</td>
+<td>-o my_report</td>
+</tr>
+<tr>
+<td>--force-overwrite</td>
+<td>如果报告文件已存在，则强制覆盖。</td>
+<td>-f</td>
+</tr>
+<tr>
+<td>--trace=</td>
+<td>指定要追踪的 API 集合，以逗号分隔。关键 API 包括 cuda, nvtx, osrt, mpi, cublas, cudnn。</td>
+<td>-t cuda,nvtx,osrt</td>
+</tr>
+<tr>
+<td>--sample=</td>
+<td>控制 CPU IP 采样方式 (process-tree, system-wide, none)。此选项会覆盖 --cpuctxsw 的设置。</td>
+<td>-s process-tree</td>
+</tr>
+<tr>
+<td>--cpuctxsw=</td>
+<td>记录 CPU 上下文切换 (process-tree, system-wide, none)。仅在 --sample=none 时可独立设置。</td>
+<td>--cpuctxsw=none</td>
+</tr>
+<tr>
+<td>--delay=</td>
+<td>延迟指定秒数后开始性能采集。</td>
+<td>-y 10</td>
+</tr>
+<tr>
+<td>--duration=</td>
+<td>从采集开始计时，持续指定秒数后停止。</td>
+<td>-d 30</td>
+</tr>
+<tr>
+<td>--capture-range=</td>
+<td>指定用于控制采集开始 / 停止的机制。关键值为 nvtx。</td>
+<td>-c nvtx</td>
+</tr>
+<tr>
+<td>--nvtx-capture=</td>
+<td>当 -c nvtx 被指定时，此选项用于定义具体的 NVTX 范围 (Range) 名称。</td>
+<td>-p "training_phase"</td>
+</tr>
+<tr>
+<td>--gpu-metrics-devices</td>
+<td>采集指定 GPU 的核心性能指标。注意：可能引入额外开销。更适合用于定性分析而非精确的性能测量。</td>
+<td>--gpu-metrics-devices=all</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p>示例：</p>
+<div class="highlight highlight-source-shell"><pre class="notranslate"><span class="pl-c"><span class="pl-c">#</span> 默认配置已覆盖大部分通用场景</span>
+nsys profile -o report_default.nsys-rep ./my_app
+<span class="pl-c"><span class="pl-c">#</span> nsys profile 默认等价于 --trace=cuda,opengl,nvtx,osrt --sample=process-tree (Linux)</span>
+
+<span class="pl-c"><span class="pl-c">#</span> 对于包含 MPI 的多节点应用，需显式添加 MPI 追踪</span>
+nsys profile \
+    --trace=cuda,nvtx,osrt \
+    --sample=process-tree \
+    --output=report_overview.nsys-rep \
+    ./my_app
+<span class="pl-c"><span class="pl-c">#</span> Windows 上 osrt 应该换成 wddm</span></pre></div>
+<div class="highlight highlight-source-shell"><pre class="notranslate"><span class="pl-c"><span class="pl-c">#</span> 示例：假设瓶颈已定位在 GPU Kernel，关闭 CPU 相关采集以减少干扰</span>
+nsys profile \
+    --trace=cuda,nvtx \
+    --sample=none \
+    --cpuctxsw=none \
+    --output=report_gpu_focused.nsys-rep \
+    ./my_app</pre></div>
+<p>对于长时间运行或具有明显初始化阶段的应用，仅分析其核心计算部分。</p>
+<div class="highlight highlight-source-shell"><pre class="notranslate"><span class="pl-c"><span class="pl-c">#</span> 方案 A：基于时间窗口的采集 </span>
+nsys profile --delay=60 --duration=120 -o report_window.nsys-rep ./my_app
+
+<span class="pl-c"><span class="pl-c">#</span> 方案 B：基于 NVTX [触发器](https://zhida.zhihu.com/search?content_id=262463237&amp;content_type=Article&amp;match_order=1&amp;q=%E8%A7%A6%E5%8F%91%E5%99%A8&amp;zhida_source=entity)的采集 </span>
+nsys profile --capture-range=nvtx --nvtx-capture=「training_phase」 --output=report_nvtx.nsys-rep ./my_app</pre></div>
+<p>Warning!!!</p>
+<blockquote>
+<p>❗内存占用：分析复杂或长时间运行的应用会生成巨大的报告文件，打开和分析时需要消耗大量主机内存（建议 &gt; 64GB）。<br>
+❗CUDA 版本兼容性：新版本的 CUDA Toolkit 通常伴随功能更强的 nsys，支持更丰富的 API 追踪和 GPU 指标。</p>
+</blockquote>
+<hr>
+<p>时间线构图：</p>
+<p>CUDA HW - GPU 硬件活动<br>
+CUDA HW 直接展示了你的 NVIDIA GPU 硬件真正在做什么，是 nsys 最重要的一行。它不受软件 API 调用的延迟影响，反映的是 GPU 芯片内部计算单元的实际工作状态。</p>
+<p>CUDA HW 行通常包含多个子轨道（sub-track），代表了 GPU 上不同类型的工作队列或引擎：</p>
+
+<p>Kernels (计算核心)：蓝色的条块，每个代表一个 CUDA Kernel 的执行<br>
+条块密集且连续: GPU 计算核心高度饱和，理想状态<br>
+条块之间有明显空隙: 性能问题信号，GPU 计算核心在等待<br>
+条块很短，数量极多: “小 Kernel 问题”，效率不高<br>
+Memory (内存操作)：绿色的条块，代表 GPU 与显存之间的数据传输<br>
+频繁且大的绿色条块: 表明程序有大量的数据传输<br>
+理想状态: 数据拷贝应与计算重叠</p>
+<p>CUDA API - CUDA <a href="https://zhida.zhihu.com/search?content_id=262463237&amp;content_type=Article&amp;match_order=1&amp;q=%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E6%8E%A5%E5%8F%A3&amp;zhida_source=entity" rel="nofollow">应用程序接口</a>调用<br>
+记录了程序（运行在 CPU 上）何时调用了 CUDA 相关的函数。这些是 CPU 向 GPU <a href="https://zhida.zhihu.com/search?content_id=262463237&amp;content_type=Article&amp;match_order=1&amp;q=%E9%A9%B1%E5%8A%A8%E7%A8%8B%E5%BA%8F&amp;zhida_source=entity" rel="nofollow">驱动程序</a>发出的”指令”。 通常显示为各种不同颜色的条块，每个都对应一个 CUDA API 调用：</p>
+<p>cudaLaunchKernel - 启动计算核心<br>
+cudaMemcpy - 拷贝内存<br>
+cudaStreamSynchronize - 等待 GPU 完成任务 关键观察点：长条块的 cudaStreamSynchronize 意味着 CPU 必须停下来等待 GPU 完成队列里所有的任务，这会严重影响性能。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/a5c1ecf0-7084-4e12-8c71-be0d05d90568"><img width="1357" height="291" alt="Image" src="https://github.com/user-attachments/assets/a5c1ecf0-7084-4e12-8c71-be0d05d90568" style="max-width: 100%; height: auto; max-height: 291px;"></a></p>
+<p>通常显示为各种不同颜色的条块，每个都对应一个 CUDA API 调用，例如 cudaLaunchKernel (启动一个计算核心), cudaMemcpy (拷贝内存), cudaStreamSynchronize (等待 GPU 完成任务)。</p>
+<p>CUDA API 行显示的是 CPU 的行为，而不是 GPU 的行为。CPU 调用 cudaLaunchKernel 只是把一个任务“扔”进了 GPU 的指令队列，GPU 可能稍后才会真正执行它。即异步执行。<br>
+长条块的 cudaStreamSynchronize: 这是一个强烈的“同步点”信号，意味着 CPU 必须停下来，等待 GPU 完成队列里所有的任务。频繁或长时间的同步会严重影响性能，因为它破坏了 CPU 和 GPU 的并行性。<br>
+通过对比 CUDA API 和 CUDA HW，你可以分析 API 调用到硬件实际执行之间的延迟。</p>
+<p>NVTX</p>
+<blockquote>
+<p>NVTX (NVIDIA Tools Extension) - 自定义应用标记</p>
+</blockquote>
+<p>NVTX (NVIDIA Tools Extension) 允许<a href="https://zhida.zhihu.com/search?content_id=262463237&amp;content_type=Article&amp;match_order=1&amp;q=%E5%BC%80%E5%8F%91%E8%80%85&amp;zhida_source=entity" rel="nofollow">开发者</a>在代码中插入自定义的范围 (Ranges) 和标记 (Markers)，是关联代码逻辑与时间线活动的关键桥梁。 如下方例子在训练过程中 前向传播 (forward)，反向传播 (backward)，优化器更新 (opt)使用 nvxt 进行标记。 简单的用@nvxt 装饰器语法装饰函数，或者用 with nvtx 进行管理上下文管理。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/7e54fd79-fa19-45d6-90f9-d647d1b7ee22"><img width="633" height="162" alt="Image" src="https://github.com/user-attachments/assets/7e54fd79-fa19-45d6-90f9-d647d1b7ee22" style="max-width: 100%; height: auto; max-height: 162px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/105e0d5f-3c2f-4786-a7d5-5f282a2790b3"><img width="1440" height="109" alt="Image" src="https://github.com/user-attachments/assets/105e0d5f-3c2f-4786-a7d5-5f282a2790b3" style="max-width: 100%; height: auto; max-height: 109px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/75311d0c-ed46-488f-b8bb-94fe5018513e"><img width="678" height="234" alt="Image" src="https://github.com/user-attachments/assets/75311d0c-ed46-488f-b8bb-94fe5018513e" style="max-width: 100%; height: auto; max-height: 234px;"></a></p>
+<blockquote>
+<p>一些公式化的场景时间线解读：<br>
+“阶梯状”的 CUDA HW: 代表 GPU 在等待 CPU 提交任务，可能是 CPU 瓶颈或 API 调用开销。<br>
+密集的短 Kernel 条块: 小核函数过多，是算子融合的绝佳机会。<br>
+CUDA HW 中的大段空白: 严重的数据供给不足或同步等待。<br>
+cudaMemcpy 与 Kernel 执行串行: 没有实现计算与传输的重叠。</p>
+</blockquote>
+<hr>
+<p>示例 1 GPU 空闲–数据集供给不足</p>
+<p>代码举例：</p>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-c"># 导入所有需要的库</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">from</span> <span class="pl-s1">torch</span> <span class="pl-k">import</span> <span class="pl-s1">nn</span>
+<span class="pl-k">from</span> <span class="pl-s1">torch</span>.<span class="pl-s1">utils</span>.<span class="pl-s1">data</span> <span class="pl-k">import</span> <span class="pl-v">DataLoader</span>, <span class="pl-s1">random_split</span>
+<span class="pl-k">from</span> <span class="pl-s1">torchvision</span> <span class="pl-k">import</span> <span class="pl-s1">datasets</span>
+<span class="pl-c"># 导入 transforms 模块，用于数据增强</span>
+<span class="pl-k">from</span> <span class="pl-s1">torchvision</span> <span class="pl-k">import</span> <span class="pl-s1">transforms</span> 
+<span class="pl-k">import</span> <span class="pl-s1">time</span>
+<span class="pl-k">import</span> <span class="pl-s1">nvtx</span>
+
+<span class="pl-c"># --- 全局配置参数 ---</span>
+
+<span class="pl-c"># 设置计算设备</span>
+<span class="pl-s1">device</span> <span class="pl-c1">=</span> 「<span class="pl-s1">cuda</span>」 <span class="pl-k">if</span> <span class="pl-s1">torch</span>.<span class="pl-c1">cuda</span>.<span class="pl-c1">is_available</span>() <span class="pl-k">else</span> 「<span class="pl-s1">cpu</span>」
+
+<span class="pl-c"># 设置训练的总轮数</span>
+<span class="pl-s1">num_epoch</span> <span class="pl-c1">=</span> <span class="pl-c1">1</span>
+
+<span class="pl-c"># 设置批次大小</span>
+<span class="pl-s1">batch_size</span> <span class="pl-c1">=</span> <span class="pl-c1">128</span>
+
+<span class="pl-c"># 设置数据加载器工作进程数量</span>
+<span class="pl-c"># 切换这里的数值 (0, 2, 4 等) 并用 nsys 观察差异</span>
+<span class="pl-s1">num_workers</span> <span class="pl-c1">=</span> <span class="pl-c1">32</span> 
+
+
+<span class="pl-c"># --- 定义神经网络模型 ---</span>
+
+<span class="pl-k">class</span> <span class="pl-v">Model</span>(<span class="pl-s1">nn</span>.<span class="pl-c1">Module</span>):
+    <span class="pl-k">def</span> <span class="pl-en">__init__</span>(<span class="pl-s1">self</span>):
+        <span class="pl-en">super</span>().<span class="pl-c1">__init__</span>()
+        <span class="pl-s1">self</span>.<span class="pl-c1">layers</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Sequential</span>(
+            <span class="pl-s1">nn</span>.<span class="pl-c1">Conv2d</span>(<span class="pl-c1">1</span>, <span class="pl-c1">32</span>, <span class="pl-c1">5</span>), <span class="pl-s1">nn</span>.<span class="pl-c1">ReLU</span>(),
+            <span class="pl-s1">nn</span>.<span class="pl-c1">Conv2d</span>(<span class="pl-c1">32</span>, <span class="pl-c1">32</span>, <span class="pl-c1">5</span>), <span class="pl-s1">nn</span>.<span class="pl-c1">ReLU</span>(),
+            <span class="pl-s1">nn</span>.<span class="pl-c1">BatchNorm2d</span>(<span class="pl-c1">32</span>),
+            <span class="pl-s1">nn</span>.<span class="pl-c1">MaxPool2d</span>(<span class="pl-c1">2</span>),
+            <span class="pl-s1">nn</span>.<span class="pl-c1">Conv2d</span>(<span class="pl-c1">32</span>, <span class="pl-c1">64</span>, <span class="pl-c1">3</span>), <span class="pl-s1">nn</span>.<span class="pl-c1">ReLU</span>(),
+            <span class="pl-s1">nn</span>.<span class="pl-c1">Conv2d</span>(<span class="pl-c1">64</span>, <span class="pl-c1">64</span>, <span class="pl-c1">3</span>), <span class="pl-s1">nn</span>.<span class="pl-c1">ReLU</span>(),
+            <span class="pl-s1">nn</span>.<span class="pl-c1">BatchNorm2d</span>(<span class="pl-c1">64</span>),
+            <span class="pl-s1">nn</span>.<span class="pl-c1">MaxPool2d</span>(<span class="pl-c1">2</span>),
+            <span class="pl-s1">nn</span>.<span class="pl-c1">Flatten</span>(<span class="pl-c1">1</span>),
+            <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-c1">576</span>, <span class="pl-c1">10</span>)
+        )
+
+    <span class="pl-en">@<span class="pl-s1">nvtx</span>.<span class="pl-c1">annotate</span>(「<span class="pl-s1">forward</span>」, <span class="pl-s1">color</span><span class="pl-c1">=</span>「<span class="pl-s1">blue</span>」)</span>
+    <span class="pl-k">def</span> <span class="pl-en">forward</span>(<span class="pl-s1">self</span>, <span class="pl-s1">x</span>):
+        <span class="pl-k">return</span> <span class="pl-s1">self</span>.<span class="pl-c1">layers</span>(<span class="pl-s1">x</span>)
+
+<span class="pl-c"># --- 定义训练和测试的单步函数 ---</span>
+
+<span class="pl-k">def</span> <span class="pl-en">train_step</span>(<span class="pl-s1">dataloader</span>, <span class="pl-s1">model</span>, <span class="pl-s1">loss_fn</span>, <span class="pl-s1">opt</span>):
+    <span class="pl-s1">model</span>.<span class="pl-c1">train</span>()
+    <span class="pl-k">for</span> <span class="pl-s1">batch</span>, (<span class="pl-c1">X</span>, <span class="pl-s1">y</span>) <span class="pl-c1">in</span> <span class="pl-en">enumerate</span>(<span class="pl-s1">dataloader</span>):
+        <span class="pl-c1">X</span>, <span class="pl-s1">y</span> <span class="pl-c1">=</span> <span class="pl-c1">X</span>.<span class="pl-c1">to</span>(<span class="pl-s1">device</span>), <span class="pl-s1">y</span>.<span class="pl-c1">to</span>(<span class="pl-s1">device</span>)
+        
+        <span class="pl-c"># 1. 前向传播</span>
+        <span class="pl-s1">pred</span> <span class="pl-c1">=</span> <span class="pl-en">model</span>(<span class="pl-c1">X</span>)
+        <span class="pl-s1">loss</span> <span class="pl-c1">=</span> <span class="pl-en">loss_fn</span>(<span class="pl-s1">pred</span>, <span class="pl-s1">y</span>)
+        
+        <span class="pl-c"># 2. 反向传播和优化</span>
+        <span class="pl-k">with</span> <span class="pl-s1">nvtx</span>.<span class="pl-c1">annotate</span>(「<span class="pl-s1">backward</span>」, <span class="pl-s1">color</span><span class="pl-c1">=</span>「<span class="pl-s1">red</span>」):
+            <span class="pl-s1">loss</span>.<span class="pl-c1">backward</span>()
+        
+        <span class="pl-k">with</span> <span class="pl-s1">nvtx</span>.<span class="pl-c1">annotate</span>(「<span class="pl-s1">opt</span>」, <span class="pl-s1">color</span><span class="pl-c1">=</span>「<span class="pl-s1">green</span>」):
+            <span class="pl-s1">opt</span>.<span class="pl-c1">step</span>()
+            <span class="pl-s1">opt</span>.<span class="pl-c1">zero_grad</span>()
+
+<span class="pl-k">def</span> <span class="pl-en">test_step</span>(<span class="pl-s1">dataloader</span>, <span class="pl-s1">model</span>, <span class="pl-s1">loss_fn</span>, <span class="pl-s1">opt</span>):
+    <span class="pl-s1">size</span> <span class="pl-c1">=</span> <span class="pl-en">len</span>(<span class="pl-s1">dataloader</span>.<span class="pl-c1">dataset</span>)
+    <span class="pl-s1">num_batches</span> <span class="pl-c1">=</span> <span class="pl-en">len</span>(<span class="pl-s1">dataloader</span>)
+    <span class="pl-s1">model</span>.<span class="pl-c1">eval</span>()
+    <span class="pl-s1">test_loss</span>, <span class="pl-s1">correct</span> <span class="pl-c1">=</span> <span class="pl-c1">0.0</span>, <span class="pl-c1">0.0</span>
+    
+    <span class="pl-k">with</span> <span class="pl-s1">torch</span>.<span class="pl-c1">no_grad</span>():
+        <span class="pl-k">for</span> <span class="pl-c1">X</span>, <span class="pl-s1">y</span> <span class="pl-c1">in</span> <span class="pl-s1">dataloader</span>:
+            <span class="pl-c1">X</span>, <span class="pl-s1">y</span> <span class="pl-c1">=</span> <span class="pl-c1">X</span>.<span class="pl-c1">to</span>(<span class="pl-s1">device</span>), <span class="pl-s1">y</span>.<span class="pl-c1">to</span>(<span class="pl-s1">device</span>)
+            <span class="pl-s1">pred</span> <span class="pl-c1">=</span> <span class="pl-en">model</span>(<span class="pl-c1">X</span>)
+            <span class="pl-s1">test_loss</span> <span class="pl-c1">+=</span> <span class="pl-en">loss_fn</span>(<span class="pl-s1">pred</span>, <span class="pl-s1">y</span>)
+            <span class="pl-s1">correct</span> <span class="pl-c1">+=</span> (<span class="pl-s1">pred</span>.<span class="pl-c1">argmax</span>(<span class="pl-c1">1</span>) <span class="pl-c1">==</span> <span class="pl-s1">y</span>).<span class="pl-c1">type</span>(<span class="pl-s1">torch</span>.<span class="pl-c1">float</span>).<span class="pl-c1">sum</span>()
+    
+    <span class="pl-s1">test_loss</span> <span class="pl-c1">/=</span> <span class="pl-s1">num_batches</span>
+    <span class="pl-s1">correct</span> <span class="pl-c1">/=</span> <span class="pl-s1">size</span>
+    <span class="pl-k">print</span>(<span class="pl-s1">f</span>『<span class="pl-v">Accuracy</span>: {(<span class="pl-c1">100</span><span class="pl-c1">*</span><span class="pl-s1">correct</span>):<span class="pl-c1">.1</span><span class="pl-s1">f</span>}<span class="pl-c1">%</span>, <span class="pl-c1">AVG</span> <span class="pl-s1">loss</span>: {<span class="pl-s1">test_loss</span>:<span class="pl-c1">.8</span><span class="pl-s1">f</span>} \<span class="pl-s1">n</span>』)
+
+<span class="pl-c"># --- 制造 CPU 瓶颈的自定义 Transform ---</span>
+<span class="pl-k">class</span> <span class="pl-v">SlowTransform</span>:
+    「」「<span class="pl-s1">一个用于演示的慢变换</span>，<span class="pl-s1">模拟复杂的</span> <span class="pl-c1">CPU</span> <span class="pl-s1">预处理</span>」「」
+    <span class="pl-k">def</span> <span class="pl-en">__call__</span>(<span class="pl-s1">self</span>, <span class="pl-s1">img</span>):
+        <span class="pl-c"># 模拟一个复杂的、CPU 密集型的图像处理过程</span>
+        <span class="pl-c"># 注意：在真实项目中不要使用 time.sleep</span>
+        <span class="pl-s1">time</span>.<span class="pl-c1">sleep</span>(<span class="pl-c1">0.001</span>) 
+        <span class="pl-k">return</span> <span class="pl-s1">img</span>
+
+<span class="pl-c"># --- 主执行流程函数 ---</span>
+
+<span class="pl-k">def</span> <span class="pl-en">Pipe</span>():
+    <span class="pl-c"># --- 1. 数据准备 ---</span>
+    
+    <span class="pl-c"># 核心：定义一个 CPU 密集的转换组合 (Data Augmentation)</span>
+    <span class="pl-s1">heavy_transforms</span> <span class="pl-c1">=</span> <span class="pl-s1">transforms</span>.<span class="pl-c1">Compose</span>([
+        <span class="pl-s1">transforms</span>.<span class="pl-c1">RandomRotation</span>(<span class="pl-c1">15</span>),       <span class="pl-c"># 随机旋转 (CPU 密集)</span>
+        <span class="pl-s1">transforms</span>.<span class="pl-c1">RandomCrop</span>(<span class="pl-c1">28</span>, <span class="pl-s1">padding</span><span class="pl-c1">=</span><span class="pl-c1">4</span>), <span class="pl-c"># 随机裁剪 (CPU 密集)</span>
+        <span class="pl-s1">transforms</span>.<span class="pl-c1">ToTensor</span>(),              <span class="pl-c"># 转换为张量</span>
+        <span class="pl-en">SlowTransform</span>()                     <span class="pl-c"># 自定义的慢变换</span>
+    ])
+
+    <span class="pl-c"># 下载并加载训练数据集，应用 CPU 密集型变换</span>
+    <span class="pl-s1">training_data</span> <span class="pl-c1">=</span> <span class="pl-s1">datasets</span>.<span class="pl-c1">MNIST</span>(
+        <span class="pl-s1">root</span><span class="pl-c1">=</span>「<span class="pl-s1">data</span>」, <span class="pl-s1">train</span><span class="pl-c1">=</span><span class="pl-c1">True</span>, <span class="pl-s1">download</span><span class="pl-c1">=</span><span class="pl-c1">True</span>, <span class="pl-s1">transform</span><span class="pl-c1">=</span><span class="pl-s1">heavy_transforms</span>,
+    )
+
+    <span class="pl-c"># 下载并加载测试数据集</span>
+    <span class="pl-s1">test_data</span> <span class="pl-c1">=</span> <span class="pl-s1">datasets</span>.<span class="pl-c1">MNIST</span>(
+        <span class="pl-s1">root</span><span class="pl-c1">=</span>「<span class="pl-s1">data</span>」, <span class="pl-s1">train</span><span class="pl-c1">=</span><span class="pl-c1">False</span>, <span class="pl-s1">download</span><span class="pl-c1">=</span><span class="pl-c1">True</span>, <span class="pl-s1">transform</span><span class="pl-c1">=</span><span class="pl-s1">transforms</span>.<span class="pl-c1">ToTensor</span>(),
+    )
+
+    <span class="pl-s1">total_samples</span> <span class="pl-c1">=</span> <span class="pl-en">len</span>(<span class="pl-s1">training_data</span>)
+    <span class="pl-c"># 使用一半数据进行训练</span>
+    <span class="pl-s1">training_samples</span>, <span class="pl-s1">_</span> <span class="pl-c1">=</span> <span class="pl-en">random_split</span>(<span class="pl-s1">training_data</span>, [<span class="pl-s1">total_samples</span><span class="pl-c1">//</span><span class="pl-c1">2</span>, <span class="pl-s1">total_samples</span><span class="pl-c1">-</span><span class="pl-s1">total_samples</span><span class="pl-c1">//</span><span class="pl-c1">2</span>])
+    
+    <span class="pl-c"># 创建训练数据加载器 (开启 pin_memory 可以加速数据从 CPU 到 GPU 的传输)</span>
+    <span class="pl-s1">train_dataloader</span> <span class="pl-c1">=</span> <span class="pl-en">DataLoader</span>(
+        <span class="pl-s1">training_samples</span>, <span class="pl-s1">batch_size</span><span class="pl-c1">=</span><span class="pl-s1">batch_size</span>, <span class="pl-s1">num_workers</span><span class="pl-c1">=</span><span class="pl-s1">num_workers</span>, <span class="pl-s1">pin_memory</span><span class="pl-c1">=</span><span class="pl-c1">True</span>
+    )
+
+    <span class="pl-c"># 创建测试数据加载器</span>
+    <span class="pl-s1">test_dataloader</span> <span class="pl-c1">=</span> <span class="pl-en">DataLoader</span>(
+        <span class="pl-s1">test_data</span>, <span class="pl-s1">batch_size</span><span class="pl-c1">=</span><span class="pl-s1">batch_size</span>, <span class="pl-s1">num_workers</span><span class="pl-c1">=</span><span class="pl-s1">num_workers</span>, <span class="pl-s1">pin_memory</span><span class="pl-c1">=</span><span class="pl-c1">True</span>
+    )
+
+    <span class="pl-c"># 打印数据形状</span>
+    <span class="pl-k">for</span> <span class="pl-c1">X</span>, <span class="pl-s1">y</span> <span class="pl-c1">in</span> <span class="pl-s1">test_dataloader</span>:
+        <span class="pl-k">print</span>(<span class="pl-s1">f</span>「<span class="pl-v">Shape</span> <span class="pl-s1">of</span> <span class="pl-c1">X</span> [<span class="pl-c1">N</span>, <span class="pl-c1">C</span>, <span class="pl-c1">H</span>, <span class="pl-c1">W</span>]: {<span class="pl-c1">X</span>.<span class="pl-c1">shape</span>}」) 
+        <span class="pl-k">print</span>(<span class="pl-s1">f</span>「<span class="pl-v">Shape</span> <span class="pl-s1">of</span> <span class="pl-s1">y</span>: {<span class="pl-s1">y</span>.<span class="pl-c1">shape</span>} {<span class="pl-s1">y</span>.<span class="pl-c1">dtype</span>}」) 
+        <span class="pl-k">break</span> 
+
+    <span class="pl-c"># --- 2. 模型、损失函数和优化器初始化 ---</span>
+    <span class="pl-s1">model</span> <span class="pl-c1">=</span> <span class="pl-en">Model</span>().<span class="pl-c1">to</span>(<span class="pl-s1">device</span>)
+    <span class="pl-s1">loss_fn</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">CrossEntropyLoss</span>()
+    <span class="pl-s1">opt</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">optim</span>.<span class="pl-c1">Adam</span>(<span class="pl-s1">model</span>.<span class="pl-c1">parameters</span>(), <span class="pl-s1">lr</span><span class="pl-c1">=</span><span class="pl-c1">1e-4</span>)
+
+    <span class="pl-c"># --- 3. 训练循环 ---</span>
+
+    <span class="pl-c"># 预热阶段：处理前几个批次以消除启动开销，这对性能分析很重要</span>
+    <span class="pl-k">print</span>(「<span class="pl-v">Starting</span> <span class="pl-s1">warmup</span>...」)
+    <span class="pl-k">for</span> <span class="pl-s1">_</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">5</span>): 
+        <span class="pl-c"># 确保数据加载器可以提供数据</span>
+        <span class="pl-k">try</span>:
+            <span class="pl-c1">X</span>, <span class="pl-s1">y</span> <span class="pl-c1">=</span> <span class="pl-en">next</span>(<span class="pl-en">iter</span>(<span class="pl-s1">train_dataloader</span>))
+        <span class="pl-k">except</span> <span class="pl-v">StopIteration</span>:
+            <span class="pl-k">break</span>
+
+        <span class="pl-c1">X</span>, <span class="pl-s1">y</span> <span class="pl-c1">=</span> <span class="pl-c1">X</span>.<span class="pl-c1">to</span>(<span class="pl-s1">device</span>), <span class="pl-s1">y</span>.<span class="pl-c1">to</span>(<span class="pl-s1">device</span>)
+        <span class="pl-s1">opt</span>.<span class="pl-c1">zero_grad</span>()
+        <span class="pl-s1">loss</span> <span class="pl-c1">=</span> <span class="pl-en">loss_fn</span>(<span class="pl-en">model</span>(<span class="pl-c1">X</span>), <span class="pl-s1">y</span>)
+        <span class="pl-s1">loss</span>.<span class="pl-c1">backward</span>()
+        <span class="pl-s1">opt</span>.<span class="pl-c1">step</span>()
+    
+    <span class="pl-k">print</span>(「<span class="pl-v">Warmup</span> <span class="pl-s1">finished</span>. <span class="pl-c1">Starting</span> <span class="pl-s1">profiling</span>...」)
+    <span class="pl-s1">torch</span>.<span class="pl-c1">cuda</span>.<span class="pl-c1">synchronize</span>() <span class="pl-c"># 确保预热结束</span>
+
+    <span class="pl-k">for</span> <span class="pl-s1">epoch</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-s1">num_epoch</span>):
+        <span class="pl-k">print</span>(<span class="pl-s1">f</span>「<span class="pl-v">Epoch</span> {<span class="pl-s1">epoch</span><span class="pl-c1">+</span><span class="pl-c1">1</span>}<span class="pl-cce">\n</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span><span class="pl-c1">-</span>」)
+        <span class="pl-s1">now</span> <span class="pl-c1">=</span> <span class="pl-s1">time</span>.<span class="pl-c1">time</span>()
+        
+        <span class="pl-c"># 训练步骤</span>
+        <span class="pl-en">train_step</span>(<span class="pl-s1">dataloader</span><span class="pl-c1">=</span><span class="pl-s1">train_dataloader</span>, <span class="pl-s1">model</span><span class="pl-c1">=</span><span class="pl-s1">model</span>, <span class="pl-s1">loss_fn</span><span class="pl-c1">=</span><span class="pl-s1">loss_fn</span>, <span class="pl-s1">opt</span><span class="pl-c1">=</span><span class="pl-s1">opt</span>)
+        
+        <span class="pl-c"># 确保 GPU 所有任务完成</span>
+        <span class="pl-s1">torch</span>.<span class="pl-c1">cuda</span>.<span class="pl-c1">synchronize</span>() 
+        <span class="pl-s1">epoch_duration</span> <span class="pl-c1">=</span> <span class="pl-s1">time</span>.<span class="pl-c1">time</span>() <span class="pl-c1">-</span> <span class="pl-s1">now</span>
+        
+        <span class="pl-en">print</span>(<span class="pl-s1">f</span>「<span class="pl-v">Epoch</span> <span class="pl-s1">duration</span>: {<span class="pl-s1">epoch_duration</span>:<span class="pl-c1">.2</span><span class="pl-s1">f</span>} <span class="pl-s1">s</span>」)
+        <span class="pl-en">print</span>(<span class="pl-s1">f</span>「<span class="pl-s1">avg</span> <span class="pl-s1">batch</span> <span class="pl-s1">train</span> <span class="pl-s1">speed</span>: {(<span class="pl-en">len</span>(<span class="pl-s1">train_dataloader</span>)<span class="pl-c1">/</span><span class="pl-s1">epoch_duration</span>):<span class="pl-c1">.2</span><span class="pl-s1">f</span>} <span class="pl-s1">it</span><span class="pl-c1">/</span><span class="pl-s1">s</span>」)
+        
+        <span class="pl-s1">now</span> <span class="pl-c1">=</span> <span class="pl-s1">time</span>.<span class="pl-c1">time</span>()
+        <span class="pl-en">test_step</span>(<span class="pl-s1">dataloader</span><span class="pl-c1">=</span><span class="pl-s1">test_dataloader</span>, <span class="pl-s1">model</span><span class="pl-c1">=</span><span class="pl-s1">model</span>, <span class="pl-s1">loss_fn</span><span class="pl-c1">=</span><span class="pl-s1">loss_fn</span>, <span class="pl-s1">opt</span><span class="pl-c1">=</span><span class="pl-s1">opt</span>)
+        <span class="pl-s1">torch</span>.<span class="pl-c1">cuda</span>.<span class="pl-c1">synchronize</span>()
+        <span class="pl-s1">test_duration</span> <span class="pl-c1">=</span> <span class="pl-s1">time</span>.<span class="pl-c1">time</span>() <span class="pl-c1">-</span> <span class="pl-s1">now</span>
+        <span class="pl-en">print</span>(<span class="pl-s1">f</span>「<span class="pl-s1">teststep</span> <span class="pl-s1">speed</span>: {(<span class="pl-en">len</span>(<span class="pl-s1">test_dataloader</span>)<span class="pl-c1">/</span><span class="pl-s1">test_duration</span>):<span class="pl-c1">.2</span><span class="pl-s1">f</span>} <span class="pl-s1">it</span><span class="pl-c1">/</span><span class="pl-s1">s</span>」)
+
+<span class="pl-k">if</span> <span class="pl-s1">__name__</span> <span class="pl-c1">==</span> 「<span class="pl-s1">__main__</span>」:
+    <span class="pl-en">Pipe</span>()</pre></div>
+<blockquote>
+<p>num_worker 的作用：</p>
+</blockquote>
+<p>在深度学习训练中，GPU 训练速度往往比 CPU 读取和处理数据要快很多。如果数据预处理很复杂（比如你代码里的 RandomRotation、RandomCrop、以及 SlowTransform），CPU 处理会成为瓶颈，导致 GPU 等待数据，浪费算力。<br>
+num_workers 的作用就是开启多个 CPU 子进程，并行地从磁盘读取数据、执行 transform、然后把 batch 准备好，这样能更好地“喂饱”GPU，减少 GPU 等待。</p>
+<p>常见设置：<br>
+num_workers=0<br>
+单进程加载（主进程负责读数据）。好处是简单，不会有进程间通信问题，但速度慢。<br>
+num_workers&gt;0<br>
+开启多个子进程并行加载。每个 worker 会分担一部分 batch 的数据准备工作，一般会显著提升吞吐。<br>
+如果你的数据增强和预处理很轻量，num_workers=2~4 就够了。<br>
+如果预处理很重（比如图像变换很多、你这里还模拟了 time.sleep），可以设得大一些（如 8、16、甚至 32），不过太大可能会导致 上下文切换开销过大 或 内存不足。</p>
+<hr>
+<p>示例 2 内存传输瓶颈–gpu 通信瓶颈</p>
+<p>内存瓶颈主要分为两种形态：</p>
+<p>带宽受限 (Bandwidth-Bound)：当程序需要读写的数据总量巨大时，性能会受到 GPU 显存（DRAM）或 PCIe 总线峰值传输速率的限制。<br>
+延迟受限 (Latency-Bound)：当程序进行大量微小、碎片化的内存操作时，性能会受到每一次操作的固定开销的限制。</p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
@@ -126,7 +482,7 @@ if("05/28/2024"!=""){
 </script></div>
 </body>
 <script>
-var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
 var utterancesLoad=0;
 
 let themeSettings={
@@ -199,7 +555,70 @@ function iFrameLoading(){
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
 
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
 
 </script>
 
