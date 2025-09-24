@@ -6,6 +6,38 @@ cudaDeviceSetMemPool` 是 **NVIDIA 官方 CUDA Runtime API**（CUDA ≥ 11.2 引
 * `cudaDeviceSetMemPool(device, memPool)` 用来**把你创建的内存池设为该设备的当前池**。
 * 如果不手动设置，也可以用**默认池**（可通过 `cudaDeviceGetDefaultMemPool` 获取并调属性）。
 
+默认内存池：
+
+默认池是每个 device 都有的，由 CUDA Runtime 管理。\
+cudaMallocAsync(ptr, size, stream) 会从**当前设备的“当前内存池（current mempool）”**拿内存；
+如果你没有手动 cudaDeviceSetMemPool，那么“当前内存池”就是默认池。
+若池里没有可复用块，运行时会向驱动申请新显存扩张池容量（受显存上限/碎片等限制）。
+cudaFreeAsync(ptr, stream) 将内存归还到池里（而不是立刻归还给系统），便于后续复用，减少频繁分配/释放的开销与同步点。
+何时把池里的闲置显存还给系统？由池属性控制，比如 cudaMemPoolAttrReleaseThreshold（阈值以下尽量保留、超过就尝试“修剪”归还）。你也可显式 cudaMemPoolTrimTo。
+
+``` cpp
+// 拿到当前设备的默认池
+cudaMemPool_t defpool;
+cudaDeviceGetDefaultMemPool(&defpool, /*device=*/0);
+
+// 调高“保留阈值”，减少频繁还给系统导致的抖动
+uint64_t threshold = 1ull << 30; // 1GB
+cudaMemPoolSetAttribute(defpool, cudaMemPoolAttrReleaseThreshold, &threshold);
+
+// 直接用 cudaMallocAsync / cudaFreeAsync（会走当前池；此处即默认池）
+cudaStream_t s; cudaStreamCreate(&s);
+void* p = nullptr;
+cudaMallocAsync(&p, bytes, s);
+// ... kernels on stream s ...
+cudaFreeAsync(p, s);
+cudaStreamSynchronize(s);
+```
+
+想显式从指定池分配，可用 cudaMallocFromPoolAsync；而 cudaMallocAsync 是“从当前池”分配的语义。
+也可以自己 cudaMemPoolCreate 建池，然后 cudaDeviceSetMemPool(device, mypool) 把它设为“当前池”。
+这些分配/释放都遵循**流有序（stream-ordered）**规则：在同一条流上不需要额外同步即可保证先分配后使用、先用后释放的正确性。
+与传统 cudaMalloc/cudaFree 可并存，但为了减少隐式全局同步，建议同一逻辑链尽量用 async + pool 一套到底。
+
 ### 常见用法骨架
 
 ```cpp
