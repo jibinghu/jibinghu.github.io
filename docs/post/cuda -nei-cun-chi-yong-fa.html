@@ -151,6 +151,46 @@ cudaStream_t s; cudaStreamCreate(&amp;s);
 <li><strong>默认池也能调优</strong>：用 <code class="notranslate">cudaDeviceGetDefaultMemPool</code> 拿到默认池后，可用 <code class="notranslate">cudaMemPoolSetAttribute</code> 调 <code class="notranslate">ReleaseThreshold</code> 等，很多场景不用自建池也能吃到收益。</li>
 <li><strong>跨设备访问</strong>：多 GPU 时如需共享，可用 <code class="notranslate">cudaMemPoolSetAccess</code> 配置访问权限。</li>
 <li><strong>为什么能加速</strong>：它减少了频繁分配/释放带来的全局同步与碎片化开销，适合你现在 “<code class="notranslate">cudaMalloc</code> 占大头” 的场景。</li>
+</ul>
+<hr>
+<p>拿到 <code class="notranslate">cudaMemPool_t defpool</code> 之后，可以用 <strong>cudaMemPoolGetAttribute / cudaMemPoolSetAttribute</strong> 来查询或设置内存池属性（CUDA 11.2+ 的“按流顺序分配器”接口）。常用的有：</p>
+<ul>
+<li><code class="notranslate">cudaMemPoolAttrReleaseThreshold</code>：释放阈值（<code class="notranslate">uint64_t</code>），达到阈值后空闲块会尽快还给驱动/系统。</li>
+<li>运行时统计（只读）：<code class="notranslate">cudaMemPoolAttrReservedMemCurrent/High</code>、<code class="notranslate">cudaMemPoolAttrUsedMemCurrent/High</code>（当前/峰值已保留与已使用字节数）。</li>
+<li>重用策略开关：<code class="notranslate">cudaMemPoolAttrReuseAllowOpportunistic</code>、<code class="notranslate">cudaMemPoolAttrReuseAllowInternalDependencies</code>、<code class="notranslate">cudaMemPoolAttrReuseFollowEventDependencies</code>（布尔值，控制空闲块如何被重用）。</li>
+</ul>
+<blockquote>
+<p>官方文档要点：<code class="notranslate">cudaMallocAsync</code> 的分配<strong>来自与该流所在设备关联的内存池</strong>（默认是设备的默认池），可以通过 <code class="notranslate">cudaMemPoolGetAttribute</code> 获取池属性，<code class="notranslate">cudaDeviceGetAttribute(cudaDevAttrMemoryPoolsSupported)</code> 可查询设备是否支持该分配器。([<a href="https://docs.nvidia.com/cuda/pdf/CUDA_Runtime_API.pdf" rel="nofollow">NVIDIA Docs</a>]<a href="https://docs.nvidia.com/cuda/pdf/CUDA_Runtime_API.pdf" title="CUDA Runtime API" rel="nofollow">1</a>)</p>
+</blockquote>
+<h3>简单示例</h3>
+<div class="highlight highlight-source-c++"><pre class="notranslate">cudaMemPool_t defpool;
+<span class="pl-en">cudaDeviceGetDefaultMemPool</span>(&amp;defpool, <span class="pl-c"><span class="pl-c">/*</span>device=<span class="pl-c">*/</span></span><span class="pl-c1">0</span>);  <span class="pl-c"><span class="pl-c">//</span> 你现在的写法</span>
+
+<span class="pl-c"><span class="pl-c">//</span> 1) 读释放阈值</span>
+<span class="pl-c1">uint64_t</span> threshold = <span class="pl-c1">0</span>;
+<span class="pl-en">cudaMemPoolGetAttribute</span>(defpool, cudaMemPoolAttrReleaseThreshold, &amp;threshold);
+
+<span class="pl-c"><span class="pl-c">//</span> 2) 改释放阈值（比如 1GB）</span>
+<span class="pl-c1">uint64_t</span> newThr = <span class="pl-c1">1ull</span> &lt;&lt; <span class="pl-c1">30</span>;
+<span class="pl-en">cudaMemPoolSetAttribute</span>(defpool, cudaMemPoolAttrReleaseThreshold, &amp;newThr);
+
+<span class="pl-c"><span class="pl-c">//</span> 3) 读一些只读统计</span>
+<span class="pl-c1">size_t</span> reserved_cur=<span class="pl-c1">0</span>, reserved_high=<span class="pl-c1">0</span>, used_cur=<span class="pl-c1">0</span>, used_high=<span class="pl-c1">0</span>;
+<span class="pl-en">cudaMemPoolGetAttribute</span>(defpool, cudaMemPoolAttrReservedMemCurrent, &amp;reserved_cur);
+<span class="pl-en">cudaMemPoolGetAttribute</span>(defpool, cudaMemPoolAttrReservedMemHigh,    &amp;reserved_high);
+<span class="pl-en">cudaMemPoolGetAttribute</span>(defpool, cudaMemPoolAttrUsedMemCurrent,     &amp;used_cur);
+<span class="pl-en">cudaMemPoolGetAttribute</span>(defpool, cudaMemPoolAttrUsedMemHigh,        &amp;used_high);
+
+<span class="pl-c"><span class="pl-c">//</span> 4) 查看重用策略（布尔）</span>
+<span class="pl-k">int</span> allowOpp=<span class="pl-c1">0</span>, allowIntDep=<span class="pl-c1">0</span>, followEvt=<span class="pl-c1">0</span>;
+<span class="pl-en">cudaMemPoolGetAttribute</span>(defpool, cudaMemPoolAttrReuseAllowOpportunistic,       &amp;allowOpp);
+<span class="pl-en">cudaMemPoolGetAttribute</span>(defpool, cudaMemPoolAttrReuseAllowInternalDependencies,&amp;allowIntDep);
+<span class="pl-en">cudaMemPoolGetAttribute</span>(defpool, cudaMemPoolAttrReuseFollowEventDependencies,  &amp;followEvt);</pre></div>
+<p>小贴士：</p>
+<ul>
+<li>读属性用 <code class="notranslate">cudaMemPoolGetAttribute(pool, attr, void* value)</code>；写属性用 <code class="notranslate">cudaMemPoolSetAttribute(...)</code>。</li>
+<li>阈值太小会频繁把内存还回去，造成后续 <code class="notranslate">cudaMallocAsync</code> 又去向驱动要内存（变慢）；太大则可能导致占用增高。一般按峰值使用量留一点余量（比如峰值的 1–1.5 倍）较稳。</li>
+<li>如果你需要不同设备/位置的默认池，新接口是 <code class="notranslate">cudaMemGetDefaultMemPool(cudaMemPool_t*, cudaMemLocation*, cudaMemAllocationType)</code>。([<a href="https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY__POOLS.html" rel="nofollow">NVIDIA Docs</a>]<a href="https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY__POOLS.html" title="CUDA Runtime API :: CUDA Toolkit Documentation" rel="nofollow">2</a>)</li>
 </ul></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
