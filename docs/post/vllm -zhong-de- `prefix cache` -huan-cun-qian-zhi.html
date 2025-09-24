@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="参考：
+
+https://vllm.hyper.ai/docs/design-v1/prefix_caching/
+
+https://mp.weixin.qq.com/s/RC8QV0Alyw0y8sEXAOOM3Q
+
+---
+
+前缀缓存 KV 缓存块是 LLM 推理中一种流行的优化技术，用于避免冗余的提示计算。">
+<meta property="og:title" content="vllm 中的 `prefix cache` 缓存前置">
+<meta property="og:description" content="参考：
+
+https://vllm.hyper.ai/docs/design-v1/prefix_caching/
+
+https://mp.weixin.qq.com/s/RC8QV0Alyw0y8sEXAOOM3Q
+
+---
+
+前缀缓存 KV 缓存块是 LLM 推理中一种流行的优化技术，用于避免冗余的提示计算。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/vllm%20-zhong-de-%20%60prefix%20cache%60%20-huan-cun-qian-zhi.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>vllm 中的 `prefix cache` 缓存前置</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">vllm 中的 `prefix cache` 缓存前置</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/170" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p>参考：</p>
+<p><a href="https://vllm.hyper.ai/docs/design-v1/prefix_caching/" rel="nofollow">https://vllm.hyper.ai/docs/design-v1/prefix_caching/</a></p>
+<p><a href="https://mp.weixin.qq.com/s/RC8QV0Alyw0y8sEXAOOM3Q" rel="nofollow">https://mp.weixin.qq.com/s/RC8QV0Alyw0y8sEXAOOM3Q</a></p>
+<hr>
+<p>前缀缓存 KV 缓存块是 LLM 推理中一种流行的优化技术，用于避免冗余的提示计算。核心思想很简单——我们缓存已处理请求的 KV 缓存块，当新请求到来时如果前缀与之前请求相同就重用这些块。由于前缀缓存几乎是无成本的且不会改变模型输出，它已被许多公共端点（如 OpenAI、Anthropic 等）和大多数开源 LLM 推理框架（如 SGLang）广泛采用。</p>
+<h2>一、回顾前缀缓存 + vLLM 的核心设计（基于官方 + 社区资料）</h2>
+<p>为了让下面的深入讲解更易追踪，先列一下主要参考资料／出处：</p>
+<ul>
+<li>vLLM 官方 “Prefix Caching” 设计文档（你最初给的链接）</li>
+<li>社区 “图解 vLLM Automatic Prefix Cache (RadixAttention)”（cloud.tencent.com） ([<a href="https://cloud.tencent.com/developer/article/2424704?utm_source=chatgpt.com" rel="nofollow">腾讯云</a>]<a href="https://cloud.tencent.com/developer/article/2424704?utm_source=chatgpt.com" title="原理&amp;图解vLLM Automatic Prefix Cache (RadixAttention)首 ..." rel="nofollow">1</a>)</li>
+<li>极术社区 “图解 vLLM 源码解析系列：Prefix Caching” ([<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" title="图解大模型计算加速系列：vLLM源码解析3，Prefix Caching" rel="nofollow">2</a>)</li>
+<li>AI 计算社区 “KVCacheManager 与 PrefixCaching” ([<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" title="图解Vllm V1系列6：KVCacheManager与PrefixCaching" rel="nofollow">3</a>)</li>
+<li>51CTO “Refix Caching 详解” ([<a href="https://www.51cto.com/article/818034.html?utm_source=chatgpt.com" rel="nofollow">51CTO</a>]<a href="https://www.51cto.com/article/818034.html?utm_source=chatgpt.com" title="Refix Caching 详解：实现 KV Cache 的跨请求高效复用" rel="nofollow">4</a>)</li>
+<li>其他技术博客（如 “LLM 推理优化 — Prefix Caching” 在知乎 / CSDN 上的讨论） ([<a href="https://zhuanlan.zhihu.com/p/13499550235?utm_source=chatgpt.com" rel="nofollow">知乎专栏</a>]<a href="https://zhuanlan.zhihu.com/p/13499550235?utm_source=chatgpt.com" title="LLM推理优化 - Prefix Caching - 知乎" rel="nofollow">5</a>)</li>
+<li>“[Prefill 优化] 图解 vLLM Prefix Prefill Triton Kernel” 讨论 kernel 层面的优化 ([<a href="https://www.jintiankansha.com/t/syiY5rhBTt?utm_source=chatgpt.com" rel="nofollow">jintiankansha.com</a>]<a href="https://www.jintiankansha.com/t/syiY5rhBTt?utm_source=chatgpt.com" title="[Prefill优化]图解vLLM Prefix Prefill Triton Kernel" rel="nofollow">6</a>)</li>
+</ul>
+<p>下面分几个层面（概念／设计／实现细节／调度与性能／局限与变种）系统讲。</p>
+<hr>
+<h2>二、概念与目标：为什么要做前缀缓存？</h2>
+<p>在 LLM 推理中，一个请求的 prompt + 上下文（或历史对话）部分，需要先经过 Prefill 阶段，计算每个 token 的 Key / Value 向量（KV cache），供后续 decode 使用。如果没有任何缓存策略，那么每个新请求都要从头算一遍，即使这个请求的前缀（prompt 部分）与之前某个请求高度重叠。</p>
+<p><strong>前缀缓存</strong>（Prefix Caching）的目标就是：在多个请求之间 <strong>共享公共前缀</strong> 的 KV 计算，使得对于那些已有缓存的前缀部分，可以直接重用而无需重新计算，从而提升效率，尤其是 <strong>首 token 的响应延迟</strong> 可以显著降低。</p>
+<p>这个思路在对话、few-shot 提示、采样并行、多请求共享前缀等场景中最为有效。</p>
+<hr>
+<h2>三、vLLM 的前缀缓存设计：总体结构与机制</h2>
+<p>下面逐层展开 vLLM 是如何把前缀缓存融入其 KV 管理、块管理器 (BlockManager) 与调度流程的。</p>
+<h3>3.1 物理块 / 逻辑块 / 哈希结构</h3>
+<p>在 vLLM 中，“块”（block）是缓存与管理 KV 的基本单位。一个 block 通常对应若干个 token（例如 block_size = 16 token，也可以是其他设定）。块管理器负责把序列 token 划分成块，并为每个块维护它的 Key/Value 缓存。</p>
+<p>每个物理块（PhysicalTokenBlock）有以下属性：</p>
+<ul>
+<li><code class="notranslate">block_hash</code>：哈希值，用来代表这个块的前缀语义身份</li>
+<li><code class="notranslate">num_hashed_tokens</code>：表示该块 hash 是建立在多少个 token 已经确定之后</li>
+<li><code class="notranslate">ref_count</code>：当前有多少个请求（sequence）在共享此块</li>
+<li><code class="notranslate">computed</code>：指示这个块是否已经被计算</li>
+<li><code class="notranslate">last_accessed</code>：最近一次被访问的时间戳（用于 LRU 驱逐）</li>
+<li>设备 / 存放位置等其他元数据 ([<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" title="图解大模型计算加速系列：vLLM源码解析3，Prefix Caching" rel="nofollow">2</a>)</li>
+</ul>
+<p>此外，还有 “逻辑块”（LogicalTokenBlock）作为对请求（sequence）对应 token 范围的抽象映射。逻辑块映射到物理块（可能多个 sequence 共享同一个物理块） ([<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" title="图解大模型计算加速系列：vLLM源码解析3，Prefix Caching" rel="nofollow">2</a>)。</p>
+<p>块管理器（BlockManager / BlockSpaceManagerV1）负责整体的块分配、缓存、释放、驱逐等流程。 ([<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" title="图解大模型计算加速系列：vLLM源码解析3，Prefix Caching" rel="nofollow">2</a>)</p>
+<p>哈希机制是前缀缓存能否命中的关键。vLLM 为每个块计算一个 <code class="notranslate">block_hash</code>，这个 hash 涵盖：</p>
+<ul>
+<li>父块的 hash（也就是前缀链路）</li>
+<li>本块内部的 token IDs</li>
+<li>额外的输入模态／参数差异（例如 LoRA 权重、图像输入的哈希） ([<a href="https://cloud.tencent.com/developer/article/2424704?utm_source=chatgpt.com" rel="nofollow">腾讯云</a>]<a href="https://cloud.tencent.com/developer/article/2424704?utm_source=chatgpt.com" title="原理&amp;图解vLLM Automatic Prefix Cache (RadixAttention)首 ..." rel="nofollow">1</a>)</li>
+</ul>
+<p>这样子，当另一个请求在同一位置拥有相同前缀时（即这部分 token 序列与缓存块一致），就能通过哈希查表命中这个块。</p>
+<h3>3.2 块分配、追加、释放、驱逐：核心流程</h3>
+<p>下面按时间或操作顺序剖析各个流程。</p>
+<h4>3.2.1 块分配 (allocate / allocate_slots)</h4>
+<p>当一个新请求进入（或者已有请求在 Prefill 阶段）时，需要把 prompt token 拆分成若干块并分配物理块。分配流程大致如下：</p>
+<ol>
+<li>
+<p><strong>检查缓存命中</strong><br>
+对于该请求的前缀 token 部分，块管理器会计算哈希，查找已有缓存块映射表（<code class="notranslate">cache_block_hash_to_block</code>），看是否有命中的物理块。若命中，则将该物理块的 <code class="notranslate">ref_count</code> 增 1，并把它从空闲队列中移除（因为这个块正在被使用，不应被驱逐） ([<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" title="图解Vllm V1系列6：KVCacheManager与PrefixCaching" rel="nofollow">3</a>)。</p>
+</li>
+<li>
+<p><strong>分配新的块</strong><br>
+对于没命中的后续部分，需要从自由块队列 (free queue) 中弹出空闲块来分配给请求。弹出时原则是从空闲队列头部取（即优先利用最“旧”的空闲块作为驱逐候选） ([<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" title="图解Vllm V1系列6：KVCacheManager与PrefixCaching" rel="nofollow">3</a>)。</p>
+</li>
+<li>
+<p><strong>填满块 / 哈希写入映射表</strong><br>
+当一个块被填满（即其槽位中对应 token 全部被计算）后，就可以给这个块计算最终哈希，并把它插入缓存映射表（<code class="notranslate">cache_block_hash_to_block</code>），使其他请求后续可以复用 ([<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" title="图解大模型计算加速系列：vLLM源码解析3，Prefix Caching" rel="nofollow">2</a>)。</p>
+</li>
+</ol>
+<p>vLLM v1 引入了 “append-only” 的策略：对于 decode 阶段追加 token 所产生的新块，虽然也会检查是否命中缓存，但在实际调度中 <strong>不会重新替换已分配给这个请求的块</strong>。即便命中，也不会改变请求当前的块结构。这样设计可以简化块管理、减少频繁重分配开销。 ([<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" title="图解Vllm V1系列6：KVCacheManager与PrefixCaching" rel="nofollow">3</a>)</p>
+<p>社区也有指出：在 vLLM v0 版本中，如果检测命中，会释放当前块再复用已有；而 v1 改为 append-only，不做这样的替换。 ([<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" title="图解Vllm V1系列6：KVCacheManager与PrefixCaching" rel="nofollow">3</a>)</p>
+<h4>3.2.2 追加 (append_slots)</h4>
+<p>在 decode 阶段，每生成一个 token，就相当于是给这个请求追加一个新 token，需要为这个 token 分配新的 slot（如果当前块已满则需要新块）。在此过程中：</p>
+<ul>
+<li>依然先做哈希检查，能命中就 reuse</li>
+<li>若不能命中或块已满，就申请新的物理块</li>
+<li>但正如上面所说，由于 append-only 策略，即便新块哈希命中，也不会替换旧块（已有块） ([<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" title="图解Vllm V1系列6：KVCacheManager与PrefixCaching" rel="nofollow">3</a>)</li>
+</ul>
+<p>这种设计简化了块的一致性管理，但也牺牲了在 decode 阶段更高命中率的可能性。</p>
+<h4>3.2.3 释放 (free) 和 引用计数 (ref_count)</h4>
+<p>每当一个请求结束或者不再使用其关联块时：</p>
+<ul>
+<li>对应物理块的 <code class="notranslate">ref_count</code> 减 1</li>
+<li>如果 <code class="notranslate">ref_count</code> 变 0，则这个块可以被释放（加入自由块队列 tail） ([<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" title="图解Vllm V1系列6：KVCacheManager与PrefixCaching" rel="nofollow">3</a>)</li>
+<li>释放入队时按照逆序（倒序地释放）加入空闲队列尾部，这样做是为了在驱逐时倾向保留那些最近可能还被复用的块，提高未来命中率 ([<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" title="图解Vllm V1系列6：KVCacheManager与PrefixCaching" rel="nofollow">3</a>)</li>
+</ul>
+<h4>3.2.4 驱逐 (Evict / LRU)</h4>
+<p>在空闲块队列头部如果遇到一个 <strong>已缓存块</strong>（即存在于缓存映射表中的块），必须把它驱逐出缓存（从映射表中删除），以腾出块空间让新的块加入。</p>
+<p>驱逐流程：</p>
+<ol>
+<li>弹出空闲队列头部块</li>
+<li>从缓存映射表中移除该块的 hash 映射</li>
+<li>将其视为普通空闲块（computed 标识清除、hash 值置空等） ([<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" title="图解大模型计算加速系列：vLLM源码解析3，Prefix Caching" rel="nofollow">2</a>)</li>
+</ol>
+<p>驱逐策略本质是 LRU（最近最少使用）风格：空闲队列头部的块，通常是最久未使用的，所以优先被驱逐。</p>
+<hr>
+<h3>3.3 调度、Chunked Prefill &amp; Kernel 优化</h3>
+<p>为了配合前缀缓存，vLLM 在调度与 kernel 优化层面也做了不少设计。</p>
+<h4>3.3.1 Chunked Prefill（分块 Prefill）</h4>
+<p>在传统设计中，Prefill 阶段可能是一次性对整个 prompt 一次性做前缀计算（所有 token 一起做）。但在 vLLM（尤其 V1）中，为了更早地利用 prefix caching，也为了使调度更灵活，它支持 <strong>将 prompt 拆成若干个 chunk</strong>，分几次做 prefill。这样，即使 prompt 很长，也能逐块尝试命中前缀缓存。 ([<a href="https://www.cnblogs.com/zackstang/p/19036108?utm_source=chatgpt.com" rel="nofollow">博客园</a>]<a href="https://www.cnblogs.com/zackstang/p/19036108?utm_source=chatgpt.com" title="vLLM框架：LLM推理的高效机制 - ZacksTang - 博客园" rel="nofollow">7</a>)</p>
+<p>此外，这种分块 prefill 有利于混合调度（Prefill 与 Decode 并行）和资源调度灵活性。 ([<a href="https://blog.csdn.net/weixin_58753619/article/details/141611100?utm_source=chatgpt.com" rel="nofollow">CSDN</a>]<a href="https://blog.csdn.net/weixin_58753619/article/details/141611100?utm_source=chatgpt.com" title="LLM推理加速3：推理优化总结Mooncake/AttentionStore ..." rel="nofollow">8</a>)</p>
+<h4>3.3.2 Prefix Prefill Kernel（Triton / CUDA 级别优化）</h4>
+<p>在 kernel 层面，也有专门针对 prefix 缓存命中的优化机制。文章 “[Prefill 优化] 图解 vLLM Prefix Prefill Triton Kernel” 曾讲解其细节。核心点包括：</p>
+<ul>
+<li>在 kernel 里做判断：有多少 token 在当前请求中 <strong>命中了前缀缓存</strong>，这些 token 对应的 KV 已经存在，不需要再做 attention／计算</li>
+<li>对未命中部分才发起新的计算</li>
+<li>使用 Tiling / 分块策略，使得 kernel 在不同 head size、不同 GPU 架构（支持 MQA/GQA）下都能正常跑</li>
+<li>合并内存访问、减少冗余读取、管线化设计等 ([<a href="https://www.jintiankansha.com/t/syiY5rhBTt?utm_source=chatgpt.com" rel="nofollow">jintiankansha.com</a>]<a href="https://www.jintiankansha.com/t/syiY5rhBTt?utm_source=chatgpt.com" title="[Prefill优化]图解vLLM Prefix Prefill Triton Kernel" rel="nofollow">6</a>)</li>
+</ul>
+<p>这样就能在最底层就绕过已有缓存部分的计算，减少 GPU 负荷。</p>
+<h4>3.3.3 调度与 Continuous Batching（连续批处理）</h4>
+<p>前缀缓存的效果要和调度策略配合好，才能在整体系统层面体现性能提升。vLLM 的设计中：</p>
+<ul>
+<li>它采用 token 级别调度（continuous batching）：即多个请求在每个时刻按当前 token 阶段并行处理，而不是一条请求处理完再处理下一条。这样可以充分利用 GPU 并行能力。 ([<a href="https://www.cnblogs.com/zackstang/p/19036108?utm_source=chatgpt.com" rel="nofollow">博客园</a>]<a href="https://www.cnblogs.com/zackstang/p/19036108?utm_source=chatgpt.com" title="vLLM框架：LLM推理的高效机制 - ZacksTang - 博客园" rel="nofollow">7</a>)</li>
+<li>调度器优先做 prefill，保证解码阶段有足够批量。 ([<a href="https://blog.csdn.net/weixin_58753619/article/details/141611100?utm_source=chatgpt.com" rel="nofollow">CSDN</a>]<a href="https://blog.csdn.net/weixin_58753619/article/details/141611100?utm_source=chatgpt.com" title="LLM推理加速3：推理优化总结Mooncake/AttentionStore ..." rel="nofollow">8</a>)</li>
+<li>在 V1 中，不再明确区分 prefill / decode 阶段，而以 <code class="notranslate">{request_id: num_tokens}</code> 这种方式统一调度，使得前缀缓存、chunked prefill、decode 混合成为可能。 ([<a href="https://www.cnblogs.com/zackstang/p/19036108?utm_source=chatgpt.com" rel="nofollow">博客园</a>]<a href="https://www.cnblogs.com/zackstang/p/19036108?utm_source=chatgpt.com" title="vLLM框架：LLM推理的高效机制 - ZacksTang - 博客园" rel="nofollow">7</a>)</li>
+</ul>
+<p>整体来说，这种设计让前缀缓存不只是一个孤立的模块，而是被调度、内核优化、资源分配等在多个层面共同支撑。</p>
+<hr>
+<h2>四、深入剖析：一些关键细节与边界情况</h2>
+<p>下面我聚焦几个社区 / 源码分析里特别提到或容易被忽略的细节，帮你“挖得更深”。</p>
+<h3>4.1 append-only 策略的利弊</h3>
+<p>如前所述，vLLM v1 在 decode 阶段采用 append-only 策略：即便后续新块与已有缓存命中，也不会用缓存块替换已经分配给请求的块。这样做有以下优点：</p>
+<ul>
+<li>简化块一致性管理、避免频繁重新绑定块</li>
+<li>减少内存 / 结构调整的开销</li>
+<li>避免在 decode 阶段反复做复杂判断、切换</li>
+</ul>
+<p>但缺点也显著：</p>
+<ul>
+<li>降低 decode 阶段缓存命中率：很多潜在可以命中的块因为早期分配的决定被“锁定”</li>
+<li>对那些在 decode 阶段有很多重复前缀（例如输出生成有规律性）情形，无法充分利用缓存</li>
+<li>增加了一定的缓存冗余（多个物理块或块引用可能语义相同） ([<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" title="图解Vllm V1系列6：KVCacheManager与PrefixCaching" rel="nofollow">3</a>)</li>
+</ul>
+<p>社区文章就指出：在 vLLM v0 中，是允许替换的；而 v1 则为了工程简化，选择不做这种替换。 ([<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" title="图解Vllm V1系列6：KVCacheManager与PrefixCaching" rel="nofollow">3</a>)</p>
+<h3>4.2 最后一个块未满 / 部分填块的哈希问题</h3>
+<p>当一个请求处于 decode 阶段，最后的那个块可能并未填满（即没有完全被用满槽位）。在这种情况下，该块尚未确定最终的 token 哈希，因此<strong>不宜立即将它插入缓存映射表</strong>，因为未来 token 可能改变其内容和哈希。</p>
+<p>vLLM 的做法是，用一个“临时 / 假的哈希”号标记它，只有在填满之后，才真正计算哈希并写入映射表。这样可以避免把不完整 / 临时状态的块被其他请求误用。 ([<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" title="图解大模型计算加速系列：vLLM源码解析3，Prefix Caching" rel="nofollow">2</a>)</p>
+<p>这个机制说明：并非所有块都是随时可缓存，有些块在“确定身份”之前必须等待完整性。</p>
+<h3>4.3 释放入队的逆序策略与命中倾斜</h3>
+<p>在释放块（ref_count = 0）时，vLLM 不是简单地把它加入空闲队列头部，而是按 <strong>逆序（从后往前）</strong> 加入队列尾部。这个设计背后的直觉是：越是最近释放的块，更可能被下一个紧接来的请求复用，因而让它在队列末尾（后面才被驱逐）能保留更久，从而提高命中率。 ([<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000513098?utm_source=chatgpt.com" title="图解Vllm V1系列6：KVCacheManager与PrefixCaching" rel="nofollow">3</a>)</p>
+<p>这个细节虽看起来微妙，但对实际命中率有很大影响 —— 它是一种 “延后驱逐” 的启发式策略。</p>
+<h3>4.4 缓存冲突、并发与哈希安全</h3>
+<p>如任何哈希缓存设计，前缀缓存也面临冲突与一致性风险：</p>
+<ul>
+<li><strong>哈希冲突</strong>：不同前缀被意外映射到同一个哈希值，从而错误地复用 KV。这在多租户 / 多模型 / 权重差异情况下尤为危险。vLLM 文档建议在这些场景下用更强哈希（如 SHA256）来降低冲突概率。 ([<a href="https://cloud.tencent.com/developer/article/2424704?utm_source=chatgpt.com" rel="nofollow">腾讯云</a>]<a href="https://cloud.tencent.com/developer/article/2424704?utm_source=chatgpt.com" title="原理&amp;图解vLLM Automatic Prefix Cache (RadixAttention)首 ..." rel="nofollow">1</a>)</li>
+<li><strong>并发 / 竞争</strong>：多个请求并行做块分配、释放、命中检查时，需要保证数据结构的线程安全（映射表、空闲队列、ref_count 更新等）。这些细节在源码中通常借锁 / 原子操作 / 并发安全结构来保障。社区一般没细节披露，但这是工程级挑战之一。</li>
+<li><strong>参数／模型不兼容</strong>：即便 prompt 前缀相同，如果两次请求在模型权重、LoRA 插件、模态输入（如图像、提示器）等上有差别，那么即使前缀相同，也不能共享缓存。这就要求哈希 key 必须包含这些“变更维度”以保证安全。vLLM 的设计就是把这些差异纳入哈希计算中。 ([<a href="https://cloud.tencent.com/developer/article/2424704?utm_source=chatgpt.com" rel="nofollow">腾讯云</a>]<a href="https://cloud.tencent.com/developer/article/2424704?utm_source=chatgpt.com" title="原理&amp;图解vLLM Automatic Prefix Cache (RadixAttention)首 ..." rel="nofollow">1</a>)</li>
+</ul>
+<hr>
+<h2>五、前缀缓存的实际收益与性能表现</h2>
+<p>前缀缓存若设计得当，其性能收益可以很显著。下面是社区 / 博客中常见的性能对比和经验观察：</p>
+<ul>
+<li>在对话场景中，后续轮次 prompt 常包含很多历史上下文，前缀缓存能显著减少 Prefill 阶段耗时。51CTO 文章就举例：第一次请求要完整构建 KV，第二次若共享长前缀，vLLM 可自动复用缓存，从而大幅减少重复计算 ([<a href="https://www.51cto.com/article/818034.html?utm_source=chatgpt.com" rel="nofollow">51CTO</a>]<a href="https://www.51cto.com/article/818034.html?utm_source=chatgpt.com" title="Refix Caching 详解：实现 KV Cache 的跨请求高效复用" rel="nofollow">4</a>)</li>
+<li>在一些 benchmark 中，Cached Attention（即前缀缓存 + 跳过重复计算）相比完全重新计算（Recomputed）在首 token 延迟和总体吞吐上都有明显优势。技术博客列出图表显示耗时下降。 ([<a href="https://blog.csdn.net/weixin_58753619/article/details/141611100?utm_source=chatgpt.com" rel="nofollow">CSDN</a>]<a href="https://blog.csdn.net/weixin_58753619/article/details/141611100?utm_source=chatgpt.com" title="LLM推理加速3：推理优化总结Mooncake/AttentionStore ..." rel="nofollow">8</a>)</li>
+<li>在极术社区的源码解析文中提到，前缀缓存是 vLLM 作为一个推理引擎的“核心卖点”之一，因为它能在实际对话服务中把重复前缀计算的成本降下来。 ([<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" rel="nofollow">极术社区</a>]<a href="https://aijishu.com/a/1060000000474505?utm_source=chatgpt.com" title="图解大模型计算加速系列：vLLM源码解析3，Prefix Caching" rel="nofollow">2</a>)</li>
+<li>但是，在 decode 阶段缓存命中较少、append-only 限制的情况下，它的实际提升可能受限。也就是说，性能提升高度依赖于 <strong>前缀重用率</strong>。</li>
+</ul>
+<p>总的来说，若系统中 prompt 重用率高、对话历史较长、多个请求共享前缀，那么前缀缓存能带来极大的加速；相反如果每个请求都截然不同，那么前缀缓存的作用就较弱。</p>
+<hr>
+<p>append_only：</p>
+<p>下面用一个简单的例子演示 append-only 策略在 decode 阶段的差异。<br>
+假设设置块大小 block_size = 4 token。<br>
+请求 1：Prompt = A, B, C, D, E, F， decode 输出 = G, H, I<br>
+那么整个 token 序列（prompt + output）是 A, B, C, D | E, F, G, H | I 被分成块（逻辑块）：<br>
+逻辑块 0: A, B, C, D、<br>
+逻辑块 1: E, F, G, H、<br>
+逻辑块 2: I（尚未满块）、<br>
+假设逻辑块 0 和 1 完整满块后被缓存（哈希插入缓存表）。<br>
+请求 2：用相同 prompt A, B, C, D, E, F， decode 输出也得出 G, H, I（例如用相同策略、无随机性）。<br>
+在 decode 阶段：<br>
+当处理到逻辑块 0、1 的那部分，vLLM 会做命中检查，发现可以复用已有缓存块 0 和块 1，于是为这些逻辑块直接映射到已有的物理块。<br>
+当进入逻辑块 2（token I）这个阶段，假设有一个已有的缓存块（哈希匹配）可供复用。如果是 v0 设计，可能会把这个逻辑块重新映射、释放已分配的新块、切换为缓存块；但在 v1 的设计里，即便命中，也 不会替换。它仍然让逻辑块 2 使用最初给它分配的新块。<br>
+因此，在 v1 的行为下，即使逻辑块 2 后来发现一个更优缓存块，也不会动态切换，那条请求的块结构就从头到尾固定了（append-only）。<br>
+这个例子也在 vLLM 文档里被提及，作为“重复块 / 冗余块”情景的示例：文档讲到请求 2 分析时可能出现一个与已有块重复的块（哈希一致）——在 v0 会替换、释放重复块，而在 v1 则因为 append-only 不做替换，形成冗余缓存。 </p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+
+
+</script>
+
+
+</html>
