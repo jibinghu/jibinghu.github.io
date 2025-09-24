@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="[AIassistant] PS: 感觉不是很好
+
+按三条主线来梳理：推理（Reasoning）、Agent（具身/工具/桌面控制）、Coding（软件工程落地），并配上训练/推理框架的现状与选型建议。">
+<meta property="og:title" content="20250924 模型快照">
+<meta property="og:description" content="[AIassistant] PS: 感觉不是很好
+
+按三条主线来梳理：推理（Reasoning）、Agent（具身/工具/桌面控制）、Coding（软件工程落地），并配上训练/推理框架的现状与选型建议。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/20250924%20-mo-xing-kuai-zhao.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>20250924 模型快照</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">20250924 模型快照</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/171" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p>[AIassistant] PS: 感觉不是很好</p>
+<p>按三条主线来梳理：推理（Reasoning）、Agent（具身/工具/桌面控制）、Coding（软件工程落地），并配上训练/推理框架的现状与选型建议。</p>
+<h1>一句话总览</h1>
+<ul>
+<li><strong>推理</strong>：进入“以推理为先”的阶段——从 OpenAI 的 o1 系列到 DeepSeek-R1，用<strong>RL 与过程奖励</strong>把“想清楚再回答”变成可训练能力；多模态也在追求“会思考”。 ([<a href="https://arxiv.org/abs/2501.12948?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2501.12948?utm_source=chatgpt.com" title="DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via ..." rel="nofollow">1</a>)</li>
+<li><strong>Agent</strong>：从“调用工具”升级到<strong>操作电脑/网页</strong>的 GUI Agent（Computer Use / Realtime），配合多代理编排框架逐步走向可落地的自动化。 ([<a href="https://www.anthropic.com/news/3-5-models-and-computer-use?utm_source=chatgpt.com" rel="nofollow">Anthropic</a>]<a href="https://www.anthropic.com/news/3-5-models-and-computer-use?utm_source=chatgpt.com" title="Introducing computer use, a new Claude 3.5 Sonnet, and Claude 3.5 Haiku" rel="nofollow">2</a>)</li>
+<li><strong>Coding</strong>：从补全代码到<strong>能读仓库、跑测试、提 PR</strong>；SWE-bench 等真实修 bug 基准成为主战场，平台侧（GitHub Copilot Workspace / Copilot Agent、Devin/OpenHands）在加速产品化。 ([<a href="https://www.swebench.com/?utm_source=chatgpt.com" rel="nofollow">SWE-bench</a>]<a href="https://www.swebench.com/?utm_source=chatgpt.com" title="SWE-bench Leaderboards" rel="nofollow">3</a>)</li>
+<li><strong>VLM</strong>：多模态“真·实时+长上下文”成常态：GPT-4o 实时音视文本、Llama 3.2 Vision 开源上车、Gemini 1.5/2.5 拉满<strong>超长上下文</strong>；国内外 Qwen2.5-VL 等持续迭代。 ([<a href="https://openai.com/index/hello-gpt-4o/?utm_source=chatgpt.com" rel="nofollow">OpenAI</a>]<a href="https://openai.com/index/hello-gpt-4o/?utm_source=chatgpt.com" title="Hello GPT-4o - OpenAI" rel="nofollow">4</a>)</li>
+</ul>
+<hr>
+<h1>1) 推理：从“多算几步”到“给过程打分”</h1>
+<p><strong>模型与方法</strong></p>
+<ul>
+<li><strong>OpenAI o1 系列</strong>把“先推理、后作答”的长思考策略产品化，标志“Reasoning-first”路线走向主流。 ([<a href="https://blog.briefy.ai/openai-unveils-advanced-reasoning-models-o1-preview-and-o1-mini-now-available/?utm_source=chatgpt.com" rel="nofollow">The Briefy Blog</a>]<a href="https://blog.briefy.ai/openai-unveils-advanced-reasoning-models-o1-preview-and-o1-mini-now-available/?utm_source=chatgpt.com" title="OpenAI Unveils Advanced Reasoning Models: o1 ... - blog.briefy.ai" rel="nofollow">5</a>)</li>
+<li><strong>DeepSeek-R1</strong>证明了<strong>纯强化学习（RL）也能催生推理能力：无需大量人工标注 CoT，RL 训练中自然涌现自我反思、验证、策略切换</strong>等行为；相关工作也把这一思路拓展到多模态 PRM。 ([<a href="https://arxiv.org/abs/2501.12948?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2501.12948?utm_source=chatgpt.com" title="DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via ..." rel="nofollow">1</a>)</li>
+<li><strong>对齐与奖励学习</strong>：从传统 RLHF 走向<strong>RLAIF（AI 反馈替人）与DPO（无 RL 的偏好学习）</strong>；同时引入<strong>过程奖励（PRM）/验证器</strong>来在<strong>步骤级</strong>约束推理质量。 ([<a href="https://arxiv.org/pdf/2309.00267v1?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/pdf/2309.00267v1?utm_source=chatgpt.com" title="RLAIF: Scaling Reinforcement Learning from Human Feedback with AI Feedback" rel="nofollow">6</a>)</li>
+</ul>
+<p><strong>训练框架现状</strong></p>
+<ul>
+<li><strong>DPO / β-DPO</strong>等在社区被广泛采用（实现简单、稳定），适合大规模偏好微调；RLAIF 降低人工标注成本；PRM/Verifier 侧重“<strong>对每一步给分</strong>”。 ([<a href="https://arxiv.org/abs/2305.18290?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2305.18290?utm_source=chatgpt.com" title="Direct Preference Optimization: Your Language Model is Secretly a Reward Model" rel="nofollow">7</a>)</li>
+</ul>
+<p><strong>推理框架现状</strong></p>
+<ul>
+<li><strong>vLLM</strong> 以 <strong>PagedAttention + 连续批处理</strong> 成为工业标配，显著提升吞吐/延迟；文档与社区活跃，KV 复用与多 LoRA 批处理等特性完备。 ([<a href="https://arxiv.org/abs/2309.06180?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2309.06180?utm_source=chatgpt.com" title="Efficient Memory Management for Large Language Model Serving with PagedAttention" rel="nofollow">8</a>)</li>
+<li><strong>SGLang</strong> 引入 <strong>RadixAttention</strong>、推测解码、解耦 prefill/decoding，针对 Llama3/DeepSeek 等场景给出高效实现。 ([<a href="https://github.com/sgl-project/sglang/blob/main/README.md?utm_source=chatgpt.com">GitHub</a>]<a href="https://github.com/sgl-project/sglang/blob/main/README.md?utm_source=chatgpt.com" title="sglang/README.md at main · sgl-project/sglang · GitHub">9</a>)</li>
+<li><strong>TensorRT-LLM / TRT-MO</strong> 提供 <strong>推测解码（Medusa/EAGLE）</strong>、FP8/INT4 量化、KV 管理等端到端优化；KV Cache 管理重构在路线上。 ([<a href="https://github.com/NVIDIA/TensorRT-Model-Optimizer/blob/main/examples/speculative_decoding/README.md?utm_source=chatgpt.com">GitHub</a>]<a href="https://github.com/NVIDIA/TensorRT-Model-Optimizer/blob/main/examples/speculative_decoding/README.md?utm_source=chatgpt.com" title="TensorRT-Model-Optimizer/examples/speculative_decoding/README ... - GitHub">10</a>)</li>
+<li><strong>TGI</strong>（Hugging Face）在企业生产侧稳定可用，易集成、易托管。 ([<a href="https://huggingface.co/docs/inference-endpoints/en/engines/tgi?utm_source=chatgpt.com" rel="nofollow">Hugging Face</a>]<a href="https://huggingface.co/docs/inference-endpoints/en/engines/tgi?utm_source=chatgpt.com" title="Text Generation Inference (TGI) - Hugging Face" rel="nofollow">11</a>)</li>
+</ul>
+<hr>
+<h1>2) Agent：从“会用工具”到“会用电脑”</h1>
+<p><strong>产品化进展</strong></p>
+<ul>
+<li><strong>Anthropic Computer Use（Beta）与Microsoft Copilot Studio computer use</strong>把 GUI 操作（移动光标、点击、键入、截图理解）纳入代理工作流，覆盖“无 API 的遗留系统”。 ([<a href="https://www.anthropic.com/news/3-5-models-and-computer-use?utm_source=chatgpt.com" rel="nofollow">Anthropic</a>]<a href="https://www.anthropic.com/news/3-5-models-and-computer-use?utm_source=chatgpt.com" title="Introducing computer use, a new Claude 3.5 Sonnet, and Claude 3.5 Haiku" rel="nofollow">2</a>)</li>
+<li><strong>OpenAI Realtime API（基于 GPT-4o）让多模态低时延</strong>交互（语音/视频/文本）可组装进实时 Agent。 ([<a href="https://openai.com/index/introducing-the-realtime-api/?utm_source=chatgpt.com" rel="nofollow">OpenAI</a>]<a href="https://openai.com/index/introducing-the-realtime-api/?utm_source=chatgpt.com" title="Introducing the Realtime API - OpenAI" rel="nofollow">12</a>)</li>
+</ul>
+<p><strong>多代理/编排生态</strong></p>
+<ul>
+<li><strong>LangChain / LangGraph</strong> 聚焦可控、有状态、可恢复的<strong>生产级 Agent 运行时</strong>；<strong>LlamaIndex</strong> 在 RAG + Agent 工作流上工程化成熟；<strong>DSPy</strong>让“程序&gt;Prompt”，支持自动优化；<strong>AutoGen/CrewAI</strong> 走多代理对话/分工路线。 ([<a href="https://blog.langchain.com/?utm_source=chatgpt.com" rel="nofollow">LangChain Blog</a>]<a href="https://blog.langchain.com/?utm_source=chatgpt.com" title="LangChain Blog" rel="nofollow">13</a>)</li>
+</ul>
+<hr>
+<h1>3) Coding：评测换赛道，走向“能合 PR”</h1>
+<p><strong>能力现状（以真实修复为准）</strong></p>
+<ul>
+<li><strong>SWE-bench</strong> 系列成为事实标准，官方榜单持续更新（Full/Verified/Lite/多模态分榜，指标为 %Resolved）；社区不断报告更高分数与更短流程。 ([<a href="https://www.swebench.com/?utm_source=chatgpt.com" rel="nofollow">SWE-bench</a>]<a href="https://www.swebench.com/?utm_source=chatgpt.com" title="SWE-bench Leaderboards" rel="nofollow">3</a>)</li>
+<li>第三方评测显示 <strong>Claude 3.5 Sonnet</strong> 在 <strong>SWE-bench Verified</strong> 上约 <strong>49%</strong>，凸显“代理式编码+工具用法”的收益（不同设定会影响分数）。 ([<a href="https://galileo.ai/blog/claude-3-5-sonnet-complete-guide-ai-capabilities-analysis?utm_source=chatgpt.com" rel="nofollow">Galileo AI</a>]<a href="https://galileo.ai/blog/claude-3-5-sonnet-complete-guide-ai-capabilities-analysis?utm_source=chatgpt.com" title="Claude 3.5 Sonnet Complete Guide: AI Capabilities &amp; Limits | Galileo" rel="nofollow">14</a>)</li>
+</ul>
+<p><strong>平台与代理</strong></p>
+<ul>
+<li><strong>GitHub Copilot Workspace</strong> 把“构思→计划→编码→测试→运行”一体化，近期 <strong>Copilot Agent</strong> 也开始<strong>自动开机/拉仓/分析/提交</strong>的端到端任务流。 ([<a href="https://github.blog/news-insights/product-news/github-copilot-workspace/?utm_source=chatgpt.com" rel="nofollow">The GitHub Blog</a>]<a href="https://github.blog/news-insights/product-news/github-copilot-workspace/?utm_source=chatgpt.com" title="GitHub Copilot Workspace: Welcome to the Copilot ... - The GitHub Blog" rel="nofollow">15</a>)</li>
+<li><strong>Devin（Cognition）</strong> 与开源 <strong>OpenHands（原 OpenDevin）</strong> 把“读仓—跑命令—网页—提 PR”的<strong>全链路代理</strong>做成产品/平台。 ([<a href="https://cognition.ai/blog/introducing-devin?utm_source=chatgpt.com" rel="nofollow">Cognition</a>]<a href="https://cognition.ai/blog/introducing-devin?utm_source=chatgpt.com" title="Cognition | Introducing Devin, the first AI software engineer" rel="nofollow">16</a>)</li>
+</ul>
+<p><strong>训练/推理要点</strong></p>
+<ul>
+<li>代码代理通常结合<strong>长上下文（读仓库）</strong>、<strong>工具调用</strong>、<strong>执行环境</strong>与<strong>验证回路（测试/静态检查/LLM 验证器）</strong>；推理端选 <strong>vLLM / SGLang / TensorRT-LLM</strong> 可获得稳定吞吐与低时延。 ([<a href="https://arxiv.org/abs/2309.06180?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2309.06180?utm_source=chatgpt.com" title="Efficient Memory Management for Large Language Model Serving with PagedAttention" rel="nofollow">8</a>)</li>
+</ul>
+<hr>
+<h1>4) VLM：多模态“实时 + 长上下文”常态化</h1>
+<ul>
+<li><strong>GPT-4o</strong> 原生统一音视文，<strong>实时</strong>延迟可至百毫秒量级；同时有更便宜的 <strong>4o-mini</strong> 覆盖成本敏感场景。 ([<a href="https://openai.com/index/hello-gpt-4o/?utm_source=chatgpt.com" rel="nofollow">OpenAI</a>]<a href="https://openai.com/index/hello-gpt-4o/?utm_source=chatgpt.com" title="Hello GPT-4o - OpenAI" rel="nofollow">4</a>)</li>
+<li><strong>Llama 3.2 Vision（11B/90B）</strong> 将视觉接入开源 Llama，生态（Databricks、SageMaker 等）已接入，便于私有化/二开。 ([<a href="https://www.theverge.com/2024/9/25/24253774/meta-ai-vision-model-llama-3-2-announced?utm_source=chatgpt.com" rel="nofollow">The Verge</a>]<a href="https://www.theverge.com/2024/9/25/24253774/meta-ai-vision-model-llama-3-2-announced?utm_source=chatgpt.com" title="Meta releases its first open AI model that can process images" rel="nofollow">17</a>)</li>
+<li><strong>Gemini 1.5/2.5</strong> 主打**超长上下文（最高 2M tokens）**与多模态理解，适合“项目级资料整合”。 ([<a href="https://www.infoworld.com/article/2510442/google-opens-access-to-2-million-context-window-of-gemini-1-5-pro.html?utm_source=chatgpt.com" rel="nofollow">InfoWorld</a>]<a href="https://www.infoworld.com/article/2510442/google-opens-access-to-2-million-context-window-of-gemini-1-5-pro.html?utm_source=chatgpt.com" title="Google opens access to 2 million context window of Gemini 1.5 Pro" rel="nofollow">18</a>)</li>
+<li><strong>Qwen2.5-VL</strong> 等开源多模态持续升级，提供从 2B 到 72B 的多档选择。 ([<a href="https://github.com/QwenLM/Qwen2.5-VL?utm_source=chatgpt.com">GitHub</a>]<a href="https://github.com/QwenLM/Qwen2.5-VL?utm_source=chatgpt.com" title="GitHub - QwenLM/Qwen2.5-VL: Qwen2.5-VL is the multimodal large language ...">19</a>)</li>
+</ul>
+<hr>
+<h1>5) 训练框架与分布式：更大更快也更省</h1>
+<ul>
+<li><strong>DeepSpeed ZeRO-3/Offload/Infinity</strong> 依然是超大模型训练的常见基座；<strong>PyTorch FSDP2</strong> 正式化、文档与教程完善；<strong>Megatron-LM/Core</strong> 组合 <strong>TP/PP/DP</strong> 与 MoE 并行，支撑千卡规模。 ([<a href="https://deepspeed.readthedocs.io/en/latest/zero3.html?utm_source=chatgpt.com" rel="nofollow">DeepSpeed</a>]<a href="https://deepspeed.readthedocs.io/en/latest/zero3.html?utm_source=chatgpt.com" title="ZeRO — DeepSpeed 0.17.6 documentation - Read the Docs" rel="nofollow">20</a>)</li>
+<li><strong>Colossal-AI</strong> 在 <strong>MoE 训练/并行</strong> 与工程化模板上可选；与上面几套栈并不冲突，可按需求混搭。 ([<a href="https://colossalai.org/zh-Hans/docs/advanced_tutorials/integrate_mixture_of_experts_into_your_model/?utm_source=chatgpt.com" rel="nofollow">Colossal-AI</a>]<a href="https://colossalai.org/zh-Hans/docs/advanced_tutorials/integrate_mixture_of_experts_into_your_model/?utm_source=chatgpt.com" title="将 MoE 整合进你的模型 - Colossal-AI" rel="nofollow">21</a>)</li>
+<li><strong>对齐阶段</strong>：DPO/RLAIF/PRM 作为三件套，已在行业里形成常见组合拳。 ([<a href="https://arxiv.org/abs/2305.18290?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2305.18290?utm_source=chatgpt.com" title="Direct Preference Optimization: Your Language Model is Secretly a Reward Model" rel="nofollow">7</a>)</li>
+</ul>
+<hr>
+<h1>6) 推理框架选型（LLM/VLM 通用）</h1>
+<ul>
+<li><strong>高吞吐/低延迟通用场景</strong>：<strong>vLLM</strong>（PagedAttention、连续批处理、前缀/多 LoRA 复用），社区成熟、兼容 OpenAI 风格 API。 ([<a href="https://arxiv.org/abs/2309.06180?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2309.06180?utm_source=chatgpt.com" title="Efficient Memory Management for Large Language Model Serving with PagedAttention" rel="nofollow">8</a>)</li>
+<li><strong>极致性能/自定义内核</strong>：<strong>TensorRT-LLM（或配合 TRT-Model-Optimizer）</strong>，拿到 FP8/INTx 量化、推测解码与专家并行等，适合 NVIDIA 堆栈。 ([<a href="https://github.com/NVIDIA/TensorRT-Model-Optimizer/blob/main/examples/speculative_decoding/README.md?utm_source=chatgpt.com">GitHub</a>]<a href="https://github.com/NVIDIA/TensorRT-Model-Optimizer/blob/main/examples/speculative_decoding/README.md?utm_source=chatgpt.com" title="TensorRT-Model-Optimizer/examples/speculative_decoding/README ... - GitHub">10</a>)</li>
+<li><strong>语用工程/更可控执行</strong>：<strong>SGLang</strong>（RadixAttention、prefill/decoding 解耦、结构化输出），对多模态和复杂解码也有优化。 ([<a href="https://github.com/sgl-project/sglang/blob/main/README.md?utm_source=chatgpt.com">GitHub</a>]<a href="https://github.com/sgl-project/sglang/blob/main/README.md?utm_source=chatgpt.com" title="sglang/README.md at main · sgl-project/sglang · GitHub">9</a>)</li>
+<li><strong>企业级托管</strong>：<strong>Hugging Face TGI</strong> 易运维、文档完备。 ([<a href="https://huggingface.co/docs/inference-endpoints/en/engines/tgi?utm_source=chatgpt.com" rel="nofollow">Hugging Face</a>]<a href="https://huggingface.co/docs/inference-endpoints/en/engines/tgi?utm_source=chatgpt.com" title="Text Generation Inference (TGI) - Hugging Face" rel="nofollow">11</a>)</li>
+</ul>
+<hr>
+<h1>7) 你可以怎么押注（实操建议）</h1>
+<ul>
+<li><strong>要推理/复杂任务</strong>：优先试 <strong>o1 类/DeepSeek-R1 家族</strong>或“带 PRM 的大模型”，把<strong>验证器 / 自检</strong>纳入推理流程；部署侧优先 <strong>vLLM + 推测解码</strong>。 ([<a href="https://arxiv.org/abs/2501.12948?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2501.12948?utm_source=chatgpt.com" title="DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via ..." rel="nofollow">1</a>)</li>
+<li><strong>要 Coding 产出</strong>：在 IDE/Repo 侧上 <strong>Copilot Workspace / Copilot Agent</strong>，或自建 <strong>OpenHands</strong>；评估用 <strong>SWE-bench Verified</strong>，把 CI/测试当成模型的“奖励”。 ([<a href="https://github.blog/news-insights/product-news/github-copilot-workspace/?utm_source=chatgpt.com" rel="nofollow">The GitHub Blog</a>]<a href="https://github.blog/news-insights/product-news/github-copilot-workspace/?utm_source=chatgpt.com" title="GitHub Copilot Workspace: Welcome to the Copilot ... - The GitHub Blog" rel="nofollow">15</a>)</li>
+<li><strong>要多模态/实时</strong>：选择 <strong>GPT-4o / 4o-mini</strong> 或开源 <strong>Llama 3.2 Vision</strong>；需要长档案上下文时用 <strong>Gemini 1.5/2.5</strong>。 ([<a href="https://openai.com/index/hello-gpt-4o/?utm_source=chatgpt.com" rel="nofollow">OpenAI</a>]<a href="https://openai.com/index/hello-gpt-4o/?utm_source=chatgpt.com" title="Hello GPT-4o - OpenAI" rel="nofollow">4</a>)</li>
+<li><strong>要低成本稳定供给</strong>：结合 <strong>量化（INT4/8、FP8）</strong> + <strong>KV 管理/连续批处理</strong> + <strong>推测解码</strong>；框架侧 <strong>TensorRT-LLM / vLLM</strong> 都已支持到位。 ([<a href="https://github.com/NVIDIA/TensorRT-Model-Optimizer/blob/main/examples/speculative_decoding/README.md?utm_source=chatgpt.com">GitHub</a>]<a href="https://github.com/NVIDIA/TensorRT-Model-Optimizer/blob/main/examples/speculative_decoding/README.md?utm_source=chatgpt.com" title="TensorRT-Model-Optimizer/examples/speculative_decoding/README ... - GitHub">10</a>)</li>
+</ul>
+<hr>
+<h2>参考与延伸</h2>
+<ul>
+<li><strong>SWE-bench 官方榜单</strong>（跟踪真实修复能力），与近期“mini-SWE-agent”等动态。 ([<a href="https://www.swebench.com/?utm_source=chatgpt.com" rel="nofollow">SWE-bench</a>]<a href="https://www.swebench.com/?utm_source=chatgpt.com" title="SWE-bench Leaderboards" rel="nofollow">3</a>)</li>
+<li><strong>GPT-4o / Realtime / 4o-mini</strong> 官方资料与系统卡。 ([<a href="https://openai.com/index/hello-gpt-4o/?utm_source=chatgpt.com" rel="nofollow">OpenAI</a>]<a href="https://openai.com/index/hello-gpt-4o/?utm_source=chatgpt.com" title="Hello GPT-4o - OpenAI" rel="nofollow">4</a>)</li>
+<li><strong>Llama 3.2 Vision / Llama 3.1</strong> 生态 &amp; 文档。 ([<a href="https://www.theverge.com/2024/9/25/24253774/meta-ai-vision-model-llama-3-2-announced?utm_source=chatgpt.com" rel="nofollow">The Verge</a>]<a href="https://www.theverge.com/2024/9/25/24253774/meta-ai-vision-model-llama-3-2-announced?utm_source=chatgpt.com" title="Meta releases its first open AI model that can process images" rel="nofollow">17</a>)</li>
+<li><strong>Gemini 1.5/2.5 长上下文</strong> 开发者文档/公告。 ([<a href="https://ai.google.dev/gemini-api/docs/long-context?utm_source=chatgpt.com" rel="nofollow">Google AI for Developers</a>]<a href="https://ai.google.dev/gemini-api/docs/long-context?utm_source=chatgpt.com" title="Long context | Gemini API | Google AI for Developers" rel="nofollow">22</a>)</li>
+<li><strong>DeepSeek-R1</strong> 论文与 Nature 版介绍（RL 促生推理）。 ([<a href="https://arxiv.org/abs/2501.12948?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2501.12948?utm_source=chatgpt.com" title="DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via ..." rel="nofollow">1</a>)</li>
+<li><strong>vLLM / SGLang / TensorRT-LLM / TGI</strong> 文档与路线图。 ([<a href="https://docs.vllm.ai/en/v0.6.0/?utm_source=chatgpt.com" rel="nofollow">VLLM Docs</a>]<a href="https://docs.vllm.ai/en/v0.6.0/?utm_source=chatgpt.com" title="Welcome to vLLM! — vLLM" rel="nofollow">23</a>)</li>
+</ul>
+<hr>
+<h1>更新的论文参考：</h1>
+<p>根据 2025 年下半年（尤其是 9 月前后）的研究进展，LLM/VLM 领域在推理（Reasoning）、智能体（Agent）和编程（Coding）能力方面呈现出显著的技术演进和应用拓展。以下是对这些趋势的详细分析：</p>
+<hr>
+<h2>🧠 推理能力：从“多算几步”到“过程奖励与自我反思”</h2>
+<h3>关键进展：</h3>
+<ul>
+<li>
+<p><strong>Agentic Reasoning 框架</strong>：通过引入外部工具智能体（如 Web 搜索、代码执行和结构化记忆），增强 LLM 的推理能力。该框架通过构建知识图谱（Mind-Map）和优化 Web 搜索机制，实现了在复杂问题解决中的逻辑连贯性和深度研究能力。 ([<a href="https://arxiv.org/abs/2502.04644?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2501.12948?utm_source=chatgpt.com" title="DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via ..." rel="nofollow">1</a>)</p>
+</li>
+<li>
+<p><strong>AgentPRM（过程奖励模型）</strong>：采用轻量级的演员-评论家（actor-critic）范式，利用蒙特卡洛回合计算奖励目标，优化智能体策略。该方法无需大量人工标注，易于与现有 RLHF 流水线集成，适用于大规模训练。 ([<a href="https://arxiv.org/abs/2502.10325?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://www.anthropic.com/news/3-5-models-and-computer-use?utm_source=chatgpt.com" title="Introducing computer use, a new Claude 3.5 Sonnet, and Claude 3.5 Haiku" rel="nofollow">2</a>)</p>
+</li>
+<li>
+<p><strong>Claude 3.7 的混合推理模式</strong>：Anthropic 推出的 Claude 3.7 模型引入了可控的推理深度和“scratchpad”功能，允许用户根据任务需求调整模型的推理过程，从而提高在复杂任务中的表现。 ([<a href="https://www.wired.com/story/anthropic-world-first-hybrid-reasoning-ai-model?utm_source=chatgpt.com" rel="nofollow">WIRED</a>]<a href="https://www.swebench.com/?utm_source=chatgpt.com" title="SWE-bench Leaderboards" rel="nofollow">3</a>)</p>
+</li>
+</ul>
+<hr>
+<h2>🤖 智能体能力：从“工具调用”到“自主操作”</h2>
+<h3>核心框架与应用：</h3>
+<ul>
+<li>
+<p><strong>AutoAgent</strong>：一个全自动、零代码的框架，使用户仅通过自然语言即可创建和部署 LLM 智能体，降低了智能体开发的门槛。 ([<a href="https://arxiv.org/abs/2502.05957?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://openai.com/index/hello-gpt-4o/?utm_source=chatgpt.com" title="Hello GPT-4o - OpenAI" rel="nofollow">4</a>)</p>
+</li>
+<li>
+<p><strong>CodeCoR（自我反思多智能体框架）</strong>：该框架通过四个智能体（生成提示、代码、测试用例和修复建议）协作，评估每个智能体及其协作的有效性，提升了代码生成和修复的质量。 ([<a href="https://arxiv.org/abs/2501.07811?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://blog.briefy.ai/openai-unveils-advanced-reasoning-models-o1-preview-and-o1-mini-now-available/?utm_source=chatgpt.com" title="OpenAI Unveils Advanced Reasoning Models: o1 ... - blog.briefy.ai" rel="nofollow">5</a>)</p>
+</li>
+<li>
+<p><strong>OrcaLoca</strong>：针对软件问题定位任务，集成了基于优先级的调度、动作分解和上下文修剪机制，成为新的开源基准。 ([<a href="https://arxiv.org/abs/2502.00350?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/pdf/2309.00267v1?utm_source=chatgpt.com" title="RLAIF: Scaling Reinforcement Learning from Human Feedback with AI Feedback" rel="nofollow">6</a>)</p>
+</li>
+<li>
+<p><strong>Neo 框架</strong>：一个可配置的多智能体框架，自动化了 LLM 智能体的多轮评估，支持领域提示、场景控制和动态反馈的模块化组合。 ([<a href="https://arxiv.org/abs/2507.14705?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2305.18290?utm_source=chatgpt.com" title="Direct Preference Optimization: Your Language Model is Secretly a Reward Model" rel="nofollow">7</a>)</p>
+</li>
+</ul>
+<hr>
+<h2>💻 编程能力：从“代码补全”到“自主修复与算法设计”</h2>
+<h3>研究与应用亮点：</h3>
+<ul>
+<li>
+<p><strong>CURE（协同进化编码器与单元测试生成器）</strong>：通过强化学习框架，基于交互结果共同进化编码和单元测试生成能力，无需地面真实代码作为监督，提升了代码质量和测试覆盖率。 ([<a href="https://arxiv.org/abs/2506.03136?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2309.06180?utm_source=chatgpt.com" title="Efficient Memory Management for Large Language Model Serving with PagedAttention" rel="nofollow">8</a>)</p>
+</li>
+<li>
+<p><strong>CodeARC</strong>：一个新的评估框架，智能体通过与隐藏目标函数交互，查询新输入、合成候选函数，并使用差异测试 oracle 迭代优化解决方案，模拟了反向工程等现实场景。 ([<a href="https://arxiv.org/abs/2503.23145?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://github.com/sgl-project/sglang/blob/main/README.md?utm_source=chatgpt.com" title="sglang/README.md at main · sgl-project/sglang · GitHub">9</a>)</p>
+</li>
+<li>
+<p><strong>AlphaEvolve</strong>：由 Google DeepMind 开发的进化编码智能体，结合 LLM 和进化计算，自动发现和优化算法，推动了通用算法设计的研究进展。 ([<a href="https://en.wikipedia.org/wiki/AlphaEvolve?utm_source=chatgpt.com" rel="nofollow">维基百科</a>]<a href="https://github.com/NVIDIA/TensorRT-Model-Optimizer/blob/main/examples/speculative_decoding/README.md?utm_source=chatgpt.com" title="TensorRT-Model-Optimizer/examples/speculative_decoding/README ... - GitHub">10</a>)</p>
+</li>
+</ul>
+<hr>
+<h2>🧩 多模态与推理框架：实时与长上下文的融合</h2>
+<h3>技术趋势：</h3>
+<ul>
+<li>
+<p><strong>Agentic Reasoning</strong>：通过引入外部工具智能体（如 Web 搜索、代码执行和结构化记忆），增强 LLM 的推理能力。该框架通过构建知识图谱（Mind-Map）和优化 Web 搜索机制，实现了在复杂问题解决中的逻辑连贯性和深度研究能力。 ([<a href="https://arxiv.org/abs/2502.04644?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://arxiv.org/abs/2501.12948?utm_source=chatgpt.com" title="DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via ..." rel="nofollow">1</a>)</p>
+</li>
+<li>
+<p><strong>AgentPRM（过程奖励模型）</strong>：采用轻量级的演员-评论家（actor-critic）范式，利用蒙特卡洛回合计算奖励目标，优化智能体策略。该方法无需大量人工标注，易于与现有 RLHF 流水线集成，适用于大规模训练。 ([<a href="https://arxiv.org/abs/2502.10325?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://www.anthropic.com/news/3-5-models-and-computer-use?utm_source=chatgpt.com" title="Introducing computer use, a new Claude 3.5 Sonnet, and Claude 3.5 Haiku" rel="nofollow">2</a>)</p>
+</li>
+<li>
+<p><strong>Claude 3.7 的混合推理模式</strong>：Anthropic 推出的 Claude 3.7 模型引入了可控的推理深度和“scratchpad”功能，允许用户根据任务需求调整模型的推理过程，从而提高在复杂任务中的表现。 ([<a href="https://www.wired.com/story/anthropic-world-first-hybrid-reasoning-ai-model?utm_source=chatgpt.com" rel="nofollow">WIRED</a>]<a href="https://www.swebench.com/?utm_source=chatgpt.com" title="SWE-bench Leaderboards" rel="nofollow">3</a>)</p>
+</li>
+</ul>
+<hr>
+<h2>🧭 训练与推理框架的现状</h2>
+<h3>训练框架：</h3>
+<ul>
+<li>
+<p><strong>AgentPRM（过程奖励模型）</strong>：采用轻量级的演员-评论家（actor-critic）范式，利用蒙特卡洛回合计算奖励目标，优化智能体策略。该方法无需大量人工标注，易于与现有 RLHF 流水线集成，适用于大规模训练。 ([<a href="https://arxiv.org/abs/2502.10325?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://www.anthropic.com/news/3-5-models-and-computer-use?utm_source=chatgpt.com" title="Introducing computer use, a new Claude 3.5 Sonnet, and Claude 3.5 Haiku" rel="nofollow">2</a>)</p>
+</li>
+<li>
+<p><strong>AutoAgent</strong>：一个全自动、零代码的框架，使用户仅通过自然语言即可创建和部署 LLM 智能体，降低了智能体开发的门槛。 ([<a href="https://arxiv.org/abs/2502.05957?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://openai.com/index/hello-gpt-4o/?utm_source=chatgpt.com" title="Hello GPT-4o - OpenAI" rel="nofollow">4</a>)</p>
+</li>
+<li>
+<p><strong>CodeCoR（自我反思多智能体框架）</strong>：该框架通过四个智能体（生成提示、代码、测试用例和修复建议）协作，评估每个智能体及其协作的有效性，提升了代码生成和修复的质量。 ([<a href="https://arxiv.org/abs/2501.07811?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://blog.briefy.ai/openai-unveils-advanced-reasoning-models-o1-preview-and-o1-mini-now-available/?utm_source=chatgpt.com" title="OpenAI Unveils Advanced Reasoning Models: o1 ... - blog.briefy.ai" rel="nofollow">5</a>)</p>
+</li>
+</ul>
+<h3>推理框架：</h3>
+<ul>
+<li>
+<p><strong>vLLM</strong>：一个高性能的推理框架，支持分页注意力和连续批处理，优化了大模型的推理效率。 ([<a href="https://zhuanlan.zhihu.com/p/1888564058556461727?utm_source=chatgpt.com" rel="nofollow">知乎专栏</a>]<a href="https://huggingface.co/docs/inference-endpoints/en/engines/tgi?utm_source=chatgpt.com" title="Text Generation Inference (TGI) - Hugging Face" rel="nofollow">11</a>)</p>
+</li>
+<li>
+<p><strong>TensorRT-LLM</strong>：结合 NVIDIA TensorRT 的推理优化，支持推测解码和专家并行等特性，提升了推理速度和效率。 ([<a href="https://arxiv.org/abs/2501.06625?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://openai.com/index/introducing-the-realtime-api/?utm_source=chatgpt.com" title="Introducing the Realtime API - OpenAI" rel="nofollow">12</a>)</p>
+</li>
+<li>
+<p><strong>SGLang</strong>：一个结构化语言模型推理框架，通过解耦预填充和解码过程，优化了多模态和复杂解码任务的性能。 ([<a href="https://arxiv.org/abs/2501.06625?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://openai.com/index/introducing-the-realtime-api/?utm_source=chatgpt.com" title="Introducing the Realtime API - OpenAI" rel="nofollow">12</a>)</p>
+</li>
+</ul>
+<hr>
+<h2>🧪 评估基准与新兴趋势</h2>
+<h3>编程能力评估：</h3>
+<ul>
+<li>
+<p><strong>SWE-bench</strong>：一个新的评估框架，智能体通过与隐藏目标函数交互，查询新输入、合成候选函数，并使用差异测试 oracle 迭代优化解决方案，模拟了反向工程等现实场景。 ([<a href="https://arxiv.org/abs/2503.23145?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://github.com/sgl-project/sglang/blob/main/README.md?utm_source=chatgpt.com" title="sglang/README.md at main · sgl-project/sglang · GitHub">9</a>)</p>
+</li>
+<li>
+<p><strong>Web-Bench</strong>：一个新的基准，包含 50 个项目，每个项目由 20 个具有顺序依赖的任务组成，模拟了现实世界中的开发工作流程。 ([<a href="https://arxiv.org/abs/2505.07473?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://blog.langchain.com/?utm_source=chatgpt.com" title="LangChain Blog" rel="nofollow">13</a>)</p>
+</li>
+<li>
+<p><strong>CodeElo</strong>：一个基于 Elo 等级评分的竞赛级代码生成评估框架，为 LLM 的代码生成能力提供了新的评估标准。 ([<a href="https://arxiv.org/abs/2501.01257?utm_source=chatgpt.com" rel="nofollow">arXiv</a>]<a href="https://galileo.ai/blog/claude-3-5-sonnet-complete-guide-ai-capabilities-analysis?utm_source=chatgpt.com" title="Claude 3.5 Sonnet Complete Guide: AI Capabilities &amp; Limits | Galileo" rel="nofollow">14</a>)</p>
+</li>
+</ul>
+<hr>
+<h2>🧭 实践建议与选型指南</h2>
+<ul>
+<li>
+<p><strong>推理任务</strong>：优先选择支持 Agentic Reasoning 和过程奖励模型的框架，如 DeepSeek-R1 或 OpenAI 的 o1 系列，以提升复杂任务的推理能力。</p>
+</li>
+<li>
+<p><strong>智能体开发</strong>：对于需要快速原型开发的场景，推荐使用 AutoAgent 或 CodeCoR 等零代码框架；对于需要高性能和可扩展性的场景，推荐使用 Neo 或 OrcaLoca 等框架。</p>
+</li>
+<li>
+<p><strong>编程任务</strong>：在需要高质量代码生成和修复的场景，推荐使用 CURE 或 CodeARC 等框架；在需要处理复杂开发任务的场景，推荐使用 Web-Bench 或 CodeElo 等基准进行评估。</p>
+</li>
+</ul></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+
+
+</script>
+
+
+</html>
