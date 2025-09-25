@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 25 Sep 2025 13:34:51 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>ffmpeg cpp用法</title><link>https://jibinghu.github.io/post/ffmpeg%20cpp-yong-fa.html</link><description>opencv 拉流并无损输出：
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 25 Sep 2025 14:22:27 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>ffmpeg cpp用法</title><link>https://jibinghu.github.io/post/ffmpeg%20cpp-yong-fa.html</link><description>opencv 拉流并无损输出：
 
 ``` cpp
 #include &lt;opencv2/opencv.hpp&gt;
@@ -64,6 +64,75 @@ int main() {
 ```
 
 `g++ test.cpp -o test `pkg-config --cflags --libs opencv4`
+
+调整缓冲帧数：
+
+``` cpp
+#include &lt;opencv2/opencv.hpp&gt;
+#include &lt;iostream&gt;
+#include &lt;cstdio&gt;
+
+int main() {
+    std::string input_url = 'rtmp://101.126.68.169/live/mac';
+    std::string output_url = 'rtmp://101.126.68.169/live/processed';
+
+    // 打开输入流
+    cv::VideoCapture cap(input_url);
+    if (!cap.isOpened()) {
+        std::cerr &lt;&lt; '无法打开输入流: ' &lt;&lt; input_url &lt;&lt; std::endl;
+        return -1;
+    }
+
+    // ⚡ 设置缓冲区大小为 1，避免延时累积
+    cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
+
+    int width  = static_cast&lt;int&gt;(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+    int height = static_cast&lt;int&gt;(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+    int fps    = static_cast&lt;int&gt;(cap.get(cv::CAP_PROP_FPS));
+    if (fps == 0) fps = 25; // 有些流获取不到fps，给默认值
+
+    // 准备 ffmpeg 命令
+    std::string ffmpeg_cmd =
+        'ffmpeg -y -f rawvideo -pix_fmt bgr24 -s ' +
+        std::to_string(width) + 'x' + std::to_string(height) +
+        ' -r ' + std::to_string(fps) +
+        ' -i - -c:v libx264 -pix_fmt yuv420p -preset ultrafast -f flv ' +
+        output_url;
+
+#ifdef _WIN32
+    FILE* pipe = _popen(ffmpeg_cmd.c_str(), 'wb');
+#else
+    FILE* pipe = popen(ffmpeg_cmd.c_str(), 'w');
+#endif
+
+    if (!pipe) {
+        std::cerr &lt;&lt; '无法启动 ffmpeg 进程' &lt;&lt; std::endl;
+        return -1;
+    }
+
+    cv::Mat frame;
+    while (true) {
+        // 丢掉旧帧，只取最新的
+        cap.grab();          // 抓取一帧但不解码
+        if (!cap.retrieve(frame)) {
+            std::cerr &lt;&lt; '读取帧失败，结束' &lt;&lt; std::endl;
+            break;
+        }
+
+        // 写入 ffmpeg stdin
+        fwrite(frame.data, 1, frame.total() * frame.elemSize(), pipe);
+    }
+
+#ifdef _WIN32
+    _pclose(pipe);
+#else
+    pclose(pipe);
+#endif
+
+    cap.release();
+    return 0;
+}
+```
 。</description><guid isPermaLink="true">https://jibinghu.github.io/post/ffmpeg%20cpp-yong-fa.html</guid><pubDate>Thu, 25 Sep 2025 13:34:22 +0000</pubDate></item><item><title>20250924 模型快照</title><link>https://jibinghu.github.io/post/20250924%20-mo-xing-kuai-zhao.html</link><description>[AIassistant] PS: 感觉不是很好
 
 按三条主线来梳理：推理（Reasoning）、Agent（具身/工具/桌面控制）、Coding（软件工程落地），并配上训练/推理框架的现状与选型建议。</description><guid isPermaLink="true">https://jibinghu.github.io/post/20250924%20-mo-xing-kuai-zhao.html</guid><pubDate>Wed, 24 Sep 2025 14:46:59 +0000</pubDate></item><item><title>vllm 中的 `prefix cache` 缓存前置</title><link>https://jibinghu.github.io/post/vllm%20-zhong-de-%20%60prefix%20cache%60%20-huan-cun-qian-zhi.html</link><description>参考：

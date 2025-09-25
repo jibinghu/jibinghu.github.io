@@ -75,6 +75,75 @@ int main() {
 ```
 
 `g++ test.cpp -o test `pkg-config --cflags --libs opencv4`
+
+调整缓冲帧数：
+
+``` cpp
+#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <cstdio>
+
+int main() {
+    std::string input_url = 'rtmp://101.126.68.169/live/mac';
+    std::string output_url = 'rtmp://101.126.68.169/live/processed';
+
+    // 打开输入流
+    cv::VideoCapture cap(input_url);
+    if (!cap.isOpened()) {
+        std::cerr << '无法打开输入流: ' << input_url << std::endl;
+        return -1;
+    }
+
+    // ⚡ 设置缓冲区大小为 1，避免延时累积
+    cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
+
+    int width  = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+    int height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+    int fps    = static_cast<int>(cap.get(cv::CAP_PROP_FPS));
+    if (fps == 0) fps = 25; // 有些流获取不到fps，给默认值
+
+    // 准备 ffmpeg 命令
+    std::string ffmpeg_cmd =
+        'ffmpeg -y -f rawvideo -pix_fmt bgr24 -s ' +
+        std::to_string(width) + 'x' + std::to_string(height) +
+        ' -r ' + std::to_string(fps) +
+        ' -i - -c:v libx264 -pix_fmt yuv420p -preset ultrafast -f flv ' +
+        output_url;
+
+#ifdef _WIN32
+    FILE* pipe = _popen(ffmpeg_cmd.c_str(), 'wb');
+#else
+    FILE* pipe = popen(ffmpeg_cmd.c_str(), 'w');
+#endif
+
+    if (!pipe) {
+        std::cerr << '无法启动 ffmpeg 进程' << std::endl;
+        return -1;
+    }
+
+    cv::Mat frame;
+    while (true) {
+        // 丢掉旧帧，只取最新的
+        cap.grab();          // 抓取一帧但不解码
+        if (!cap.retrieve(frame)) {
+            std::cerr << '读取帧失败，结束' << std::endl;
+            break;
+        }
+
+        // 写入 ffmpeg stdin
+        fwrite(frame.data, 1, frame.total() * frame.elemSize(), pipe);
+    }
+
+#ifdef _WIN32
+    _pclose(pipe);
+#else
+    pclose(pipe);
+#endif
+
+    cap.release();
+    return 0;
+}
+```
 。">
 <meta property="og:title" content="ffmpeg cpp用法">
 <meta property="og:description" content="opencv 拉流并无损输出：
@@ -142,6 +211,75 @@ int main() {
 ```
 
 `g++ test.cpp -o test `pkg-config --cflags --libs opencv4`
+
+调整缓冲帧数：
+
+``` cpp
+#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <cstdio>
+
+int main() {
+    std::string input_url = 'rtmp://101.126.68.169/live/mac';
+    std::string output_url = 'rtmp://101.126.68.169/live/processed';
+
+    // 打开输入流
+    cv::VideoCapture cap(input_url);
+    if (!cap.isOpened()) {
+        std::cerr << '无法打开输入流: ' << input_url << std::endl;
+        return -1;
+    }
+
+    // ⚡ 设置缓冲区大小为 1，避免延时累积
+    cap.set(cv::CAP_PROP_BUFFERSIZE, 1);
+
+    int width  = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+    int height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+    int fps    = static_cast<int>(cap.get(cv::CAP_PROP_FPS));
+    if (fps == 0) fps = 25; // 有些流获取不到fps，给默认值
+
+    // 准备 ffmpeg 命令
+    std::string ffmpeg_cmd =
+        'ffmpeg -y -f rawvideo -pix_fmt bgr24 -s ' +
+        std::to_string(width) + 'x' + std::to_string(height) +
+        ' -r ' + std::to_string(fps) +
+        ' -i - -c:v libx264 -pix_fmt yuv420p -preset ultrafast -f flv ' +
+        output_url;
+
+#ifdef _WIN32
+    FILE* pipe = _popen(ffmpeg_cmd.c_str(), 'wb');
+#else
+    FILE* pipe = popen(ffmpeg_cmd.c_str(), 'w');
+#endif
+
+    if (!pipe) {
+        std::cerr << '无法启动 ffmpeg 进程' << std::endl;
+        return -1;
+    }
+
+    cv::Mat frame;
+    while (true) {
+        // 丢掉旧帧，只取最新的
+        cap.grab();          // 抓取一帧但不解码
+        if (!cap.retrieve(frame)) {
+            std::cerr << '读取帧失败，结束' << std::endl;
+            break;
+        }
+
+        // 写入 ffmpeg stdin
+        fwrite(frame.data, 1, frame.total() * frame.elemSize(), pipe);
+    }
+
+#ifdef _WIN32
+    _pclose(pipe);
+#else
+    pclose(pipe);
+#endif
+
+    cap.release();
+    return 0;
+}
+```
 。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://jibinghu.github.io/post/ffmpeg%20cpp-yong-fa.html">
@@ -273,7 +411,72 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     cap.<span class="pl-c1">release</span>();
     <span class="pl-k">return</span> <span class="pl-c1">0</span>;
 }</pre></div>
-<p><code class="notranslate">g++ test.cpp -o test </code>pkg-config --cflags --libs opencv4`</p></div>
+<p><code class="notranslate">g++ test.cpp -o test </code>pkg-config --cflags --libs opencv4`</p>
+<p>调整缓冲帧数：</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>opencv2/opencv.hpp<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cstdio<span class="pl-pds">&gt;</span></span>
+
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    std::string input_url = <span class="pl-s"><span class="pl-pds">"</span>rtmp://101.126.68.169/live/mac<span class="pl-pds">"</span></span>;
+    std::string output_url = <span class="pl-s"><span class="pl-pds">"</span>rtmp://101.126.68.169/live/processed<span class="pl-pds">"</span></span>;
+
+    <span class="pl-c"><span class="pl-c">//</span> 打开输入流</span>
+    cv::VideoCapture <span class="pl-smi">cap</span>(input_url);
+    <span class="pl-k">if</span> (!cap.<span class="pl-c1">isOpened</span>()) {
+        std::cerr &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>无法打开输入流: <span class="pl-pds">"</span></span> &lt;&lt; input_url &lt;&lt; std::endl;
+        <span class="pl-k">return</span> -<span class="pl-c1">1</span>;
+    }
+
+    <span class="pl-c"><span class="pl-c">//</span> ⚡ 设置缓冲区大小为 1，避免延时累积</span>
+    cap.<span class="pl-c1">set</span>(cv::CAP_PROP_BUFFERSIZE, <span class="pl-c1">1</span>);
+
+    <span class="pl-k">int</span> width  = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::CAP_PROP_FRAME_WIDTH));
+    <span class="pl-k">int</span> height = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::CAP_PROP_FRAME_HEIGHT));
+    <span class="pl-k">int</span> fps    = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::CAP_PROP_FPS));
+    <span class="pl-k">if</span> (fps == <span class="pl-c1">0</span>) fps = <span class="pl-c1">25</span>; <span class="pl-c"><span class="pl-c">//</span> 有些流获取不到fps，给默认值</span>
+
+    <span class="pl-c"><span class="pl-c">//</span> 准备 ffmpeg 命令</span>
+    std::string ffmpeg_cmd =
+        <span class="pl-s"><span class="pl-pds">"</span>ffmpeg -y -f rawvideo -pix_fmt bgr24 -s <span class="pl-pds">"</span></span> +
+        <span class="pl-c1">std::to_string</span>(width) + <span class="pl-s"><span class="pl-pds">"</span>x<span class="pl-pds">"</span></span> + <span class="pl-c1">std::to_string</span>(height) +
+        <span class="pl-s"><span class="pl-pds">"</span> -r <span class="pl-pds">"</span></span> + <span class="pl-c1">std::to_string</span>(fps) +
+        <span class="pl-s"><span class="pl-pds">"</span> -i - -c:v libx264 -pix_fmt yuv420p -preset ultrafast -f flv <span class="pl-pds">"</span></span> +
+        output_url;
+
+#<span class="pl-k">ifdef</span> _WIN32
+    FILE* pipe = <span class="pl-c1">_popen</span>(ffmpeg_cmd.<span class="pl-c1">c_str</span>(), <span class="pl-s"><span class="pl-pds">"</span>wb<span class="pl-pds">"</span></span>);
+#<span class="pl-k">else</span>
+    FILE* pipe = <span class="pl-c1">popen</span>(ffmpeg_cmd.<span class="pl-c1">c_str</span>(), <span class="pl-s"><span class="pl-pds">"</span>w<span class="pl-pds">"</span></span>);
+#<span class="pl-k">endif</span>
+
+    <span class="pl-k">if</span> (!pipe) {
+        std::cerr &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>无法启动 ffmpeg 进程<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+        <span class="pl-k">return</span> -<span class="pl-c1">1</span>;
+    }
+
+    cv::Mat frame;
+    <span class="pl-k">while</span> (<span class="pl-c1">true</span>) {
+        <span class="pl-c"><span class="pl-c">//</span> 丢掉旧帧，只取最新的</span>
+        cap.<span class="pl-c1">grab</span>();          <span class="pl-c"><span class="pl-c">//</span> 抓取一帧但不解码</span>
+        <span class="pl-k">if</span> (!cap.<span class="pl-c1">retrieve</span>(frame)) {
+            std::cerr &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>读取帧失败，结束<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+            <span class="pl-k">break</span>;
+        }
+
+        <span class="pl-c"><span class="pl-c">//</span> 写入 ffmpeg stdin</span>
+        <span class="pl-c1">fwrite</span>(frame.<span class="pl-smi">data</span>, <span class="pl-c1">1</span>, frame.<span class="pl-c1">total</span>() * frame.<span class="pl-c1">elemSize</span>(), pipe);
+    }
+
+#<span class="pl-k">ifdef</span> _WIN32
+    <span class="pl-c1">_pclose</span>(pipe);
+#<span class="pl-k">else</span>
+    <span class="pl-c1">pclose</span>(pipe);
+#<span class="pl-k">endif</span>
+
+    cap.<span class="pl-c1">release</span>();
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
