@@ -1,5 +1,25 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 25 Sep 2025 14:22:27 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>ffmpeg cpp用法</title><link>https://jibinghu.github.io/post/ffmpeg%20cpp-yong-fa.html</link><description>opencv 拉流并无损输出：
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Fri, 26 Sep 2025 06:33:40 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>使用 paramiko python 三方库实现远程 ssh 登录及命令执行</title><link>https://jibinghu.github.io/post/shi-yong-%20paramiko%20python%20-san-fang-ku-shi-xian-yuan-cheng-%20ssh%20-deng-lu-ji-ming-ling-zhi-xing.html</link><description>``` python
+import os
+import paramiko
+from typing import Optional, Tuple
+
+def run_ssh_cmd_key(
+    host: str,
+    port: int,
+    username: str,
+    cmd: str,
+    *,
+    key_path: Optional[str] = None,         
+    key_passphrase: Optional[str] = None, 
+    timeout: int = 15,
+    use_sudo: bool = False,
+    sudo_password: Optional[str] = None, 
+    allow_agent: bool = True,         
+    look_for_keys: bool = True,
+) -&gt; Tuple[int, str, str]:
+    '''
+    通过 SSH 私钥执行远程命令。</description><guid isPermaLink="true">https://jibinghu.github.io/post/shi-yong-%20paramiko%20python%20-san-fang-ku-shi-xian-yuan-cheng-%20ssh%20-deng-lu-ji-ming-ling-zhi-xing.html</guid><pubDate>Fri, 26 Sep 2025 06:33:08 +0000</pubDate></item><item><title>ffmpeg cpp用法</title><link>https://jibinghu.github.io/post/ffmpeg%20cpp-yong-fa.html</link><description>opencv 拉流并无损输出：
 
 ``` cpp
 #include &lt;opencv2/opencv.hpp&gt;
