@@ -109,6 +109,13 @@ struct FastInterleavedAndBiasedNumericArrayConverter<half_t, uint8_t, 4> {
 };
 ```
 
+- 正常顺序（未交织）：
+内存中的字节顺序是 {e3, e2, e1, e0}（右边是低字节）。
+
+- 交织存储：
+把偶数索引元素放低位（low bits），奇数索引元素放高位（high bits），变成 {e3, e1, e2, e0}。
+这样每个 32-bit 寄存器里，同时塞了两组元素：低 16 bits 是偶数元素，高 16 bits 是奇数元素。
+
 ---
 
 **PTX 的 `prmt` 指令**（byte **permute**）。它是 CUDA PTX 里的**按字节重排**指令，用来从两个 32 位寄存器里挑选并拼装 4 个字节，生成一个新的 32 位结果；很多场景下可替代多条移位/与/或操作（比如打包/解包、大小端转换、掩码生成、AES 等）。官方文档把它称为 *PRMT/byte permute*。([[NVIDIA Docs](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source=chatgpt.com)][1])

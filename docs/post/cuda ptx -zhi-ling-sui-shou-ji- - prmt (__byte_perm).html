@@ -240,6 +240,17 @@ Permute bytes from register pair.</p>
     }
     CUTLASS_DEVICE result_type <span class="pl-en">operator</span>()(source_type <span class="pl-k">const</span>&amp; s) { <span class="pl-k">return</span> <span class="pl-c1">convert</span>(s); }
 };</pre></div>
+<ul>
+<li>
+<p>正常顺序（未交织）：<br>
+内存中的字节顺序是 {e3, e2, e1, e0}（右边是低字节）。</p>
+</li>
+<li>
+<p>交织存储：<br>
+把偶数索引元素放低位（low bits），奇数索引元素放高位（high bits），变成 {e3, e1, e2, e0}。<br>
+这样每个 32-bit 寄存器里，同时塞了两组元素：低 16 bits 是偶数元素，高 16 bits 是奇数元素。</p>
+</li>
+</ul>
 <hr>
 <p><strong>PTX 的 <code class="notranslate">prmt</code> 指令</strong>（byte <strong>permute</strong>）。它是 CUDA PTX 里的<strong>按字节重排</strong>指令，用来从两个 32 位寄存器里挑选并拼装 4 个字节，生成一个新的 32 位结果；很多场景下可替代多条移位/与/或操作（比如打包/解包、大小端转换、掩码生成、AES 等）。官方文档把它称为 <em>PRMT/byte permute</em>。([<a href="https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source=chatgpt.com" rel="nofollow">NVIDIA Docs</a>]<a href="https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source=chatgpt.com" title="1. Introduction — PTX ISA 9.0 documentation" rel="nofollow">1</a>)</p>
 <h1>基本形式</h1>
