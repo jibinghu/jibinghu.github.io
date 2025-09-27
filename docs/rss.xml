@@ -1,5 +1,36 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Sat, 27 Sep 2025 14:02:46 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>cuda ptx 指令随手记 - prmt (__byte_perm)</title><link>https://jibinghu.github.io/post/cuda%20ptx%20-zhi-ling-sui-shou-ji-%20-%20prmt%20%28__byte_perm%29.html</link><description>**PTX 的 `prmt` 指令**（byte **permute**）。</description><guid isPermaLink="true">https://jibinghu.github.io/post/cuda%20ptx%20-zhi-ling-sui-shou-ji-%20-%20prmt%20%28__byte_perm%29.html</guid><pubDate>Sat, 27 Sep 2025 14:02:15 +0000</pubDate></item><item><title>cuda 类型测试</title><link>https://jibinghu.github.io/post/cuda%20-lei-xing-ce-shi.html</link><description>btw -&gt; 看不到 nvcc时的解决办法：
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Sat, 27 Sep 2025 15:22:28 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>cuda ptx 指令随手记 - prmt (__byte_perm)</title><link>https://jibinghu.github.io/post/cuda%20ptx%20-zhi-ling-sui-shou-ji-%20-%20prmt%20%28__byte_perm%29.html</link><description>
+由于 gpt 给出的源和 `https://zhuanlan.zhihu.com/p/30652451322` 给出的 prmt 的说明不一致，在这里做个探讨：
+
+参考： `https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source` -&gt; `grep prmt`
+
+prmt requires sm_20 or higher.
+Permute bytes from register pair.
+
+``` cpp
+prmt.b32{.mode}  d, a, b, c;
+.mode = { .f4e, .b4e, .rc8, .ecl, .ecr, .rc16 };
+```
+
+实际作用都是一样的：Pick four arbitrary bytes from two 32-bit registers, and reassemble them into a 32-bit destination register.
+但是对于索引寄存器 c 的使用，在 nvidia doc里：
+
+在没有指定mode 的情况下，c寄存器是 4*4 的：
+
+&lt;img width='1064' height='54' alt='Image' src='https://github.com/user-attachments/assets/7c9e0d5d-ad8a-45b8-8190-736bc7332f82' /&gt;
+
+目前看起来的说法 gpt 给的是正确的，最下面的说明：
+
+&gt;  Least Significant Bit Substitution 最低有效位
+&gt; 最高有效位(Most Significant Bit)
+
+&lt;img width='1093' height='81' alt='Image' src='https://github.com/user-attachments/assets/00f2137f-29bf-4022-ba3b-19708b3f26c0' /&gt;
+
+再参考下：https://zhuanlan.zhihu.com/p/660630414 以及 https://zhuanlan.zhihu.com/p/657070837
+
+文章里讲的更详细些：
+
+&gt; 对于目标寄存器中的每个字节，定义了一个 4 位选择器。</description><guid isPermaLink="true">https://jibinghu.github.io/post/cuda%20ptx%20-zhi-ling-sui-shou-ji-%20-%20prmt%20%28__byte_perm%29.html</guid><pubDate>Sat, 27 Sep 2025 14:02:15 +0000</pubDate></item><item><title>cuda 类型测试</title><link>https://jibinghu.github.io/post/cuda%20-lei-xing-ce-shi.html</link><description>btw -&gt; 看不到 nvcc时的解决办法：
 
 ``` cuda
 export PATH=/usr/local/cuda-13.0/bin:$PATH

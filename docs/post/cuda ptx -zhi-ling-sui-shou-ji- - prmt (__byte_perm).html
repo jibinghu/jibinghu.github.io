@@ -10,14 +10,76 @@
         let theme = localStorage.getItem("meek_theme") || "light";
         document.documentElement.setAttribute("data-color-mode", theme);
     </script>
-<meta name="description" content="**PTX 的 `prmt` 指令**（byte **permute**）。">
+<meta name="description" content="
+由于 gpt 给出的源和 `https://zhuanlan.zhihu.com/p/30652451322` 给出的 prmt 的说明不一致，在这里做个探讨：
+
+参考： `https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source` -> `grep prmt`
+
+prmt requires sm_20 or higher.
+Permute bytes from register pair.
+
+``` cpp
+prmt.b32{.mode}  d, a, b, c;
+.mode = { .f4e, .b4e, .rc8, .ecl, .ecr, .rc16 };
+```
+
+实际作用都是一样的：Pick four arbitrary bytes from two 32-bit registers, and reassemble them into a 32-bit destination register.
+但是对于索引寄存器 c 的使用，在 nvidia doc里：
+
+在没有指定mode 的情况下，c寄存器是 4*4 的：
+
+<img width='1064' height='54' alt='Image' src='https://github.com/user-attachments/assets/7c9e0d5d-ad8a-45b8-8190-736bc7332f82' />
+
+目前看起来的说法 gpt 给的是正确的，最下面的说明：
+
+>  Least Significant Bit Substitution 最低有效位
+> 最高有效位(Most Significant Bit)
+
+<img width='1093' height='81' alt='Image' src='https://github.com/user-attachments/assets/00f2137f-29bf-4022-ba3b-19708b3f26c0' />
+
+再参考下：https://zhuanlan.zhihu.com/p/660630414 以及 https://zhuanlan.zhihu.com/p/657070837
+
+文章里讲的更详细些：
+
+> 对于目标寄存器中的每个字节，定义了一个 4 位选择器。">
 <meta property="og:title" content="cuda ptx 指令随手记 - prmt (__byte_perm)">
-<meta property="og:description" content="**PTX 的 `prmt` 指令**（byte **permute**）。">
+<meta property="og:description" content="
+由于 gpt 给出的源和 `https://zhuanlan.zhihu.com/p/30652451322` 给出的 prmt 的说明不一致，在这里做个探讨：
+
+参考： `https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source` -> `grep prmt`
+
+prmt requires sm_20 or higher.
+Permute bytes from register pair.
+
+``` cpp
+prmt.b32{.mode}  d, a, b, c;
+.mode = { .f4e, .b4e, .rc8, .ecl, .ecr, .rc16 };
+```
+
+实际作用都是一样的：Pick four arbitrary bytes from two 32-bit registers, and reassemble them into a 32-bit destination register.
+但是对于索引寄存器 c 的使用，在 nvidia doc里：
+
+在没有指定mode 的情况下，c寄存器是 4*4 的：
+
+<img width='1064' height='54' alt='Image' src='https://github.com/user-attachments/assets/7c9e0d5d-ad8a-45b8-8190-736bc7332f82' />
+
+目前看起来的说法 gpt 给的是正确的，最下面的说明：
+
+>  Least Significant Bit Substitution 最低有效位
+> 最高有效位(Most Significant Bit)
+
+<img width='1093' height='81' alt='Image' src='https://github.com/user-attachments/assets/00f2137f-29bf-4022-ba3b-19708b3f26c0' />
+
+再参考下：https://zhuanlan.zhihu.com/p/660630414 以及 https://zhuanlan.zhihu.com/p/657070837
+
+文章里讲的更详细些：
+
+> 对于目标寄存器中的每个字节，定义了一个 4 位选择器。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://jibinghu.github.io/post/cuda%20ptx%20-zhi-ling-sui-shou-ji-%20-%20prmt%20%28__byte_perm%29.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>cuda ptx 指令随手记 - prmt (__byte_perm)</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -83,7 +145,103 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
 </div>
     <div id="content">
-<div class="markdown-body" id="postBody"><p><strong>PTX 的 <code class="notranslate">prmt</code> 指令</strong>（byte <strong>permute</strong>）。它是 CUDA PTX 里的<strong>按字节重排</strong>指令，用来从两个 32 位寄存器里挑选并拼装 4 个字节，生成一个新的 32 位结果；很多场景下可替代多条移位/与/或操作（比如打包/解包、大小端转换、掩码生成、AES 等）。官方文档把它称为 <em>PRMT/byte permute</em>。([<a href="https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source=chatgpt.com" rel="nofollow">NVIDIA Docs</a>]<a href="https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source=chatgpt.com" title="1. Introduction — PTX ISA 9.0 documentation" rel="nofollow">1</a>)</p>
+<div class="markdown-body" id="postBody"><p>由于 gpt 给出的源和 <code class="notranslate">https://zhuanlan.zhihu.com/p/30652451322</code> 给出的 prmt 的说明不一致，在这里做个探讨：</p>
+<p>参考： <code class="notranslate">https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source</code> -&gt; <code class="notranslate">grep prmt</code></p>
+<p>prmt requires sm_20 or higher.<br>
+Permute bytes from register pair.</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate">prmt.b32{.<span class="pl-smi">mode</span>}  d, a, b, c;
+.mode = { .<span class="pl-smi">f4e</span>, .<span class="pl-smi">b4e</span>, .<span class="pl-smi">rc8</span>, .<span class="pl-smi">ecl</span>, .<span class="pl-smi">ecr</span>, .<span class="pl-smi">rc16</span> };</pre></div>
+<p>实际作用都是一样的：Pick four arbitrary bytes from two 32-bit registers, and reassemble them into a 32-bit destination register.<br>
+但是对于索引寄存器 c 的使用，在 nvidia doc里：</p>
+<p>在没有指定mode 的情况下，c寄存器是 4*4 的：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/7c9e0d5d-ad8a-45b8-8190-736bc7332f82"><img width="1064" height="54" alt="Image" src="https://github.com/user-attachments/assets/7c9e0d5d-ad8a-45b8-8190-736bc7332f82" style="max-width: 100%; height: auto; max-height: 54px;"></a></p>
+<p>目前看起来的说法 gpt 给的是正确的，最下面的说明：</p>
+<blockquote>
+<p>Least Significant Bit Substitution 最低有效位<br>
+最高有效位(Most Significant Bit)</p>
+</blockquote>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/00f2137f-29bf-4022-ba3b-19708b3f26c0"><img width="1093" height="81" alt="Image" src="https://github.com/user-attachments/assets/00f2137f-29bf-4022-ba3b-19708b3f26c0" style="max-width: 100%; height: auto; max-height: 81px;"></a></p>
+<p>再参考下：<a href="https://zhuanlan.zhihu.com/p/660630414" rel="nofollow">https://zhuanlan.zhihu.com/p/660630414</a> 以及 <a href="https://zhuanlan.zhihu.com/p/657070837" rel="nofollow">https://zhuanlan.zhihu.com/p/657070837</a></p>
+<p>文章里讲的更详细些：</p>
+<blockquote>
+<p>对于目标寄存器中的每个字节，定义了一个 4 位选择器。选择值的 3 个 低位lsb 指定应将 8 个源字节中的哪一个移至目标中位置。 msb 定义是否应直接复制原始字节值，或者是否应复制符号（即，是否进行符号扩展）；msb=0表示直接复制原始的bit值，msb=1，则表示进行符号扩展。为简单起见，这里只关注PRMT指令的通用形式。（事实上，这个指令还有f2e、b4e、rc8等特殊模型）</p>
+</blockquote>
+<p>下面的代码和注释说明比较清楚了：</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> --------------------------- Notes from NVIDIA FasterTransformer ------------------------------</span>
+<span class="pl-c"><span class="pl-c">//</span> This converter is meant to be used with data interleaved in a 32-bit register where the even </span>
+<span class="pl-c"><span class="pl-c">//</span> elements are in the low bits and the odd elements are in the high bits of the register. In </span>
+<span class="pl-c"><span class="pl-c">//</span> addition, it assumes elements were originally signed and had a bias of 2**(b-1) added (where </span>
+<span class="pl-c"><span class="pl-c">//</span> b is the number of bits in the type) to make all numbers unsigned. This converter will </span>
+<span class="pl-c"><span class="pl-c">//</span> uninterleave the data and subtract the bias while converting to the result type.</span>
+<span class="pl-c"><span class="pl-c">//</span> --------------------------- Notes from NVIDIA FasterTransformer ------------------------------</span>
+<span class="pl-c"><span class="pl-c">//</span> -------------------------------------- Notes from Personal -----------------------------------</span>
+<span class="pl-c"><span class="pl-c">//</span> 个人理解：</span>
+<span class="pl-c"><span class="pl-c">//</span> 假设保存好的uint8量化权重，在内存中，是交织(interleaved)后的布局，偶数索引的元素保存在低bits，奇数索引的元素</span>
+<span class="pl-c"><span class="pl-c">//</span> 保存在高bits，也就是原始在内存中的布局（右侧为低字节）{e3,e2,e1,e0} 交织为 {e3,e1,e2,e0}. 这应该是为了更好</span>
+<span class="pl-c"><span class="pl-c">//</span> 地利用硬件的特性获得更好的性能。另外，也假设保存好uint8权重是已经 + 2**(b-1)的了，即128，已经是unsigned数值。</span>
+<span class="pl-c"><span class="pl-c">//</span> 因此，反量化函数，需要完成几个事，即：反量化、解交织 和 减128恢复原值大小。</span>
+<span class="pl-k">template</span>&lt;&gt;
+<span class="pl-k">struct</span> <span class="pl-en">FastInterleavedAndBiasedNumericArrayConverter</span>&lt;<span class="pl-c1">half_t</span>, <span class="pl-c1">uint8_t</span>, <span class="pl-c1">4</span>&gt; {
+    <span class="pl-k">using</span> result_type = Array&lt;<span class="pl-c1">half_t</span>, <span class="pl-c1">4</span>&gt;;
+    <span class="pl-k">using</span> source_type = Array&lt;<span class="pl-c1">uint8_t</span>, <span class="pl-c1">4</span>&gt;;
+    CUTLASS_DEVICE
+    <span class="pl-k">static</span> result_type <span class="pl-en">convert</span>(source_type <span class="pl-k">const</span>&amp; source)
+    {   
+        result_type result; <span class="pl-c"><span class="pl-c">//</span> Array&lt;half_t, 4&gt;  32x2 bits</span>
+        <span class="pl-c"><span class="pl-c">//</span> 注意，这里的h实际上指向了一块大小为32x2bits的连续内存，只是为了方便后续的</span>
+        <span class="pl-c"><span class="pl-c">//</span> 操作，reinterpret为uint32_t，即h[0]代表低32bits，h[1]代表高32bits</span>
+        <span class="pl-c1">uint32_t</span>*      h   = <span class="pl-k">reinterpret_cast</span>&lt;<span class="pl-c1">uint32_t</span>*&gt;(&amp;result);
+        <span class="pl-c1">uint32_t</span> <span class="pl-k">const</span> i8s = <span class="pl-k">reinterpret_cast</span>&lt;<span class="pl-c1">uint32_t</span> <span class="pl-k">const</span>&amp;&gt;(source);
+        <span class="pl-c"><span class="pl-c">//</span> 字节选择器，虽然是uint32_t，但实际只有低16bits有值</span>
+        <span class="pl-c"><span class="pl-c">//</span> byte selector: [0][101] [0][010] [0][101] [0][000]</span>
+        <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> mask_for_elt_01     = <span class="pl-c1">0x5250</span>;   
+        <span class="pl-c"><span class="pl-c">//</span> byte selector: [0][101] [0][011] [0][101] [0][001] </span>
+        <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> mask_for_elt_23     = <span class="pl-c1">0x5351</span>;    
+        <span class="pl-c"><span class="pl-c">//</span> pack {b, a}成{{b7, b6, b5, b4},{b3, b2, b1, b0}}</span>
+        <span class="pl-c"><span class="pl-c">//</span> {b, a} = {{0x64, 0x64, 0x64, 0x64}, {b3, b2, b1, b0}}</span>
+        <span class="pl-c"><span class="pl-c">//</span> 由于原始在内存中的布局（右侧为低字节）{e3,e2,e1,e0} 已经交织为 </span>
+        <span class="pl-c"><span class="pl-c">//</span> {e3,e1,e2,e0}所以{b, a}在内存中实际的值排布为：</span>
+        <span class="pl-c"><span class="pl-c">//</span> {b, a} = {start_byte_for_fp16, i8s} = </span>
+        <span class="pl-c"><span class="pl-c">//</span> {{0x64, 0x64, 0x64, 0x64}, {e3, e1, e2, e0}}</span>
+        <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> start_byte_for_fp16 = <span class="pl-c1">0x64646464</span>;  
+        <span class="pl-c"><span class="pl-c">//</span> mask_for_elt_01就是选择器，根据选择器和{b,a}，我们可以的到h[0]的值</span>
+        <span class="pl-c"><span class="pl-c">//</span> mask_for_elt_01 -&gt; [0][101] [0][010] [0][101] [0][000]</span>
+        <span class="pl-c"><span class="pl-c">//</span> mask_for_elt_01 -&gt;   d.b3     d.b2     d.b1     d.b0</span>
+        <span class="pl-c"><span class="pl-c">//</span> mask_for_elt_01 -&gt;   5        2        5        0</span>
+        <span class="pl-c"><span class="pl-c">//</span> mask_for_elt_01 -&gt;   0x64     e1       0x64     e0</span>
+        <span class="pl-c"><span class="pl-c">//</span>            h[0] -&gt;   0x64[e1]64[e0]</span>
+        <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>prmt.b32 %0,%1,%2,%3;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">0</span>]) : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(i8s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(start_byte_for_fp16), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(mask_for_elt_01));
+        <span class="pl-c"><span class="pl-c">//</span> mask_for_elt_23就是选择器，根据选择器和{b,a}，我们可以的到h[1]的值</span>
+        <span class="pl-c"><span class="pl-c">//</span> mask_for_elt_23 -&gt; [0][101] [0][011] [0][101] [0][001]</span>
+        <span class="pl-c"><span class="pl-c">//</span> mask_for_elt_23 -&gt;   d.b3     d.b2     d.b1     d.b0</span>
+        <span class="pl-c"><span class="pl-c">//</span> mask_for_elt_23 -&gt;   5        3        5        1</span>
+        <span class="pl-c"><span class="pl-c">//</span> mask_for_elt_23 -&gt;   0x64     e3       0x64     e2</span>
+        <span class="pl-c"><span class="pl-c">//</span>            h[1] -&gt;   0x64[e3]64[e2]</span>
+        <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>prmt.b32 %0,%1,%2,%3;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">1</span>]) : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(i8s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(start_byte_for_fp16), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(mask_for_elt_23));
+        <span class="pl-c"><span class="pl-c">//</span> 需要注意的是h[1]h[0]保存的值，已经是解交织后的排布了，即 {e3,e2,e1,e0}</span>
+        <span class="pl-c"><span class="pl-c">//</span> NOTE: ei = ei_ori + 128</span>
+
+
+        <span class="pl-c"><span class="pl-c">//</span> 把 int8 转成 fp16</span>
+        <span class="pl-c"><span class="pl-c">//</span> Lastly, we subtract 1152 from our constructed number using fp16 math to get our signed integer as fp16.</span>
+        <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> I8s_TO_F16s_MAGIC_NUM = <span class="pl-c1">0x64806480</span>;
+        <span class="pl-c"><span class="pl-c">//</span> h[0] -&gt;   0x[64[e1]][64[e0]]   -   0x[6480][6480]</span>
+        <span class="pl-c"><span class="pl-c">//</span> h[0] -&gt;   0x([64[e1]] - [6480]) ([64[e0]] - [6480])</span>
+        <span class="pl-c"><span class="pl-c">//</span> h[0] -&gt;   0x[e1_ori][e0_ori]</span>
+        <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>sub.f16x2 %0, %1, %2;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">0</span>]) : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">0</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(I8s_TO_F16s_MAGIC_NUM));
+        <span class="pl-c"><span class="pl-c">//</span> h[1] -&gt;   0x[64[e3]][64[e2]]   -   0x[6480][6480]</span>
+        <span class="pl-c"><span class="pl-c">//</span> h[1] -&gt;   0x([64[e3]] - [6480]) ([64[e2]] - [6480])</span>
+        <span class="pl-c"><span class="pl-c">//</span> h[1] -&gt;   0x[e3_ori][e2_ori]</span>
+        <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>sub.f16x2 %0, %1, %2;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span> : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">1</span>]) : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">1</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(I8s_TO_F16s_MAGIC_NUM));
+        <span class="pl-c"><span class="pl-c">//</span> 最终，获得量化权重的FP16表示，并且完成解交织</span>
+        <span class="pl-c"><span class="pl-c">//</span> h[1]h[0](右侧为低字节)解交织为 FP16 arr {e3_ori_f16, e2_ori_f16, e1_ori_f16, e0_ori_f16} </span>
+        <span class="pl-c"><span class="pl-c">//</span> arr[0] = e0_ori_f16, arr[1] = e1_ori_f16, arr[2] = e2_ori_f16, arr[3] = e3_ori_f16</span>
+        <span class="pl-k">return</span> result;
+    }
+    CUTLASS_DEVICE result_type <span class="pl-en">operator</span>()(source_type <span class="pl-k">const</span>&amp; s) { <span class="pl-k">return</span> <span class="pl-c1">convert</span>(s); }
+};</pre></div>
+<hr>
+<p><strong>PTX 的 <code class="notranslate">prmt</code> 指令</strong>（byte <strong>permute</strong>）。它是 CUDA PTX 里的<strong>按字节重排</strong>指令，用来从两个 32 位寄存器里挑选并拼装 4 个字节，生成一个新的 32 位结果；很多场景下可替代多条移位/与/或操作（比如打包/解包、大小端转换、掩码生成、AES 等）。官方文档把它称为 <em>PRMT/byte permute</em>。([<a href="https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source=chatgpt.com" rel="nofollow">NVIDIA Docs</a>]<a href="https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source=chatgpt.com" title="1. Introduction — PTX ISA 9.0 documentation" rel="nofollow">1</a>)</p>
 <h1>基本形式</h1>
 <pre class="notranslate"><code class="notranslate">prmt.b32 d, a, b, s;
 </code></pre>
