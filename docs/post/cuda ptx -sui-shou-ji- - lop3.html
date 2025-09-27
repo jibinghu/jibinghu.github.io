@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="“LOP3” 是 NVIDIA CUDA / PTX（Parallel Thread Execution）中一个比较高级的位/布尔操作指令。">
+<meta property="og:title" content="cuda ptx 随手记 - lop3">
+<meta property="og:description" content="“LOP3” 是 NVIDIA CUDA / PTX（Parallel Thread Execution）中一个比较高级的位/布尔操作指令。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/cuda%20ptx%20-sui-shou-ji-%20-%20lop3.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>cuda ptx 随手记 - lop3</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">cuda ptx 随手记 - lop3</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/176" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p>“LOP3” 是 NVIDIA CUDA / PTX（Parallel Thread Execution）中一个比较高级的位/布尔操作指令。它可以对 <strong>三个输入</strong> 做任意一种布尔逻辑组合（即三元逻辑操作），由一个 8-bit 的 LUT（查找表）立即数（<code class="notranslate">immLut</code>）来决定具体的逻辑函数。下面是详细解释和用法。</p>
+<hr>
+<h2>LOP3 的基本概念</h2>
+<ul>
+<li>指令形式（PTX）是 <code class="notranslate">lop3.b32 d, a, b, c, immLut;</code>（也有 <code class="notranslate">.u32</code>、<code class="notranslate">.b32</code> 等变体）</li>
+<li>它的作用是：把 <code class="notranslate">a, b, c</code> 这三个 32-bit 值作为布尔变量，按位进行逻辑操作。<code class="notranslate">immLut</code> 是一个 8-bit 的常数，表示一个从 3 输入到 1 输出的真值表（truth table）。</li>
+<li>换句话说，LOP3 可以实现任何三输入布尔函数 —— 例如 <code class="notranslate">F = (a AND b) OR (NOT c)</code>，或者 <code class="notranslate">F = (a XOR b) AND c</code>，等等。只要你用合适的 <code class="notranslate">immLut</code> 表格，就能让 <code class="notranslate">lop3</code> 做这个函数。</li>
+</ul>
+<p>具体地，<code class="notranslate">immLut</code> 的 8 位（bit0 到 bit7）对应于输入组合 (a_bit, b_bit, c_bit) 的 8 种可能（000,001,010,011,100,101,110,111）。如果对于某一种组合输出要为 1，那对应的 <code class="notranslate">immLut</code> 那一位就设为 1；否则设为 0。</p>
+<p>StackOverflow 有比较清楚的解释：</p>
+<blockquote>
+<p>“The lop3.b32 PTX instruction can perform a more-or-less arbitrary boolean (logical) operation on 3 variables A, B, and C. … we must provide a “lookup-table” immediate argument (immLut — an 8-bit quantity).” ([<a href="https://stackoverflow.com/questions/37149662/how-to-write-lop3-based-instructions-for-maxwell-and-up-nvidia-architecture?utm_source=chatgpt.com" rel="nofollow">Stack Overflow</a>]<a href="https://stackoverflow.com/questions/37149662/how-to-write-lop3-based-instructions-for-maxwell-and-up-nvidia-architecture?utm_source=chatgpt.com" title="cuda - How to write LOP3 based instructions for Maxwell and up NVIDIA ..." rel="nofollow">1</a>)<br>
+也就是说，<code class="notranslate">immLut</code> 就是用来指定三输入逻辑函数的查找表。([<a href="https://stackoverflow.com/questions/37149662/how-to-write-lop3-based-instructions-for-maxwell-and-up-nvidia-architecture?utm_source=chatgpt.com" rel="nofollow">Stack Overflow</a>]<a href="https://stackoverflow.com/questions/37149662/how-to-write-lop3-based-instructions-for-maxwell-and-up-nvidia-architecture?utm_source=chatgpt.com" title="cuda - How to write LOP3 based instructions for Maxwell and up NVIDIA ..." rel="nofollow">1</a>)</p>
+</blockquote>
+<hr>
+<h2>为什么有 LOP3：优点和用途</h2>
+<p>LOP3 在 PTX/硬件层面是个强大的工具，主要有以下几个优点：</p>
+<ol>
+<li>
+<p><strong>减少指令数 / 合并逻辑</strong><br>
+如果你用传统的 AND / OR / XOR / NOT 等组合逻辑去做一个复杂的三输入布尔函数，可能要几条指令（比如先 NAND、再 XOR、再 AND、再 NOT 等）。用 LOP3，只需要一条指令 + 一个立即数，就能实现这个组合逻辑。这样可以节省指令数、寄存器临时值以及执行瓶颈。</p>
+</li>
+<li>
+<p><strong>按位并行处理</strong><br>
+LOP3 是对每一 bit 并行做逻辑操作（即对 32 位的每一 bit 分别看作 a_i, b_i, c_i，给出输出 bit_i）。所以对于向量 / 字位操作特别高效。</p>
+</li>
+<li>
+<p><strong>灵活性高</strong><br>
+只要你能把逻辑表达式写成三输入布尔函数，就可以通过一个 <code class="notranslate">immLut</code> 来表达 —— 相对于只能做固定几种逻辑（AND、OR、XOR）更通用。</p>
+</li>
+<li>
+<p><strong>硬件支持</strong><br>
+在较新的 NVIDIA 架构（从 Maxwell / Compute Capability ≥ 5.0 起）就支持 LOP3。 ([<a href="https://stackoverflow.com/questions/37149662/how-to-write-lop3-based-instructions-for-maxwell-and-up-nvidia-architecture?utm_source=chatgpt.com" rel="nofollow">Stack Overflow</a>]<a href="https://stackoverflow.com/questions/37149662/how-to-write-lop3-based-instructions-for-maxwell-and-up-nvidia-architecture?utm_source=chatgpt.com" title="cuda - How to write LOP3 based instructions for Maxwell and up NVIDIA ..." rel="nofollow">1</a>)<br>
+在很多高级加速库 / 优化里，用 LOP3 来替代多个布尔组合是常见做法。([<a href="https://zhuanlan.zhihu.com/p/657073857?utm_source=chatgpt.com" rel="nofollow">知乎专栏</a>]<a href="https://zhuanlan.zhihu.com/p/657073857?utm_source=chatgpt.com" title="[LLM推理优化] WINT8/4-(03): LOP3指令详解及INT4转FP16 ..." rel="nofollow">2</a>)</p>
+</li>
+</ol>
+<hr>
+<h2>一个例子说明</h2>
+<p>假设你要实现逻辑函数：</p>
+<p>$$
+F = (A \lor B) \land (\lnot C)
+$$</p>
+<p>你希望用 <code class="notranslate">lop3.b32</code> 来完成这个操作。做法是：</p>
+<ol>
+<li>你列出这个函数对于三输入的真值表（8 种组合）</li>
+<li>然后把这些输出写成一个 8 位二进制数 <code class="notranslate">immLut</code></li>
+<li>在 PTX 中写 <code class="notranslate">lop3.b32 d, a, b, c, immLut</code></li>
+</ol>
+<p>StackOverflow 上有示例，假设这个函数对应的 <code class="notranslate">immLut = 0x54</code>（这只是举例），就写成：</p>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">lop3.b32 %d</span><span class="pl-s1">,</span><span class="pl-en"> %a</span><span class="pl-s1">,</span><span class="pl-en"> %b</span><span class="pl-s1">,</span><span class="pl-en"> %c</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x54</span><span class="pl-c">;</span></pre></div>
+<p>这个指令就对每个位执行相应的布尔逻辑。([<a href="https://stackoverflow.com/questions/37149662/how-to-write-lop3-based-instructions-for-maxwell-and-up-nvidia-architecture?utm_source=chatgpt.com" rel="nofollow">Stack Overflow</a>]<a href="https://stackoverflow.com/questions/37149662/how-to-write-lop3-based-instructions-for-maxwell-and-up-nvidia-architecture?utm_source=chatgpt.com" title="cuda - How to write LOP3 based instructions for Maxwell and up NVIDIA ..." rel="nofollow">1</a>)</p>
+<hr>
+<h2>LOP3 vs PRMT 的区别 / 场景对比</h2>
+<ul>
+<li>
+<p><code class="notranslate">PRMT</code>（或 <code class="notranslate">prmt.b32</code>）是字节级（byte-level）的重排 / permute 指令，用来做字节重组 / 重排 / 插入 / 混合常量等操作。它的粒度是每个字节的选择。</p>
+</li>
+<li>
+<p><code class="notranslate">LOP3</code> 的粒度是位（bit-level），做的是逻辑操作。用它可以非常灵活地对每一位做布尔组合。比如在 INT4 / INT8 等量化技巧里，对单个位做条件掩码 / 重组 / bit 插入等操作，LOP3 很常见。([<a href="https://zhuanlan.zhihu.com/p/657073857?utm_source=chatgpt.com" rel="nofollow">知乎专栏</a>]<a href="https://zhuanlan.zhihu.com/p/657073857?utm_source=chatgpt.com" title="[LLM推理优化] WINT8/4-(03): LOP3指令详解及INT4转FP16 ..." rel="nofollow">2</a>)</p>
+</li>
+<li>
+<p>在某些更高级的量化 / 解码 / 反量化方案里（尤其是 INT4、半比特 / nibble 级别的重组），开发者可能会用 LOP3 替代 PRMT 以得到更精细的控制。正如某篇文章中说的：</p>
+<blockquote>
+<p>在 NV FasterTransformer 的实现中，使用了另一个指令 LOP3 来替代 PRMT，从而完成 INT4 快速反量化到 FP16/BF16 的核心逻辑。([<a href="https://zhuanlan.zhihu.com/p/657073857?utm_source=chatgpt.com" rel="nofollow">知乎专栏</a>]<a href="https://zhuanlan.zhihu.com/p/657073857?utm_source=chatgpt.com" title="[LLM推理优化] WINT8/4-(03): LOP3指令详解及INT4转FP16 ..." rel="nofollow">2</a>)</p>
+</blockquote>
+</li>
+</ul>
+<hr></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+<script>MathJax = {tex: {inlineMath: [["$", "$"]]}};</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</html>
