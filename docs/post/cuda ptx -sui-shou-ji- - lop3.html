@@ -226,6 +226,9 @@ $$</p>
   <span class="pl-c"><span class="pl-c">//</span> 表示fp16格式的{-64, -64}，用于偏移校正</span>
   <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> NEG_64 = <span class="pl-c1">0xd400d400</span>;
 
+  <span class="pl-c"><span class="pl-c">//</span> 交织？</span>
+  <span class="pl-c"><span class="pl-c">//</span> e7 e3 e5 e1 e6 e2 e4 e0</span>
+
   <span class="pl-c"><span class="pl-c">//</span> Finally, we construct the output numbers.</span>
   <span class="pl-c"><span class="pl-c">//</span> Convert elt_01</span>
   <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>sub.f16x2 %0, %1, %2;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>

@@ -142,6 +142,9 @@ __device__ uint4 dequantize_s4_to_fp16x2(uint32_t const& source) {
   // 表示fp16格式的{-64, -64}，用于偏移校正
   static constexpr uint32_t NEG_64 = 0xd400d400;
 
+  // 交织？
+  // e7 e3 e5 e1 e6 e2 e4 e0
+
   // Finally, we construct the output numbers.
   // Convert elt_01
   asm volatile("sub.f16x2 %0, %1, %2;\n"
