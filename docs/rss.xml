@@ -1,5 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 29 Sep 2025 08:55:30 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>Ubuntu 服务器上禁止密码登录、只允许公钥登录</title><link>https://jibinghu.github.io/post/Ubuntu%20-fu-wu-qi-shang-jin-zhi-mi-ma-deng-lu-%E3%80%81-zhi-yun-xu-gong-yao-deng-lu.html</link><description>在 Ubuntu 服务器上禁止密码登录、只允许公钥登录，可以按照以下步骤操作：
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 29 Sep 2025 09:47:11 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>深度学习attention机制中的Q,K,V 解释</title><link>https://jibinghu.github.io/post/shen-du-xue-xi-attention-ji-zhi-zhong-de-Q%2CK%2CV%20-jie-shi.html</link><description>参考：https://www.zhihu.com/question/325839123/answer/1945590592194191583
+
+说的挺有道理的：
+
+&lt;img width='673' height='417' alt='Image' src='https://github.com/user-attachments/assets/750bc08c-04ec-47a7-9e2b-e7b02f1e843e' /&gt;
+
+&lt;img width='674' height='425' alt='Image' src='https://github.com/user-attachments/assets/73cf1baf-5d60-4814-9643-71b03945cbab' /&gt;。</description><guid isPermaLink="true">https://jibinghu.github.io/post/shen-du-xue-xi-attention-ji-zhi-zhong-de-Q%2CK%2CV%20-jie-shi.html</guid><pubDate>Mon, 29 Sep 2025 09:46:42 +0000</pubDate></item><item><title>Ubuntu 服务器上禁止密码登录、只允许公钥登录</title><link>https://jibinghu.github.io/post/Ubuntu%20-fu-wu-qi-shang-jin-zhi-mi-ma-deng-lu-%E3%80%81-zhi-yun-xu-gong-yao-deng-lu.html</link><description>在 Ubuntu 服务器上禁止密码登录、只允许公钥登录，可以按照以下步骤操作：
 
 ---
 
