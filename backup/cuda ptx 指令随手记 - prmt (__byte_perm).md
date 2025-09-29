@@ -3,6 +3,8 @@
 
 参考： `https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source` -> `grep prmt`
 
+>> https://zhuanlan.zhihu.com/p/1911790481416909410 这个博客写了 int4 的公式
+
 prmt requires sm_20 or higher.
 Permute bytes from register pair.
 

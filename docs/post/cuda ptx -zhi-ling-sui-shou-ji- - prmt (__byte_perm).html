@@ -15,6 +15,8 @@
 
 参考： `https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source` -> `grep prmt`
 
+>> https://zhuanlan.zhihu.com/p/1911790481416909410 这个博客写了 int4 的公式
+
 prmt requires sm_20 or higher.
 Permute bytes from register pair.
 
@@ -47,6 +49,8 @@ prmt.b32{.mode}  d, a, b, c;
 由于 gpt 给出的源和 `https://zhuanlan.zhihu.com/p/30652451322` 给出的 prmt 的说明不一致，在这里做个探讨：
 
 参考： `https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source` -> `grep prmt`
+
+>> https://zhuanlan.zhihu.com/p/1911790481416909410 这个博客写了 int4 的公式
 
 prmt requires sm_20 or higher.
 Permute bytes from register pair.
@@ -147,6 +151,11 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     <div id="content">
 <div class="markdown-body" id="postBody"><p>由于 gpt 给出的源和 <code class="notranslate">https://zhuanlan.zhihu.com/p/30652451322</code> 给出的 prmt 的说明不一致，在这里做个探讨：</p>
 <p>参考： <code class="notranslate">https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source</code> -&gt; <code class="notranslate">grep prmt</code></p>
+<blockquote>
+<blockquote>
+<p><a href="https://zhuanlan.zhihu.com/p/1911790481416909410" rel="nofollow">https://zhuanlan.zhihu.com/p/1911790481416909410</a> 这个博客写了 int4 的公式</p>
+</blockquote>
+</blockquote>
 <p>prmt requires sm_20 or higher.<br>
 Permute bytes from register pair.</p>
 <div class="highlight highlight-source-c++"><pre class="notranslate">prmt.b32{.<span class="pl-smi">mode</span>}  d, a, b, c;

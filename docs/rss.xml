@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 29 Sep 2025 08:39:14 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>Ubuntu 服务器上禁止密码登录、只允许公钥登录</title><link>https://jibinghu.github.io/post/Ubuntu%20-fu-wu-qi-shang-jin-zhi-mi-ma-deng-lu-%E3%80%81-zhi-yun-xu-gong-yao-deng-lu.html</link><description>在 Ubuntu 服务器上禁止密码登录、只允许公钥登录，可以按照以下步骤操作：
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 29 Sep 2025 08:55:30 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>Ubuntu 服务器上禁止密码登录、只允许公钥登录</title><link>https://jibinghu.github.io/post/Ubuntu%20-fu-wu-qi-shang-jin-zhi-mi-ma-deng-lu-%E3%80%81-zhi-yun-xu-gong-yao-deng-lu.html</link><description>在 Ubuntu 服务器上禁止密码登录、只允许公钥登录，可以按照以下步骤操作：
 
 ---
 
@@ -67,6 +67,8 @@ ssh user@your_server_ip
 由于 gpt 给出的源和 `https://zhuanlan.zhihu.com/p/30652451322` 给出的 prmt 的说明不一致，在这里做个探讨：
 
 参考： `https://docs.nvidia.com/cuda/parallel-thread-execution/index.html?utm_source` -&gt; `grep prmt`
+
+&gt;&gt; https://zhuanlan.zhihu.com/p/1911790481416909410 这个博客写了 int4 的公式
 
 prmt requires sm_20 or higher.
 Permute bytes from register pair.
