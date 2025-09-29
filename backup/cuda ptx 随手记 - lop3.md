@@ -1,3 +1,5 @@
+参考：https://zhuanlan.zhihu.com/p/1911790481416909410
+
 “LOP3” 是 NVIDIA CUDA / PTX（Parallel Thread Execution）中一个比较高级的位/布尔操作指令。它可以对 **三个输入** 做任意一种布尔逻辑组合（即三元逻辑操作），由一个 8-bit 的 LUT（查找表）立即数（`immLut`）来决定具体的逻辑函数。下面是详细解释和用法。
 
 ---
