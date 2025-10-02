@@ -1,5 +1,93 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 29 Sep 2025 09:47:11 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>深度学习attention机制中的Q,K,V 解释</title><link>https://jibinghu.github.io/post/shen-du-xue-xi-attention-ji-zhi-zhong-de-Q%2CK%2CV%20-jie-shi.html</link><description>参考：https://www.zhihu.com/question/325839123/answer/1945590592194191583
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 02 Oct 2025 06:47:51 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>NVIDIA Tesla V100 参数(CUDA 用)</title><link>https://jibinghu.github.io/post/NVIDIA%20Tesla%20V100%20-can-shu-%28CUDA%20-yong-%29.html</link><description>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;
+
+&lt;p&gt;NVIDIA Tesla V100（Volta 架构，Compute Capability = 7.0）的比较全面的硬件／资源参数汇总：&lt;/p&gt;
+&lt;hr&gt;
+
+&lt;h2&gt;基本架构参数&lt;/h2&gt;
+&lt;table border='1' cellpadding='4' cellspacing='0'&gt;
+  &lt;tr&gt;&lt;th&gt;项目&lt;/th&gt;&lt;th&gt;数值 / 描述&lt;/th&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;架构 / 代号&lt;/td&gt;&lt;td&gt;Volta / GV100 :contentReference[oaicite:0]{index=0}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;完整 GV100 芯片的 SM 总数&lt;/td&gt;&lt;td&gt;84 个 SM :contentReference[oaicite:1]{index=1}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;在实际 V100 上启用的 SM 数目&lt;/td&gt;&lt;td&gt;80 个 SM（部分禁用以提高良品率）:contentReference[oaicite:2]{index=2}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;每 SM 的计算单元组成&lt;/td&gt;
+    &lt;td&gt;64 个 FP32 核心 + 32 个 FP64 核心 + 64 个 INT32 核心 + 8 个 Tensor Core :contentReference[oaicite:3]{index=3}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;各种核之间并行执行能力&lt;/td&gt;&lt;td&gt;FP32 和 INT32 指令可并行发射（因它们有独立资源）:contentReference[oaicite:4]{index=4}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;GPU 全局 L2 缓存&lt;/td&gt;&lt;td&gt;6,144 KB（6 MB）:contentReference[oaicite:5]{index=5}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;HBM2 显存带宽（峰值）&lt;/td&gt;&lt;td&gt;约 900 GB/s（标准版本）:contentReference[oaicite:6]{index=6}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;显存容量&lt;/td&gt;&lt;td&gt;通常 16 GB 或 32 GB HBM2（不同型号）:contentReference[oaicite:7]{index=7}&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;hr&gt;
+
+&lt;h2&gt;SM 级资源 / 线程 / 寄存器 / 共享内存 限制&lt;/h2&gt;
+&lt;table border='1' cellpadding='4' cellspacing='0'&gt;
+  &lt;tr&gt;&lt;th&gt;资源类型&lt;/th&gt;&lt;th&gt;限制 / 说明&lt;/th&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;最大并发 warp 数&lt;/td&gt;&lt;td&gt;64 个 warp（即 64 × 32 = 2048 线程）:contentReference[oaicite:8]{index=8}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;最大并发线程数／SM&lt;/td&gt;&lt;td&gt;2,048 线程 :contentReference[oaicite:9]{index=9}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;最大并发线程块（resident blocks）／SM&lt;/td&gt;&lt;td&gt;32 个线程块 :contentReference[oaicite:10]{index=10}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;线程块最大线程数&lt;/td&gt;&lt;td&gt;1,024 线程 :contentReference[oaicite:11]{index=11}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;寄存器总数（32-bit 寄存器）／SM&lt;/td&gt;&lt;td&gt;65,536 个（即 64K）:contentReference[oaicite:12]{index=12}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;每线程最大寄存器数&lt;/td&gt;&lt;td&gt;255 个 32-bit 寄存器 :contentReference[oaicite:13]{index=13}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;线程块可使用的最大寄存器总数&lt;/td&gt;&lt;td&gt;最高可达 65,536 个寄存器（即一个 block 理论上可动用 SM 全部寄存器）:contentReference[oaicite:14]{index=14}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;共享内存 + L1 缓存 合并空间&lt;/td&gt;&lt;td&gt;每 SM 最多可配置 96 KB（共享内存 + L1 混合）:contentReference[oaicite:15]{index=15}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;单个线程块可用共享内存上限&lt;/td&gt;&lt;td&gt;理论上可使用全部 96 KB（如果该 block 占用全部共享内存）:contentReference[oaicite:16]{index=16}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;默认静态共享内存限制&lt;/td&gt;&lt;td&gt;静态分配通常受限为 48 KB，若超过则需动态分配机制 :contentReference[oaicite:17]{index=17}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;SM 分区 / 内部结构&lt;/td&gt;&lt;td&gt;每 SM 被划分为 4 个 partition（每个 partition 有自己的调度器 / 指令缓存 L0 / 部分资源）:contentReference[oaicite:18]{index=18}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;每个 partition 的寄存器文件&lt;/td&gt;&lt;td&gt;每个 partition 有约 64 KB 的寄存器空间（即 SM 的寄存器空间被划分给 4 个分区）:contentReference[oaicite:19]{index=19}&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;hr&gt;
+
+&lt;h2&gt;不同精度 / Tensor Core 吞吐能力&lt;/h2&gt;
+&lt;table border='1' cellpadding='4' cellspacing='0'&gt;
+  &lt;tr&gt;&lt;th&gt;精度 / 类型&lt;/th&gt;&lt;th&gt;理论峰值算力 / 吞吐&lt;/th&gt;&lt;th&gt;说明 / 备注&lt;/th&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;FP64（双精度）&lt;/td&gt;&lt;td&gt;约 7.8 TFLOPS（在 SXM / GV100 版本）:contentReference[oaicite:20]{index=20}&lt;/td&gt;&lt;td&gt;每 SM 有 32 个 FP64 核心&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;FP32（单精度）&lt;/td&gt;&lt;td&gt;约 15.7 TFLOPS（Boost 时钟下）:contentReference[oaicite:21]{index=21}&lt;/td&gt;&lt;td&gt;标准 CUDA 核心用于标量浮点运算&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;Tensor / 混合精度（FP16 输入 + FP32 累加）&lt;/td&gt;&lt;td&gt;125 TFLOPS（混合精度 Tensor 运算）:contentReference[oaicite:22]{index=22}&lt;/td&gt;&lt;td&gt;全卡共有 640 个 Tensor Core（每 SM 8 个）:contentReference[oaicite:23]{index=23}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;普通 FP16（非 Tensor 运算）&lt;/td&gt;&lt;td&gt;理论上可接近 FP32 的 2×，但不常用作主路径&lt;/td&gt;&lt;td&gt;Volta 架构主要通过 Tensor Core 加速矩阵运算，对标量 FP16 支持有限&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;p&gt;关于 Tensor Core 的设计细节：&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;每个 SM 拥有 8 个 Tensor Core → 全卡共 640 个 :contentReference[oaicite:24]{index=24}&lt;/li&gt;
+  &lt;li&gt;每个 Tensor Core 在一个时钟周期内可执行一次 4×4 矩阵乘加 (即 D = A×B + C) :contentReference[oaicite:25]{index=25}&lt;/li&gt;
+  &lt;li&gt;单个 Tensor Core 每周期可执行 64 个 FMA 操作（乘加对） → 每 SM 的 8 个 Tensor Core 共 512 FMA（或 1024 个浮点运算） :contentReference[oaicite:26]{index=26}&lt;/li&gt;
+  &lt;li&gt;理论上，整卡的 Tensor 运算峰值为 125 TFLOPS 混合精度 :contentReference[oaicite:27]{index=27}&lt;/li&gt;
+  &lt;li&gt;在实际测得的性能中，使用 cuBLAS 等优化库时可达 ~83 TFLOPS 混合精度水平（比理论峰值低一些）:contentReference[oaicite:28]{index=28}&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr&gt;
+
+&lt;h2&gt;子结构 / 缓存 / 内存 / 带宽 等&lt;/h2&gt;
+&lt;table border='1' cellpadding='4' cellspacing='0'&gt;
+  &lt;tr&gt;&lt;th&gt;子系统&lt;/th&gt;&lt;th&gt;参数 / 大小 / 吞吐&lt;/th&gt;&lt;th&gt;说明 / 备注&lt;/th&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;L2 缓存&lt;/td&gt;&lt;td&gt;6,144 KB（6 MB）:contentReference[oaicite:29]{index=29}&lt;/td&gt;&lt;td&gt;整卡共享，用于跨 SM 缓存加速&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;共享内存 + L1 混合空间&lt;/td&gt;&lt;td&gt;每 SM 最多可配置 96 KB :contentReference[oaicite:30]{index=30}&lt;/td&gt;&lt;td&gt;Volta 架构中共享内存与 L1 缓存资源是可配置混合使用的&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;静态共享内存（__shared__）&lt;/td&gt;&lt;td&gt;通常上限 48 KB，超过部分需动态分配&lt;/td&gt;&lt;td&gt;编译器 / 运行时可能根据资源优化做调整 :contentReference[oaicite:31]{index=31}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;访存带宽（HBM2）&lt;/td&gt;&lt;td&gt;约 900 GB/s（标准版本）:contentReference[oaicite:32]{index=32}&lt;/td&gt;&lt;td&gt;部分 V100S / SXM 型号带宽更高（如 1134 GB/s）:contentReference[oaicite:33]{index=33}&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;显存容量&lt;/td&gt;&lt;td&gt;16 GB 或 32 GB HBM2（具体型号不同）:contentReference[oaicite:34]{index=34}&lt;/td&gt;&lt;td&gt;支持 ECC（错误检测与修正）&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;NVLink / 接口带宽&lt;/td&gt;&lt;td&gt;在 NVLink 型号下可达高带宽互联，PCIe 型号受 PCIe 总线限制 :contentReference[oaicite:35]{index=35}&lt;/td&gt;&lt;td&gt;NVLink 型号互联带宽可达数百 GB/s&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;L0 / 指令缓存 / 调度单元&lt;/td&gt;&lt;td&gt;每 SM 划分为多个 partition（通常 4 个），每个有自己的指令缓存（L0）和调度单元 :contentReference[oaicite:36]{index=36}&lt;/td&gt;&lt;td&gt;此结构可减少资源冲突、提高并行度&lt;/td&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;线程调度 / 独立线程执行&lt;/td&gt;&lt;td&gt;Volta 支持 Independent Thread Scheduling，warp 内线程可相对独立调度 / 同步（`__syncwarp()`）:contentReference[oaicite:37]{index=37}&lt;/td&gt;&lt;td&gt;增加了调度灵活性&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;hr&gt;
+
+&lt;h2&gt;限制 / 资源约束（回顾 + 补充）&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;每 SM 最大线程数：2,048（即 64 个 warp）:contentReference[oaicite:38]{index=38}&lt;/li&gt;
+  &lt;li&gt;每 SM 最大并发线程块数：32 个 block :contentReference[oaicite:39]{index=39}&lt;/li&gt;
+  &lt;li&gt;每线程块（block）最大线程数：1,024 线程 :contentReference[oaicite:40]{index=40}&lt;/li&gt;
+  &lt;li&gt;每线程最大寄存器数：255 个（32-bit）:contentReference[oaicite:41]{index=41}&lt;/li&gt;
+  &lt;li&gt;每 SM 寄存器总量：65,536 个（32-bit）:contentReference[oaicite:42]{index=42}&lt;/li&gt;
+  &lt;li&gt;每线程块可使用的最大寄存器总数：理论上可动用 SM 全部寄存器（65,536 个）:contentReference[oaicite:43]{index=43}&lt;/li&gt;
+  &lt;li&gt;线程块的最大维度（CUDA API 限制）：通常单 block 最多 1024 线程，各维度不超过 1024 等（具体依 CUDA 版本）&lt;/li&gt;
+  &lt;li&gt;共享内存 / L1 空间总量可配置（如前所述）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;/body&gt;&lt;/html&gt;
+。</description><guid isPermaLink="true">https://jibinghu.github.io/post/NVIDIA%20Tesla%20V100%20-can-shu-%28CUDA%20-yong-%29.html</guid><pubDate>Thu, 02 Oct 2025 06:47:25 +0000</pubDate></item><item><title>深度学习attention机制中的Q,K,V 解释</title><link>https://jibinghu.github.io/post/shen-du-xue-xi-attention-ji-zhi-zhong-de-Q%2CK%2CV%20-jie-shi.html</link><description>参考：https://www.zhihu.com/question/325839123/answer/1945590592194191583
 
 说的挺有道理的：
 
