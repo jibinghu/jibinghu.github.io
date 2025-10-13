@@ -1,5 +1,84 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Sun, 05 Oct 2025 09:08:24 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>ldmatrix</title><link>https://jibinghu.github.io/post/ldmatrix.html</link><description>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 13 Oct 2025 12:46:21 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>3. 无重复字符的最长子串</title><link>https://jibinghu.github.io/post/3.%20-wu-zhong-fu-zi-fu-de-zui-chang-zi-chuan.html</link><description>&gt; https://leetcode.cn/problems/longest-substring-without-repeating-characters/description/
+
+python
+
+``` python
+class Solution:
+    def lengthOfLongestSubstring(self, s: str) -&gt; int:
+        # 滑动窗口 [a, b] 确定当前窗口中无重复字符的长度
+        # hash 表保存当前窗口字符及位置并匹配， max_num 记录当前最大值
+        if s == '':
+            return 0
+        elif len(s) == 1:
+            return 1
+
+        hash = []
+        a,b = 0,0
+        max_num = 0
+        hash.append(s[0])
+        nums = len(s)
+        while b &lt; nums - 1:
+            # 如果下一位字符不在hash表内，b+=1
+            # 否则 a 跳转至hash中字符位置
+            if s[b+1] in hash:
+                tmp = hash.index(s[b+1])
+                hash = hash[tmp + 1:]
+                b += 1
+                hash.append(s[b])
+            else:
+                hash.append(s[b+1])
+                b += 1
+            max_num = max_num if max_num&gt;= len(hash) else len(hash)
+        return max_num
+
+s = Solution()
+print(s.lengthOfLongestSubstring('pwwkew'))
+```
+
+cpp
+
+``` cpp
+#include &lt;string&gt;
+#include &lt;vector&gt;
+#include &lt;algorithm&gt;
+using namespace std;
+
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        if(!s.size()){
+            return 0;
+        }
+        else if(s.size() == 1){
+            return 1;
+        }
+
+        vector&lt;char&gt; hash = {};
+        int a = 0, b = 0;
+        int max_num = 0;
+        hash.push_back(s[0]);
+        int nums = s.size();
+        while(b &lt; nums - 1){
+            auto it = find(hash.begin(), hash.end(), s[b+1]);
+            if(it != hash.end()){
+                int tmp = it - hash.begin();
+                hash.erase(hash.begin(), hash.begin() + tmp + 1);
+                b++;
+                hash.push_back(s[b]);
+            }
+            else{
+                hash.push_back(s[b+1]);
+                b++;
+            }
+            max_num = max_num&gt;=hash.size() ? max_num : hash.size();
+        }
+        return max_num;
+    }
+};
+```
+
+注意 find 是 #include &lt;algorithm&gt; 的函数，不是 std::vector 的成员函数；另外 vector.erase(vector.begin(), vector.end(), target) 可以相当于 python 的切片。</description><guid isPermaLink="true">https://jibinghu.github.io/post/3.%20-wu-zhong-fu-zi-fu-de-zui-chang-zi-chuan.html</guid><pubDate>Mon, 13 Oct 2025 12:45:55 +0000</pubDate></item><item><title>ldmatrix</title><link>https://jibinghu.github.io/post/ldmatrix.html</link><description>
 &lt;hr&gt;
 &lt;h1&gt;是什么&lt;/h1&gt;
 &lt;p&gt;&lt;code inline=''&gt;ldmatrix.sync&lt;/code&gt; 是 &lt;strong&gt;按 warp 协作&lt;/strong&gt;、从 &lt;strong&gt;shared memory&lt;/strong&gt; 中一次性读取 &lt;strong&gt;8×8 的矩阵 tile&lt;/strong&gt; 到寄存器的指令，用来给 Tensor Core 的矩阵乘（&lt;code inline=''&gt;mma.sync&lt;/code&gt; / &lt;code inline=''&gt;mma.sp.sync&lt;/code&gt; 等）准备操作数 &lt;strong&gt;fragment&lt;/strong&gt;。</description><guid isPermaLink="true">https://jibinghu.github.io/post/ldmatrix.html</guid><pubDate>Sun, 05 Oct 2025 09:07:57 +0000</pubDate></item><item><title>cuda 优化笔记（非常原始）</title><link>https://jibinghu.github.io/post/cuda%20-you-hua-bi-ji-%EF%BC%88-fei-chang-yuan-shi-%EF%BC%89.html</link><description># __fdividef
