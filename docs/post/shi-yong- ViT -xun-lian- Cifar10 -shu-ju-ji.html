@@ -29,7 +29,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/shi-yong-%20ViT%20-xun-lian-%20Cifar10%20-shu-ju-ji.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>使用 ViT 训练 Cifar10 数据集</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -53,7 +53,17 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     body {padding: 8px;}
     .postTitle{font-size:24px;}
 }
-
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
 </style>
 
 
@@ -105,19 +115,18 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <h3><code class="notranslate">nn.LayerNorm</code> 在代码中的使用</h3>
 <p>在 PyTorch 中，可以使用 <code class="notranslate">nn.LayerNorm</code> 来实现层归一化。以下是一些示例：</p>
 <h4>示例代码</h4>
-<pre lang="python" class="notranslate"><code class="notranslate">import torch
-from torch import nn
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">from</span> <span class="pl-s1">torch</span> <span class="pl-k">import</span> <span class="pl-s1">nn</span>
 
-# 创建一个 LayerNorm 层
-layer_norm = nn.LayerNorm(normalized_shape=10)
+<span class="pl-c"># 创建一个 LayerNorm 层</span>
+<span class="pl-s1">layer_norm</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">LayerNorm</span>(<span class="pl-s1">normalized_shape</span><span class="pl-c1">=</span><span class="pl-c1">10</span>)
 
-# 创建一个输入张量
-x = torch.randn(2, 10)
+<span class="pl-c"># 创建一个输入张量</span>
+<span class="pl-s1">x</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">randn</span>(<span class="pl-c1">2</span>, <span class="pl-c1">10</span>)
 
-# 应用 LayerNorm
-output = layer_norm(x)
-print(output)
-</code></pre>
+<span class="pl-c"># 应用 LayerNorm</span>
+<span class="pl-s1">output</span> <span class="pl-c1">=</span> <span class="pl-en">layer_norm</span>(<span class="pl-s1">x</span>)
+<span class="pl-en">print</span>(<span class="pl-s1">output</span>)</pre></div>
 <p>在这个示例中：</p>
 <ul>
 <li><code class="notranslate">normalized_shape=10</code> 表示对每个输入样本的 10 个特征进行归一化。</li>
@@ -139,8 +148,7 @@ print(output)
 <hr>
 <h3><code class="notranslate">einops.repeat</code> 函数简介</h3>
 <p><code class="notranslate">einops.repeat</code> 函数用于扩展张量的维度。它的语法如下：</p>
-<pre lang="python" class="notranslate"><code class="notranslate">repeat(tensor, pattern, **axes_lengths)
-</code></pre>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-en">repeat</span>(<span class="pl-s1">tensor</span>, <span class="pl-s1">pattern</span>, <span class="pl-c1">**</span><span class="pl-s1">axes_lengths</span>)</pre></div>
 <ul>
 <li><code class="notranslate">tensor</code>：要扩展的张量。</li>
 <li><code class="notranslate">pattern</code>：描述如何扩展张量的模式。</li>
@@ -148,8 +156,7 @@ print(output)
 </ul>
 <h3>代码解释</h3>
 <h4>代码 1</h4>
-<pre lang="python" class="notranslate"><code class="notranslate">cls_tokens = repeat(self.cls_token, '() n d -&gt; b n d', b = b)
-</code></pre>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">cls_tokens</span> <span class="pl-c1">=</span> <span class="pl-en">repeat</span>(<span class="pl-s1">self</span>.<span class="pl-c1">cls_token</span>, <span class="pl-s">'() n d -&gt; b n d'</span>, <span class="pl-s1">b</span> <span class="pl-c1">=</span> <span class="pl-s1">b</span>)</pre></div>
 <ul>
 <li><code class="notranslate">self.cls_token</code> 的形状为 <code class="notranslate">(1, d)</code>。</li>
 <li>模式 <code class="notranslate">'() n d -&gt; b n d'</code> 表示：
@@ -164,8 +171,7 @@ print(output)
 </ul>
 <p>这个模式扩展了 <code class="notranslate">self.cls_token</code> 的第一个维度，使其形状从 <code class="notranslate">(1, d)</code> 变为 <code class="notranslate">(b, n, d)</code>。其中，<code class="notranslate">n</code> 是保持不变的第二维度，<code class="notranslate">b</code> 是新增加的批次维度。</p>
 <h4>代码 2</h4>
-<pre lang="python" class="notranslate"><code class="notranslate">cls_tokens = repeat(self.cls_token, '1 1 d -&gt; b 1 d', b=b)
-</code></pre>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">cls_tokens</span> <span class="pl-c1">=</span> <span class="pl-en">repeat</span>(<span class="pl-s1">self</span>.<span class="pl-c1">cls_token</span>, <span class="pl-s">'1 1 d -&gt; b 1 d'</span>, <span class="pl-s1">b</span><span class="pl-c1">=</span><span class="pl-s1">b</span>)</pre></div>
 <ul>
 <li><code class="notranslate">self.cls_token</code> 的形状为 <code class="notranslate">(1, 1, d)</code>。</li>
 <li>模式 <code class="notranslate">'1 1 d -&gt; b 1 d'</code> 表示：
@@ -204,20 +210,19 @@ print(output)
 </ol>
 <h3>示例</h3>
 <p>假设 <code class="notranslate">self.cls_token</code> 的初始形状为 <code class="notranslate">(1, d)</code>：</p>
-<pre lang="python" class="notranslate"><code class="notranslate">import torch
-from einops import repeat
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">from</span> <span class="pl-s1">einops</span> <span class="pl-k">import</span> <span class="pl-s1">repeat</span>
 
-# 初始化 cls_token
-self.cls_token = torch.randn(1, 768)
+<span class="pl-c"># 初始化 cls_token</span>
+<span class="pl-s1">self</span>.<span class="pl-c1">cls_token</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">randn</span>(<span class="pl-c1">1</span>, <span class="pl-c1">768</span>)
 
-# 扩展后的 cls_tokens
-b = 32
-cls_tokens1 = repeat(self.cls_token, '() n d -&gt; b n d', b = b)
-cls_tokens2 = repeat(self.cls_token.unsqueeze(1), '1 1 d -&gt; b 1 d', b = b)
+<span class="pl-c"># 扩展后的 cls_tokens</span>
+<span class="pl-s1">b</span> <span class="pl-c1">=</span> <span class="pl-c1">32</span>
+<span class="pl-s1">cls_tokens1</span> <span class="pl-c1">=</span> <span class="pl-en">repeat</span>(<span class="pl-s1">self</span>.<span class="pl-c1">cls_token</span>, <span class="pl-s">'() n d -&gt; b n d'</span>, <span class="pl-s1">b</span> <span class="pl-c1">=</span> <span class="pl-s1">b</span>)
+<span class="pl-s1">cls_tokens2</span> <span class="pl-c1">=</span> <span class="pl-en">repeat</span>(<span class="pl-s1">self</span>.<span class="pl-c1">cls_token</span>.<span class="pl-c1">unsqueeze</span>(<span class="pl-c1">1</span>), <span class="pl-s">'1 1 d -&gt; b 1 d'</span>, <span class="pl-s1">b</span> <span class="pl-c1">=</span> <span class="pl-s1">b</span>)
 
-print(cls_tokens1.shape)  # 形状 (32, 1, 768)
-print(cls_tokens2.shape)  # 形状 (32, 1, 768)
-</code></pre>
+<span class="pl-en">print</span>(<span class="pl-s1">cls_tokens1</span>.<span class="pl-c1">shape</span>)  <span class="pl-c"># 形状 (32, 1, 768)</span>
+<span class="pl-en">print</span>(<span class="pl-s1">cls_tokens2</span>.<span class="pl-c1">shape</span>)  <span class="pl-c"># 形状 (32, 1, 768)</span></pre></div>
 <p>在这个示例中，尽管两种方式的最终输出形状相同，但第一种方式更适用于 <code class="notranslate">self.cls_token</code> 的形状为 <code class="notranslate">(1, d)</code> 的情况，而第二种方式假设 <code class="notranslate">self.cls_token</code> 的形状已经是 <code class="notranslate">(1, 1, d)</code> 或通过 <code class="notranslate">unsqueeze</code> 方法调整过来。</p>
 <hr>
 <h3>Adam 和 AdamW 优化器的区别</h3>
@@ -275,21 +280,20 @@ print(cls_tokens2.shape)  # 形状 (32, 1, 768)
 </li>
 </ol>
 <h3>示例代码</h3>
-<pre lang="python" class="notranslate"><code class="notranslate">import torch
-from torch import nn, optim
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">from</span> <span class="pl-s1">torch</span> <span class="pl-k">import</span> <span class="pl-s1">nn</span>, <span class="pl-s1">optim</span>
 
-# 定义一个简单的模型
-model = nn.Sequential(nn.Linear(10, 10))
+<span class="pl-c"># 定义一个简单的模型</span>
+<span class="pl-s1">model</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Sequential</span>(<span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-c1">10</span>, <span class="pl-c1">10</span>))
 
-# 使用 AdamW 优化器
-optimizer_adamw = optim.AdamW(model.parameters(), lr=0.0001, weight_decay=1e-4)
+<span class="pl-c"># 使用 AdamW 优化器</span>
+<span class="pl-s1">optimizer_adamw</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">AdamW</span>(<span class="pl-s1">model</span>.<span class="pl-c1">parameters</span>(), <span class="pl-s1">lr</span><span class="pl-c1">=</span><span class="pl-c1">0.0001</span>, <span class="pl-s1">weight_decay</span><span class="pl-c1">=</span><span class="pl-c1">1e-4</span>)
 
-# 使用 Adam 优化器
-optimizer_adam = torch.optim.Adam(model.parameters(), lr=3e-4)
+<span class="pl-c"># 使用 Adam 优化器</span>
+<span class="pl-s1">optimizer_adam</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">optim</span>.<span class="pl-c1">Adam</span>(<span class="pl-s1">model</span>.<span class="pl-c1">parameters</span>(), <span class="pl-s1">lr</span><span class="pl-c1">=</span><span class="pl-c1">3e-4</span>)
 
-print(optimizer_adamw)
-print(optimizer_adam)
-</code></pre>
+<span class="pl-en">print</span>(<span class="pl-s1">optimizer_adamw</span>)
+<span class="pl-en">print</span>(<span class="pl-s1">optimizer_adam</span>)</pre></div>
 <p>通过以上分析，可以看出 <code class="notranslate">AdamW</code> 优化器和 <code class="notranslate">Adam</code> 优化器在实现和使用上的关键区别。具体选择哪个优化器和参数设置，取决于你的任务需求和模型性能调优的经验。</p>
 <hr>
 <p>学习率设置为太小的话，更新后的准确率上升不明显容易触发早停机制导致收敛提前结束：</p>
@@ -318,69 +322,68 @@ print(optimizer_adam)
 </ol>
 <h3>示例代码</h3>
 <p>以下是一个使用学习率调度器和早停策略的示例代码：</p>
-<pre lang="python" class="notranslate"><code class="notranslate">import torch
-from torch import nn, optim
-from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">from</span> <span class="pl-s1">torch</span> <span class="pl-k">import</span> <span class="pl-s1">nn</span>, <span class="pl-s1">optim</span>
+<span class="pl-k">from</span> <span class="pl-s1">torch</span>.<span class="pl-s1">optim</span>.<span class="pl-s1">lr_scheduler</span> <span class="pl-k">import</span> <span class="pl-v">StepLR</span>, <span class="pl-v">ReduceLROnPlateau</span>
 
-# 定义一个简单的模型
-model = nn.Sequential(nn.Linear(10, 10))
+<span class="pl-c"># 定义一个简单的模型</span>
+<span class="pl-s1">model</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Sequential</span>(<span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-c1">10</span>, <span class="pl-c1">10</span>))
 
-# 选择优化器
-optimizer = optim.AdamW(model.parameters(), lr=0.0001, weight_decay=1e-4)
+<span class="pl-c"># 选择优化器</span>
+<span class="pl-s1">optimizer</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">AdamW</span>(<span class="pl-s1">model</span>.<span class="pl-c1">parameters</span>(), <span class="pl-s1">lr</span><span class="pl-c1">=</span><span class="pl-c1">0.0001</span>, <span class="pl-s1">weight_decay</span><span class="pl-c1">=</span><span class="pl-c1">1e-4</span>)
 
-# 定义学习率调度器
-scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
+<span class="pl-c"># 定义学习率调度器</span>
+<span class="pl-s1">scheduler</span> <span class="pl-c1">=</span> <span class="pl-en">StepLR</span>(<span class="pl-s1">optimizer</span>, <span class="pl-s1">step_size</span><span class="pl-c1">=</span><span class="pl-c1">10</span>, <span class="pl-s1">gamma</span><span class="pl-c1">=</span><span class="pl-c1">0.1</span>)
 
-# 或者使用 ReduceLROnPlateau
-# scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)
+<span class="pl-c"># 或者使用 ReduceLROnPlateau</span>
+<span class="pl-c"># scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)</span>
 
-# 定义损失函数
-criterion = nn.CrossEntropyLoss()
+<span class="pl-c"># 定义损失函数</span>
+<span class="pl-s1">criterion</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">CrossEntropyLoss</span>()
 
-# 模拟训练和验证过程
-for epoch in range(100):
-    model.train()
-    # 训练过程（示例）
-    for inputs, targets in trainloader:
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
-        loss.backward()
-        optimizer.step()
+<span class="pl-c"># 模拟训练和验证过程</span>
+<span class="pl-k">for</span> <span class="pl-s1">epoch</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">100</span>):
+    <span class="pl-s1">model</span>.<span class="pl-c1">train</span>()
+    <span class="pl-c"># 训练过程（示例）</span>
+    <span class="pl-k">for</span> <span class="pl-s1">inputs</span>, <span class="pl-s1">targets</span> <span class="pl-c1">in</span> <span class="pl-s1">trainloader</span>:
+        <span class="pl-s1">optimizer</span>.<span class="pl-c1">zero_grad</span>()
+        <span class="pl-s1">outputs</span> <span class="pl-c1">=</span> <span class="pl-en">model</span>(<span class="pl-s1">inputs</span>)
+        <span class="pl-s1">loss</span> <span class="pl-c1">=</span> <span class="pl-en">criterion</span>(<span class="pl-s1">outputs</span>, <span class="pl-s1">targets</span>)
+        <span class="pl-s1">loss</span>.<span class="pl-c1">backward</span>()
+        <span class="pl-s1">optimizer</span>.<span class="pl-c1">step</span>()
     
-    model.eval()
-    val_loss = 0.0
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for inputs, targets in valloader:
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-            val_loss += loss.item()
-            _, predicted = outputs.max(1)
-            total += targets.size(0)
-            correct += predicted.eq(targets).sum().item()
+    <span class="pl-s1">model</span>.<span class="pl-c1">eval</span>()
+    <span class="pl-s1">val_loss</span> <span class="pl-c1">=</span> <span class="pl-c1">0.0</span>
+    <span class="pl-s1">correct</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-s1">total</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-k">with</span> <span class="pl-s1">torch</span>.<span class="pl-c1">no_grad</span>():
+        <span class="pl-k">for</span> <span class="pl-s1">inputs</span>, <span class="pl-s1">targets</span> <span class="pl-c1">in</span> <span class="pl-s1">valloader</span>:
+            <span class="pl-s1">outputs</span> <span class="pl-c1">=</span> <span class="pl-en">model</span>(<span class="pl-s1">inputs</span>)
+            <span class="pl-s1">loss</span> <span class="pl-c1">=</span> <span class="pl-en">criterion</span>(<span class="pl-s1">outputs</span>, <span class="pl-s1">targets</span>)
+            <span class="pl-s1">val_loss</span> <span class="pl-c1">+=</span> <span class="pl-s1">loss</span>.<span class="pl-c1">item</span>()
+            <span class="pl-s1">_</span>, <span class="pl-s1">predicted</span> <span class="pl-c1">=</span> <span class="pl-s1">outputs</span>.<span class="pl-c1">max</span>(<span class="pl-c1">1</span>)
+            <span class="pl-s1">total</span> <span class="pl-c1">+=</span> <span class="pl-s1">targets</span>.<span class="pl-c1">size</span>(<span class="pl-c1">0</span>)
+            <span class="pl-s1">correct</span> <span class="pl-c1">+=</span> <span class="pl-s1">predicted</span>.<span class="pl-c1">eq</span>(<span class="pl-s1">targets</span>).<span class="pl-c1">sum</span>().<span class="pl-c1">item</span>()
     
-    val_loss /= len(valloader)
-    val_acc = 100. * correct / total
+    <span class="pl-s1">val_loss</span> <span class="pl-c1">/=</span> <span class="pl-en">len</span>(<span class="pl-s1">valloader</span>)
+    <span class="pl-s1">val_acc</span> <span class="pl-c1">=</span> <span class="pl-c1">100.</span> <span class="pl-c1">*</span> <span class="pl-s1">correct</span> <span class="pl-c1">/</span> <span class="pl-s1">total</span>
 
-    # 调整学习率
-    scheduler.step()
+    <span class="pl-c"># 调整学习率</span>
+    <span class="pl-s1">scheduler</span>.<span class="pl-c1">step</span>()
 
-    # 或者使用 ReduceLROnPlateau
-    # scheduler.step(val_loss)
+    <span class="pl-c"># 或者使用 ReduceLROnPlateau</span>
+    <span class="pl-c"># scheduler.step(val_loss)</span>
 
-    print(f'Epoch {epoch}: Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%')
+    <span class="pl-en">print</span>(<span class="pl-s">f'Epoch <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">epoch</span><span class="pl-kos">}</span></span>: Val Loss: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">val_loss</span>:.4f<span class="pl-kos">}</span></span>, Val Acc: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">val_acc</span>:.2f<span class="pl-kos">}</span></span>%'</span>)
 
-    # 早停机制（示例）
-    if early_stopping_criteria:
-        early_stopping_counter += 1
-        if early_stopping_counter &gt; patience:
-            print("Early stopping")
-            break
-    else:
-        early_stopping_counter = 0
-</code></pre>
+    <span class="pl-c"># 早停机制（示例）</span>
+    <span class="pl-k">if</span> <span class="pl-s1">early_stopping_criteria</span>:
+        <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">+=</span> <span class="pl-c1">1</span>
+        <span class="pl-k">if</span> <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">&gt;</span> <span class="pl-s1">patience</span>:
+            <span class="pl-en">print</span>(<span class="pl-s">"Early stopping"</span>)
+            <span class="pl-k">break</span>
+    <span class="pl-k">else</span>:
+        <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span></pre></div>
 <h3>调整学习率和早停策略的总结</h3>
 <ul>
 <li><strong>学习率调度器</strong>：使用学习率调度器动态调整学习率，以平衡训练速度和稳定性。</li>
@@ -404,19 +407,18 @@ for epoch in range(100):
 <h3>应用权重衰减</h3>
 <p>在 PyTorch 中，权重衰减可以在定义优化器时通过 <code class="notranslate">weight_decay</code> 参数来设置。默认情况下，<code class="notranslate">weight_decay</code> 为 0，即不进行权重衰减。</p>
 <h4>示例代码</h4>
-<pre lang="python" class="notranslate"><code class="notranslate">import torch
-import torch.optim as optim
-from torch import nn
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">optim</span> <span class="pl-k">as</span> <span class="pl-s1">optim</span>
+<span class="pl-k">from</span> <span class="pl-s1">torch</span> <span class="pl-k">import</span> <span class="pl-s1">nn</span>
 
-# 定义一个简单的模型
-model = nn.Sequential(nn.Linear(10, 10))
+<span class="pl-c"># 定义一个简单的模型</span>
+<span class="pl-s1">model</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Sequential</span>(<span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-c1">10</span>, <span class="pl-c1">10</span>))
 
-# 使用 Adam 优化器，不进行权重衰减
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+<span class="pl-c"># 使用 Adam 优化器，不进行权重衰减</span>
+<span class="pl-s1">optimizer</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">Adam</span>(<span class="pl-s1">model</span>.<span class="pl-c1">parameters</span>(), <span class="pl-s1">lr</span><span class="pl-c1">=</span><span class="pl-c1">0.001</span>)
 
-# 使用 AdamW 优化器，进行权重衰减
-optimizer_adamw = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
-</code></pre>
+<span class="pl-c"># 使用 AdamW 优化器，进行权重衰减</span>
+<span class="pl-s1">optimizer_adamw</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">AdamW</span>(<span class="pl-s1">model</span>.<span class="pl-c1">parameters</span>(), <span class="pl-s1">lr</span><span class="pl-c1">=</span><span class="pl-c1">0.001</span>, <span class="pl-s1">weight_decay</span><span class="pl-c1">=</span><span class="pl-c1">1e-4</span>)</pre></div>
 <p>在上面的代码中，<code class="notranslate">optimizer</code> 不进行权重衰减，而 <code class="notranslate">optimizer_adamw</code> 进行权重衰减，系数为 <code class="notranslate">1e-4</code>。</p>
 <h3>学习率调整</h3>
 <p>Adam 和 AdamW 都可以结合学习率调度器来自动调整学习率。常用的学习率调度器有：</p>
@@ -427,33 +429,31 @@ optimizer_adamw = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
 <li><strong>CosineAnnealingLR</strong>：使用余弦退火调整学习率。</li>
 </ol>
 <h4>StepLR 示例</h4>
-<pre lang="python" class="notranslate"><code class="notranslate">from torch.optim.lr_scheduler import StepLR
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">torch</span>.<span class="pl-s1">optim</span>.<span class="pl-s1">lr_scheduler</span> <span class="pl-k">import</span> <span class="pl-v">StepLR</span>
 
-# 使用 AdamW 优化器
-optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
+<span class="pl-c"># 使用 AdamW 优化器</span>
+<span class="pl-s1">optimizer</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">AdamW</span>(<span class="pl-s1">model</span>.<span class="pl-c1">parameters</span>(), <span class="pl-s1">lr</span><span class="pl-c1">=</span><span class="pl-c1">0.001</span>, <span class="pl-s1">weight_decay</span><span class="pl-c1">=</span><span class="pl-c1">1e-4</span>)
 
-# 定义 StepLR 调度器，每 10 个 epoch 将学习率乘以 0.1
-scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
+<span class="pl-c"># 定义 StepLR 调度器，每 10 个 epoch 将学习率乘以 0.1</span>
+<span class="pl-s1">scheduler</span> <span class="pl-c1">=</span> <span class="pl-en">StepLR</span>(<span class="pl-s1">optimizer</span>, <span class="pl-s1">step_size</span><span class="pl-c1">=</span><span class="pl-c1">10</span>, <span class="pl-s1">gamma</span><span class="pl-c1">=</span><span class="pl-c1">0.1</span>)
 
-for epoch in range(100):
-    train()  # 训练模型的函数
-    validate()  # 验证模型的函数
-    scheduler.step()  # 更新学习率
-</code></pre>
+<span class="pl-k">for</span> <span class="pl-s1">epoch</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">100</span>):
+    <span class="pl-en">train</span>()  <span class="pl-c"># 训练模型的函数</span>
+    <span class="pl-en">validate</span>()  <span class="pl-c"># 验证模型的函数</span>
+    <span class="pl-s1">scheduler</span>.<span class="pl-c1">step</span>()  <span class="pl-c"># 更新学习率</span></pre></div>
 <h4>ReduceLROnPlateau 示例</h4>
-<pre lang="python" class="notranslate"><code class="notranslate">from torch.optim.lr_scheduler import ReduceLROnPlateau
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">torch</span>.<span class="pl-s1">optim</span>.<span class="pl-s1">lr_scheduler</span> <span class="pl-k">import</span> <span class="pl-v">ReduceLROnPlateau</span>
 
-# 使用 AdamW 优化器
-optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
+<span class="pl-c"># 使用 AdamW 优化器</span>
+<span class="pl-s1">optimizer</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">AdamW</span>(<span class="pl-s1">model</span>.<span class="pl-c1">parameters</span>(), <span class="pl-s1">lr</span><span class="pl-c1">=</span><span class="pl-c1">0.001</span>, <span class="pl-s1">weight_decay</span><span class="pl-c1">=</span><span class="pl-c1">1e-4</span>)
 
-# 定义 ReduceLROnPlateau 调度器，当验证集上的损失不再改善时，降低学习率
-scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)
+<span class="pl-c"># 定义 ReduceLROnPlateau 调度器，当验证集上的损失不再改善时，降低学习率</span>
+<span class="pl-s1">scheduler</span> <span class="pl-c1">=</span> <span class="pl-en">ReduceLROnPlateau</span>(<span class="pl-s1">optimizer</span>, <span class="pl-s1">mode</span><span class="pl-c1">=</span><span class="pl-s">'min'</span>, <span class="pl-s1">factor</span><span class="pl-c1">=</span><span class="pl-c1">0.1</span>, <span class="pl-s1">patience</span><span class="pl-c1">=</span><span class="pl-c1">5</span>, <span class="pl-s1">verbose</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
 
-for epoch in range(100):
-    train()  # 训练模型的函数
-    val_loss = validate()  # 验证模型的函数，返回验证集上的损失
-    scheduler.step(val_loss)  # 根据验证集上的损失更新学习率
-</code></pre>
+<span class="pl-k">for</span> <span class="pl-s1">epoch</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">100</span>):
+    <span class="pl-en">train</span>()  <span class="pl-c"># 训练模型的函数</span>
+    <span class="pl-s1">val_loss</span> <span class="pl-c1">=</span> <span class="pl-en">validate</span>()  <span class="pl-c"># 验证模型的函数，返回验证集上的损失</span>
+    <span class="pl-s1">scheduler</span>.<span class="pl-c1">step</span>(<span class="pl-s1">val_loss</span>)  <span class="pl-c"># 根据验证集上的损失更新学习率</span></pre></div>
 <h3>总结</h3>
 <ul>
 <li><strong>权重衰减</strong>：在定义优化器时通过 <code class="notranslate">weight_decay</code> 参数设置，默认值为 0。用于防止过拟合。</li>
@@ -466,187 +466,185 @@ for epoch in range(100):
 <h3><code class="notranslate">ReduceLROnPlateau</code> 示例</h3>
 <p><code class="notranslate">ReduceLROnPlateau</code> 是一种学习率调度器，当验证集上的指标（如损失）不再改善时，降低学习率。这种方法适用于当你希望在验证集上的性能达到一个平稳期时调整学习率。</p>
 <h4>示例代码</h4>
-<pre lang="python" class="notranslate"><code class="notranslate">import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span> <span class="pl-k">as</span> <span class="pl-s1">nn</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">optim</span> <span class="pl-k">as</span> <span class="pl-s1">optim</span>
+<span class="pl-k">from</span> <span class="pl-s1">torch</span>.<span class="pl-s1">utils</span>.<span class="pl-s1">data</span> <span class="pl-k">import</span> <span class="pl-v">DataLoader</span>
+<span class="pl-k">import</span> <span class="pl-s1">torchvision</span>.<span class="pl-s1">transforms</span> <span class="pl-k">as</span> <span class="pl-s1">transforms</span>
+<span class="pl-k">import</span> <span class="pl-s1">torchvision</span>.<span class="pl-s1">datasets</span> <span class="pl-k">as</span> <span class="pl-s1">datasets</span>
 
-# 定义一个简单的模型
-class SimpleModel(nn.Module):
-    def __init__(self):
-        super(SimpleModel, self).__init__()
-        self.fc = nn.Linear(784, 10)
+<span class="pl-c"># 定义一个简单的模型</span>
+<span class="pl-k">class</span> <span class="pl-v">SimpleModel</span>(<span class="pl-s1">nn</span>.<span class="pl-c1">Module</span>):
+    <span class="pl-k">def</span> <span class="pl-en">__init__</span>(<span class="pl-s1">self</span>):
+        <span class="pl-en">super</span>(<span class="pl-v">SimpleModel</span>, <span class="pl-s1">self</span>).<span class="pl-c1">__init__</span>()
+        <span class="pl-s1">self</span>.<span class="pl-c1">fc</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-c1">784</span>, <span class="pl-c1">10</span>)
     
-    def forward(self, x):
-        return self.fc(x.view(x.size(0), -1))
+    <span class="pl-k">def</span> <span class="pl-en">forward</span>(<span class="pl-s1">self</span>, <span class="pl-s1">x</span>):
+        <span class="pl-k">return</span> <span class="pl-s1">self</span>.<span class="pl-c1">fc</span>(<span class="pl-s1">x</span>.<span class="pl-c1">view</span>(<span class="pl-s1">x</span>.<span class="pl-c1">size</span>(<span class="pl-c1">0</span>), <span class="pl-c1">-</span><span class="pl-c1">1</span>))
 
-# 加载数据集
-transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
-train_dataset = datasets.MNIST(root='./data', train=True, transform=transform, download=True)
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+<span class="pl-c"># 加载数据集</span>
+<span class="pl-s1">transform</span> <span class="pl-c1">=</span> <span class="pl-s1">transforms</span>.<span class="pl-c1">Compose</span>([<span class="pl-s1">transforms</span>.<span class="pl-c1">ToTensor</span>(), <span class="pl-s1">transforms</span>.<span class="pl-c1">Normalize</span>((<span class="pl-c1">0.5</span>,), (<span class="pl-c1">0.5</span>,))])
+<span class="pl-s1">train_dataset</span> <span class="pl-c1">=</span> <span class="pl-s1">datasets</span>.<span class="pl-c1">MNIST</span>(<span class="pl-s1">root</span><span class="pl-c1">=</span><span class="pl-s">'./data'</span>, <span class="pl-s1">train</span><span class="pl-c1">=</span><span class="pl-c1">True</span>, <span class="pl-s1">transform</span><span class="pl-c1">=</span><span class="pl-s1">transform</span>, <span class="pl-s1">download</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
+<span class="pl-s1">train_loader</span> <span class="pl-c1">=</span> <span class="pl-en">DataLoader</span>(<span class="pl-s1">train_dataset</span>, <span class="pl-s1">batch_size</span><span class="pl-c1">=</span><span class="pl-c1">64</span>, <span class="pl-s1">shuffle</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
 
-val_dataset = datasets.MNIST(root='./data', train=False, transform=transform, download=True)
-val_loader = DataLoader(val_dataset, batch_size=1000, shuffle=False)
+<span class="pl-s1">val_dataset</span> <span class="pl-c1">=</span> <span class="pl-s1">datasets</span>.<span class="pl-c1">MNIST</span>(<span class="pl-s1">root</span><span class="pl-c1">=</span><span class="pl-s">'./data'</span>, <span class="pl-s1">train</span><span class="pl-c1">=</span><span class="pl-c1">False</span>, <span class="pl-s1">transform</span><span class="pl-c1">=</span><span class="pl-s1">transform</span>, <span class="pl-s1">download</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
+<span class="pl-s1">val_loader</span> <span class="pl-c1">=</span> <span class="pl-en">DataLoader</span>(<span class="pl-s1">val_dataset</span>, <span class="pl-s1">batch_size</span><span class="pl-c1">=</span><span class="pl-c1">1000</span>, <span class="pl-s1">shuffle</span><span class="pl-c1">=</span><span class="pl-c1">False</span>)
 
-# 初始化模型和优化器
-model = SimpleModel()
-optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+<span class="pl-c"># 初始化模型和优化器</span>
+<span class="pl-s1">model</span> <span class="pl-c1">=</span> <span class="pl-en">SimpleModel</span>()
+<span class="pl-s1">optimizer</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">Adam</span>(<span class="pl-s1">model</span>.<span class="pl-c1">parameters</span>(), <span class="pl-s1">lr</span><span class="pl-c1">=</span><span class="pl-c1">0.001</span>, <span class="pl-s1">weight_decay</span><span class="pl-c1">=</span><span class="pl-c1">1e-4</span>)
 
-# 定义 ReduceLROnPlateau 调度器
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)
+<span class="pl-c"># 定义 ReduceLROnPlateau 调度器</span>
+<span class="pl-s1">scheduler</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">lr_scheduler</span>.<span class="pl-c1">ReduceLROnPlateau</span>(<span class="pl-s1">optimizer</span>, <span class="pl-s1">mode</span><span class="pl-c1">=</span><span class="pl-s">'min'</span>, <span class="pl-s1">factor</span><span class="pl-c1">=</span><span class="pl-c1">0.1</span>, <span class="pl-s1">patience</span><span class="pl-c1">=</span><span class="pl-c1">5</span>, <span class="pl-s1">verbose</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
 
-# 定义损失函数
-criterion = nn.CrossEntropyLoss()
+<span class="pl-c"># 定义损失函数</span>
+<span class="pl-s1">criterion</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">CrossEntropyLoss</span>()
 
-# 训练和验证函数
-def train(model, loader, optimizer, criterion):
-    model.train()
-    total_loss = 0
-    correct = 0
-    for inputs, targets in loader:
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
-        loss.backward()
-        optimizer.step()
-        total_loss += loss.item()
-        _, predicted = outputs.max(1)
-        correct += predicted.eq(targets).sum().item()
-    return total_loss / len(loader), correct / len(loader.dataset)
+<span class="pl-c"># 训练和验证函数</span>
+<span class="pl-k">def</span> <span class="pl-en">train</span>(<span class="pl-s1">model</span>, <span class="pl-s1">loader</span>, <span class="pl-s1">optimizer</span>, <span class="pl-s1">criterion</span>):
+    <span class="pl-s1">model</span>.<span class="pl-c1">train</span>()
+    <span class="pl-s1">total_loss</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-s1">correct</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-k">for</span> <span class="pl-s1">inputs</span>, <span class="pl-s1">targets</span> <span class="pl-c1">in</span> <span class="pl-s1">loader</span>:
+        <span class="pl-s1">optimizer</span>.<span class="pl-c1">zero_grad</span>()
+        <span class="pl-s1">outputs</span> <span class="pl-c1">=</span> <span class="pl-en">model</span>(<span class="pl-s1">inputs</span>)
+        <span class="pl-s1">loss</span> <span class="pl-c1">=</span> <span class="pl-en">criterion</span>(<span class="pl-s1">outputs</span>, <span class="pl-s1">targets</span>)
+        <span class="pl-s1">loss</span>.<span class="pl-c1">backward</span>()
+        <span class="pl-s1">optimizer</span>.<span class="pl-c1">step</span>()
+        <span class="pl-s1">total_loss</span> <span class="pl-c1">+=</span> <span class="pl-s1">loss</span>.<span class="pl-c1">item</span>()
+        <span class="pl-s1">_</span>, <span class="pl-s1">predicted</span> <span class="pl-c1">=</span> <span class="pl-s1">outputs</span>.<span class="pl-c1">max</span>(<span class="pl-c1">1</span>)
+        <span class="pl-s1">correct</span> <span class="pl-c1">+=</span> <span class="pl-s1">predicted</span>.<span class="pl-c1">eq</span>(<span class="pl-s1">targets</span>).<span class="pl-c1">sum</span>().<span class="pl-c1">item</span>()
+    <span class="pl-k">return</span> <span class="pl-s1">total_loss</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>), <span class="pl-s1">correct</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>.<span class="pl-c1">dataset</span>)
 
-def validate(model, loader, criterion):
-    model.eval()
-    total_loss = 0
-    correct = 0
-    with torch.no_grad():
-        for inputs, targets in loader:
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-            total_loss += loss.item()
-            _, predicted = outputs.max(1)
-            correct += predicted.eq(targets).sum().item()
-    return total_loss / len(loader), correct / len(loader.dataset)
+<span class="pl-k">def</span> <span class="pl-en">validate</span>(<span class="pl-s1">model</span>, <span class="pl-s1">loader</span>, <span class="pl-s1">criterion</span>):
+    <span class="pl-s1">model</span>.<span class="pl-c1">eval</span>()
+    <span class="pl-s1">total_loss</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-s1">correct</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-k">with</span> <span class="pl-s1">torch</span>.<span class="pl-c1">no_grad</span>():
+        <span class="pl-k">for</span> <span class="pl-s1">inputs</span>, <span class="pl-s1">targets</span> <span class="pl-c1">in</span> <span class="pl-s1">loader</span>:
+            <span class="pl-s1">outputs</span> <span class="pl-c1">=</span> <span class="pl-en">model</span>(<span class="pl-s1">inputs</span>)
+            <span class="pl-s1">loss</span> <span class="pl-c1">=</span> <span class="pl-en">criterion</span>(<span class="pl-s1">outputs</span>, <span class="pl-s1">targets</span>)
+            <span class="pl-s1">total_loss</span> <span class="pl-c1">+=</span> <span class="pl-s1">loss</span>.<span class="pl-c1">item</span>()
+            <span class="pl-s1">_</span>, <span class="pl-s1">predicted</span> <span class="pl-c1">=</span> <span class="pl-s1">outputs</span>.<span class="pl-c1">max</span>(<span class="pl-c1">1</span>)
+            <span class="pl-s1">correct</span> <span class="pl-c1">+=</span> <span class="pl-s1">predicted</span>.<span class="pl-c1">eq</span>(<span class="pl-s1">targets</span>).<span class="pl-c1">sum</span>().<span class="pl-c1">item</span>()
+    <span class="pl-k">return</span> <span class="pl-s1">total_loss</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>), <span class="pl-s1">correct</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>.<span class="pl-c1">dataset</span>)
 
-# 训练和验证过程
-best_val_acc = 0
-patience = 10
-early_stopping_counter = 0
+<span class="pl-c"># 训练和验证过程</span>
+<span class="pl-s1">best_val_acc</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+<span class="pl-s1">patience</span> <span class="pl-c1">=</span> <span class="pl-c1">10</span>
+<span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
 
-for epoch in range(100):
-    train_loss, train_acc = train(model, train_loader, optimizer, criterion)
-    val_loss, val_acc = validate(model, val_loader, criterion)
+<span class="pl-k">for</span> <span class="pl-s1">epoch</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">100</span>):
+    <span class="pl-s1">train_loss</span>, <span class="pl-s1">train_acc</span> <span class="pl-c1">=</span> <span class="pl-en">train</span>(<span class="pl-s1">model</span>, <span class="pl-s1">train_loader</span>, <span class="pl-s1">optimizer</span>, <span class="pl-s1">criterion</span>)
+    <span class="pl-s1">val_loss</span>, <span class="pl-s1">val_acc</span> <span class="pl-c1">=</span> <span class="pl-en">validate</span>(<span class="pl-s1">model</span>, <span class="pl-s1">val_loader</span>, <span class="pl-s1">criterion</span>)
     
-    # 使用 ReduceLROnPlateau 更新学习率
-    scheduler.step(val_loss)
+    <span class="pl-c"># 使用 ReduceLROnPlateau 更新学习率</span>
+    <span class="pl-s1">scheduler</span>.<span class="pl-c1">step</span>(<span class="pl-s1">val_loss</span>)
     
-    print(f'Epoch {epoch+1}: Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}')
+    <span class="pl-en">print</span>(<span class="pl-s">f'Epoch <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">epoch</span><span class="pl-c1">+</span><span class="pl-c1">1</span><span class="pl-kos">}</span></span>: Train Loss: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">train_loss</span>:.4f<span class="pl-kos">}</span></span>, Train Acc: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">train_acc</span>:.2f<span class="pl-kos">}</span></span>, Val Loss: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">val_loss</span>:.4f<span class="pl-kos">}</span></span>, Val Acc: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">val_acc</span>:.2f<span class="pl-kos">}</span></span>'</span>)
     
-    # 早停策略
-    if val_acc &gt; best_val_acc:
-        best_val_acc = val_acc
-        early_stopping_counter = 0
-        # 保存最好的模型
-        torch.save(model.state_dict(), 'best_model.pth')
-    else:
-        early_stopping_counter += 1
-        if early_stopping_counter &gt;= patience:
-            print("Early stopping")
-            break
-</code></pre>
+    <span class="pl-c"># 早停策略</span>
+    <span class="pl-k">if</span> <span class="pl-s1">val_acc</span> <span class="pl-c1">&gt;</span> <span class="pl-s1">best_val_acc</span>:
+        <span class="pl-s1">best_val_acc</span> <span class="pl-c1">=</span> <span class="pl-s1">val_acc</span>
+        <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+        <span class="pl-c"># 保存最好的模型</span>
+        <span class="pl-s1">torch</span>.<span class="pl-c1">save</span>(<span class="pl-s1">model</span>.<span class="pl-c1">state_dict</span>(), <span class="pl-s">'best_model.pth'</span>)
+    <span class="pl-k">else</span>:
+        <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">+=</span> <span class="pl-c1">1</span>
+        <span class="pl-k">if</span> <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">&gt;=</span> <span class="pl-s1">patience</span>:
+            <span class="pl-en">print</span>(<span class="pl-s">"Early stopping"</span>)
+            <span class="pl-k">break</span></pre></div>
 <h3><code class="notranslate">CosineAnnealingLR</code> 示例</h3>
 <p><code class="notranslate">CosineAnnealingLR</code> 使用余弦退火调整学习率，使学习率在训练过程中逐渐减小，然后周期性地恢复。这种方法适用于当你希望学习率在训练过程中有周期性变化，以跳出局部最优解。</p>
 <h4>示例代码</h4>
-<pre lang="python" class="notranslate"><code class="notranslate">import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span> <span class="pl-k">as</span> <span class="pl-s1">nn</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">optim</span> <span class="pl-k">as</span> <span class="pl-s1">optim</span>
+<span class="pl-k">from</span> <span class="pl-s1">torch</span>.<span class="pl-s1">utils</span>.<span class="pl-s1">data</span> <span class="pl-k">import</span> <span class="pl-v">DataLoader</span>
+<span class="pl-k">import</span> <span class="pl-s1">torchvision</span>.<span class="pl-s1">transforms</span> <span class="pl-k">as</span> <span class="pl-s1">transforms</span>
+<span class="pl-k">import</span> <span class="pl-s1">torchvision</span>.<span class="pl-s1">datasets</span> <span class="pl-k">as</span> <span class="pl-s1">datasets</span>
 
-# 定义一个简单的模型
-class SimpleModel(nn.Module):
-    def __init__(self):
-        super(SimpleModel, self).__init__()
-        self.fc = nn.Linear(784, 10)
+<span class="pl-c"># 定义一个简单的模型</span>
+<span class="pl-k">class</span> <span class="pl-v">SimpleModel</span>(<span class="pl-s1">nn</span>.<span class="pl-c1">Module</span>):
+    <span class="pl-k">def</span> <span class="pl-en">__init__</span>(<span class="pl-s1">self</span>):
+        <span class="pl-en">super</span>(<span class="pl-v">SimpleModel</span>, <span class="pl-s1">self</span>).<span class="pl-c1">__init__</span>()
+        <span class="pl-s1">self</span>.<span class="pl-c1">fc</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-c1">784</span>, <span class="pl-c1">10</span>)
     
-    def forward(self, x):
-        return self.fc(x.view(x.size(0), -1))
+    <span class="pl-k">def</span> <span class="pl-en">forward</span>(<span class="pl-s1">self</span>, <span class="pl-s1">x</span>):
+        <span class="pl-k">return</span> <span class="pl-s1">self</span>.<span class="pl-c1">fc</span>(<span class="pl-s1">x</span>.<span class="pl-c1">view</span>(<span class="pl-s1">x</span>.<span class="pl-c1">size</span>(<span class="pl-c1">0</span>), <span class="pl-c1">-</span><span class="pl-c1">1</span>))
 
-# 加载数据集
-transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
-train_dataset = datasets.MNIST(root='./data', train=True, transform=transform, download=True)
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+<span class="pl-c"># 加载数据集</span>
+<span class="pl-s1">transform</span> <span class="pl-c1">=</span> <span class="pl-s1">transforms</span>.<span class="pl-c1">Compose</span>([<span class="pl-s1">transforms</span>.<span class="pl-c1">ToTensor</span>(), <span class="pl-s1">transforms</span>.<span class="pl-c1">Normalize</span>((<span class="pl-c1">0.5</span>,), (<span class="pl-c1">0.5</span>,))])
+<span class="pl-s1">train_dataset</span> <span class="pl-c1">=</span> <span class="pl-s1">datasets</span>.<span class="pl-c1">MNIST</span>(<span class="pl-s1">root</span><span class="pl-c1">=</span><span class="pl-s">'./data'</span>, <span class="pl-s1">train</span><span class="pl-c1">=</span><span class="pl-c1">True</span>, <span class="pl-s1">transform</span><span class="pl-c1">=</span><span class="pl-s1">transform</span>, <span class="pl-s1">download</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
+<span class="pl-s1">train_loader</span> <span class="pl-c1">=</span> <span class="pl-en">DataLoader</span>(<span class="pl-s1">train_dataset</span>, <span class="pl-s1">batch_size</span><span class="pl-c1">=</span><span class="pl-c1">64</span>, <span class="pl-s1">shuffle</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
 
-val_dataset = datasets.MNIST(root='./data', train=False, transform=transform, download=True)
-val_loader = DataLoader(val_dataset, batch_size=1000, shuffle=False)
+<span class="pl-s1">val_dataset</span> <span class="pl-c1">=</span> <span class="pl-s1">datasets</span>.<span class="pl-c1">MNIST</span>(<span class="pl-s1">root</span><span class="pl-c1">=</span><span class="pl-s">'./data'</span>, <span class="pl-s1">train</span><span class="pl-c1">=</span><span class="pl-c1">False</span>, <span class="pl-s1">transform</span><span class="pl-c1">=</span><span class="pl-s1">transform</span>, <span class="pl-s1">download</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
+<span class="pl-s1">val_loader</span> <span class="pl-c1">=</span> <span class="pl-en">DataLoader</span>(<span class="pl-s1">val_dataset</span>, <span class="pl-s1">batch_size</span><span class="pl-c1">=</span><span class="pl-c1">1000</span>, <span class="pl-s1">shuffle</span><span class="pl-c1">=</span><span class="pl-c1">False</span>)
 
-# 初始化模型和优化器
-model = SimpleModel()
-optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+<span class="pl-c"># 初始化模型和优化器</span>
+<span class="pl-s1">model</span> <span class="pl-c1">=</span> <span class="pl-en">SimpleModel</span>()
+<span class="pl-s1">optimizer</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">Adam</span>(<span class="pl-s1">model</span>.<span class="pl-c1">parameters</span>(), <span class="pl-s1">lr</span><span class="pl-c1">=</span><span class="pl-c1">0.001</span>, <span class="pl-s1">weight_decay</span><span class="pl-c1">=</span><span class="pl-c1">1e-4</span>)
 
-# 定义 CosineAnnealingLR 调度器
-scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50, eta_min=0)
+<span class="pl-c"># 定义 CosineAnnealingLR 调度器</span>
+<span class="pl-s1">scheduler</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">lr_scheduler</span>.<span class="pl-c1">CosineAnnealingLR</span>(<span class="pl-s1">optimizer</span>, <span class="pl-v">T_max</span><span class="pl-c1">=</span><span class="pl-c1">50</span>, <span class="pl-s1">eta_min</span><span class="pl-c1">=</span><span class="pl-c1">0</span>)
 
-# 定义损失函数
-criterion = nn.CrossEntropyLoss()
+<span class="pl-c"># 定义损失函数</span>
+<span class="pl-s1">criterion</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">CrossEntropyLoss</span>()
 
-# 训练和验证函数
-def train(model, loader, optimizer, criterion):
-    model.train()
-    total_loss = 0
-    correct = 0
-    for inputs, targets in loader:
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
-        loss.backward()
-        optimizer.step()
-        total_loss += loss.item()
-        _, predicted = outputs.max(1)
-        correct += predicted.eq(targets).sum().item()
-    return total_loss / len(loader), correct / len(loader.dataset)
+<span class="pl-c"># 训练和验证函数</span>
+<span class="pl-k">def</span> <span class="pl-en">train</span>(<span class="pl-s1">model</span>, <span class="pl-s1">loader</span>, <span class="pl-s1">optimizer</span>, <span class="pl-s1">criterion</span>):
+    <span class="pl-s1">model</span>.<span class="pl-c1">train</span>()
+    <span class="pl-s1">total_loss</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-s1">correct</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-k">for</span> <span class="pl-s1">inputs</span>, <span class="pl-s1">targets</span> <span class="pl-c1">in</span> <span class="pl-s1">loader</span>:
+        <span class="pl-s1">optimizer</span>.<span class="pl-c1">zero_grad</span>()
+        <span class="pl-s1">outputs</span> <span class="pl-c1">=</span> <span class="pl-en">model</span>(<span class="pl-s1">inputs</span>)
+        <span class="pl-s1">loss</span> <span class="pl-c1">=</span> <span class="pl-en">criterion</span>(<span class="pl-s1">outputs</span>, <span class="pl-s1">targets</span>)
+        <span class="pl-s1">loss</span>.<span class="pl-c1">backward</span>()
+        <span class="pl-s1">optimizer</span>.<span class="pl-c1">step</span>()
+        <span class="pl-s1">total_loss</span> <span class="pl-c1">+=</span> <span class="pl-s1">loss</span>.<span class="pl-c1">item</span>()
+        <span class="pl-s1">_</span>, <span class="pl-s1">predicted</span> <span class="pl-c1">=</span> <span class="pl-s1">outputs</span>.<span class="pl-c1">max</span>(<span class="pl-c1">1</span>)
+        <span class="pl-s1">correct</span> <span class="pl-c1">+=</span> <span class="pl-s1">predicted</span>.<span class="pl-c1">eq</span>(<span class="pl-s1">targets</span>).<span class="pl-c1">sum</span>().<span class="pl-c1">item</span>()
+    <span class="pl-k">return</span> <span class="pl-s1">total_loss</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>), <span class="pl-s1">correct</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>.<span class="pl-c1">dataset</span>)
 
-def validate(model, loader, criterion):
-    model.eval()
-    total_loss = 0
-    correct = 0
-    with torch.no_grad():
-        for inputs, targets in loader:
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-            total_loss += loss.item()
-            _, predicted = outputs.max(1)
-            correct += predicted.eq(targets).sum().item()
-    return total_loss / len(loader), correct / len(loader.dataset)
+<span class="pl-k">def</span> <span class="pl-en">validate</span>(<span class="pl-s1">model</span>, <span class="pl-s1">loader</span>, <span class="pl-s1">criterion</span>):
+    <span class="pl-s1">model</span>.<span class="pl-c1">eval</span>()
+    <span class="pl-s1">total_loss</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-s1">correct</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-k">with</span> <span class="pl-s1">torch</span>.<span class="pl-c1">no_grad</span>():
+        <span class="pl-k">for</span> <span class="pl-s1">inputs</span>, <span class="pl-s1">targets</span> <span class="pl-c1">in</span> <span class="pl-s1">loader</span>:
+            <span class="pl-s1">outputs</span> <span class="pl-c1">=</span> <span class="pl-en">model</span>(<span class="pl-s1">inputs</span>)
+            <span class="pl-s1">loss</span> <span class="pl-c1">=</span> <span class="pl-en">criterion</span>(<span class="pl-s1">outputs</span>, <span class="pl-s1">targets</span>)
+            <span class="pl-s1">total_loss</span> <span class="pl-c1">+=</span> <span class="pl-s1">loss</span>.<span class="pl-c1">item</span>()
+            <span class="pl-s1">_</span>, <span class="pl-s1">predicted</span> <span class="pl-c1">=</span> <span class="pl-s1">outputs</span>.<span class="pl-c1">max</span>(<span class="pl-c1">1</span>)
+            <span class="pl-s1">correct</span> <span class="pl-c1">+=</span> <span class="pl-s1">predicted</span>.<span class="pl-c1">eq</span>(<span class="pl-s1">targets</span>).<span class="pl-c1">sum</span>().<span class="pl-c1">item</span>()
+    <span class="pl-k">return</span> <span class="pl-s1">total_loss</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>), <span class="pl-s1">correct</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>.<span class="pl-c1">dataset</span>)
 
-# 训练和验证过程
-best_val_acc = 0
-patience = 10
-early_stopping_counter = 0
+<span class="pl-c"># 训练和验证过程</span>
+<span class="pl-s1">best_val_acc</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+<span class="pl-s1">patience</span> <span class="pl-c1">=</span> <span class="pl-c1">10</span>
+<span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
 
-for epoch in range(100):
-    train_loss, train_acc = train(model, train_loader, optimizer, criterion)
-    val_loss, val_acc = validate(model, val_loader, criterion)
+<span class="pl-k">for</span> <span class="pl-s1">epoch</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">100</span>):
+    <span class="pl-s1">train_loss</span>, <span class="pl-s1">train_acc</span> <span class="pl-c1">=</span> <span class="pl-en">train</span>(<span class="pl-s1">model</span>, <span class="pl-s1">train_loader</span>, <span class="pl-s1">optimizer</span>, <span class="pl-s1">criterion</span>)
+    <span class="pl-s1">val_loss</span>, <span class="pl-s1">val_acc</span> <span class="pl-c1">=</span> <span class="pl-en">validate</span>(<span class="pl-s1">model</span>, <span class="pl-s1">val_loader</span>, <span class="pl-s1">criterion</span>)
     
-    # 使用 CosineAnnealingLR 更新学习率
-    scheduler.step()
+    <span class="pl-c"># 使用 CosineAnnealingLR 更新学习率</span>
+    <span class="pl-s1">scheduler</span>.<span class="pl-c1">step</span>()
     
-    print(f'Epoch {epoch+1}: Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}')
+    <span class="pl-en">print</span>(<span class="pl-s">f'Epoch <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">epoch</span><span class="pl-c1">+</span><span class="pl-c1">1</span><span class="pl-kos">}</span></span>: Train Loss: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">train_loss</span>:.4f<span class="pl-kos">}</span></span>, Train Acc: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">train_acc</span>:.2f<span class="pl-kos">}</span></span>, Val Loss: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">val_loss</span>:.4f<span class="pl-kos">}</span></span>, Val Acc: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">val_acc</span>:.2f<span class="pl-kos">}</span></span>'</span>)
     
-    # 早停策略
-    if val_acc &gt; best_val_acc:
-        best_val_acc = val_acc
-        early_stopping_counter = 0
-        # 保存最好的模型
-        torch.save(model.state_dict(), 'best_model.pth')
-    else:
-        early_stopping_counter += 1
-        if early_stopping_counter &gt;= patience:
-            print("Early stopping")
-            break
-</code></pre>
+    <span class="pl-c"># 早停策略</span>
+    <span class="pl-k">if</span> <span class="pl-s1">val_acc</span> <span class="pl-c1">&gt;</span> <span class="pl-s1">best_val_acc</span>:
+        <span class="pl-s1">best_val_acc</span> <span class="pl-c1">=</span> <span class="pl-s1">val_acc</span>
+        <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+        <span class="pl-c"># 保存最好的模型</span>
+        <span class="pl-s1">torch</span>.<span class="pl-c1">save</span>(<span class="pl-s1">model</span>.<span class="pl-c1">state_dict</span>(), <span class="pl-s">'best_model.pth'</span>)
+    <span class="pl-k">else</span>:
+        <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">+=</span> <span class="pl-c1">1</span>
+        <span class="pl-k">if</span> <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">&gt;=</span> <span class="pl-s1">patience</span>:
+            <span class="pl-en">print</span>(<span class="pl-s">"Early stopping"</span>)
+            <span class="pl-k">break</span></pre></div>
 <h3>总结</h3>
 <ul>
 <li><strong>ReduceLROnPlateau</strong>：当验证集上的损失不再改善时，降低学习率。适用于需要在验证集上达到稳定期时调整学习率的情况。</li>
@@ -657,8 +655,7 @@ for epoch in range(100):
 <p>具体余弦退火学习率降低算法：<br>
 这行代码使用的是 <code class="notranslate">CosineAnnealingLR</code> 学习率调度器。<code class="notranslate">CosineAnnealingLR</code> 是一种基于余弦退火的学习率调整方法。其主要思想是学习率在每个周期内以余弦曲线的形式从初始值逐渐减小到最低值，然后周期性地恢复。</p>
 <h3>代码解释</h3>
-<pre lang="python" class="notranslate"><code class="notranslate">scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
-</code></pre>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">scheduler</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">optim</span>.<span class="pl-c1">lr_scheduler</span>.<span class="pl-c1">CosineAnnealingLR</span>(<span class="pl-s1">optimizer</span>, <span class="pl-v">T_max</span><span class="pl-c1">=</span><span class="pl-c1">200</span>)</pre></div>
 <ul>
 <li><code class="notranslate">optimizer</code>：这是你在定义模型时使用的优化器。</li>
 <li><code class="notranslate">T_max</code>：这是一个周期内的迭代次数，即学习率从初始值退火到最低值所需的迭代次数。</li>
@@ -679,95 +676,94 @@ for epoch in range(100):
 </ul>
 <h3>示例代码</h3>
 <p>下面是一个使用 <code class="notranslate">CosineAnnealingLR</code> 的完整训练示例：</p>
-<pre lang="python" class="notranslate"><code class="notranslate">import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span> <span class="pl-k">as</span> <span class="pl-s1">nn</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">optim</span> <span class="pl-k">as</span> <span class="pl-s1">optim</span>
+<span class="pl-k">from</span> <span class="pl-s1">torch</span>.<span class="pl-s1">utils</span>.<span class="pl-s1">data</span> <span class="pl-k">import</span> <span class="pl-v">DataLoader</span>
+<span class="pl-k">import</span> <span class="pl-s1">torchvision</span>.<span class="pl-s1">transforms</span> <span class="pl-k">as</span> <span class="pl-s1">transforms</span>
+<span class="pl-k">import</span> <span class="pl-s1">torchvision</span>.<span class="pl-s1">datasets</span> <span class="pl-k">as</span> <span class="pl-s1">datasets</span>
 
-# 定义一个简单的模型
-class SimpleModel(nn.Module):
-    def __init__(self):
-        super(SimpleModel, self).__init__()
-        self.fc = nn.Linear(784, 10)
+<span class="pl-c"># 定义一个简单的模型</span>
+<span class="pl-k">class</span> <span class="pl-v">SimpleModel</span>(<span class="pl-s1">nn</span>.<span class="pl-c1">Module</span>):
+    <span class="pl-k">def</span> <span class="pl-en">__init__</span>(<span class="pl-s1">self</span>):
+        <span class="pl-en">super</span>(<span class="pl-v">SimpleModel</span>, <span class="pl-s1">self</span>).<span class="pl-c1">__init__</span>()
+        <span class="pl-s1">self</span>.<span class="pl-c1">fc</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-c1">784</span>, <span class="pl-c1">10</span>)
     
-    def forward(self, x):
-        return self.fc(x.view(x.size(0), -1))
+    <span class="pl-k">def</span> <span class="pl-en">forward</span>(<span class="pl-s1">self</span>, <span class="pl-s1">x</span>):
+        <span class="pl-k">return</span> <span class="pl-s1">self</span>.<span class="pl-c1">fc</span>(<span class="pl-s1">x</span>.<span class="pl-c1">view</span>(<span class="pl-s1">x</span>.<span class="pl-c1">size</span>(<span class="pl-c1">0</span>), <span class="pl-c1">-</span><span class="pl-c1">1</span>))
 
-# 加载数据集
-transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
-train_dataset = datasets.MNIST(root='./data', train=True, transform=transform, download=True)
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+<span class="pl-c"># 加载数据集</span>
+<span class="pl-s1">transform</span> <span class="pl-c1">=</span> <span class="pl-s1">transforms</span>.<span class="pl-c1">Compose</span>([<span class="pl-s1">transforms</span>.<span class="pl-c1">ToTensor</span>(), <span class="pl-s1">transforms</span>.<span class="pl-c1">Normalize</span>((<span class="pl-c1">0.5</span>,), (<span class="pl-c1">0.5</span>,))])
+<span class="pl-s1">train_dataset</span> <span class="pl-c1">=</span> <span class="pl-s1">datasets</span>.<span class="pl-c1">MNIST</span>(<span class="pl-s1">root</span><span class="pl-c1">=</span><span class="pl-s">'./data'</span>, <span class="pl-s1">train</span><span class="pl-c1">=</span><span class="pl-c1">True</span>, <span class="pl-s1">transform</span><span class="pl-c1">=</span><span class="pl-s1">transform</span>, <span class="pl-s1">download</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
+<span class="pl-s1">train_loader</span> <span class="pl-c1">=</span> <span class="pl-en">DataLoader</span>(<span class="pl-s1">train_dataset</span>, <span class="pl-s1">batch_size</span><span class="pl-c1">=</span><span class="pl-c1">64</span>, <span class="pl-s1">shuffle</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
 
-val_dataset = datasets.MNIST(root='./data', train=False, transform=transform, download=True)
-val_loader = DataLoader(val_dataset, batch_size=1000, shuffle=False)
+<span class="pl-s1">val_dataset</span> <span class="pl-c1">=</span> <span class="pl-s1">datasets</span>.<span class="pl-c1">MNIST</span>(<span class="pl-s1">root</span><span class="pl-c1">=</span><span class="pl-s">'./data'</span>, <span class="pl-s1">train</span><span class="pl-c1">=</span><span class="pl-c1">False</span>, <span class="pl-s1">transform</span><span class="pl-c1">=</span><span class="pl-s1">transform</span>, <span class="pl-s1">download</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
+<span class="pl-s1">val_loader</span> <span class="pl-c1">=</span> <span class="pl-en">DataLoader</span>(<span class="pl-s1">val_dataset</span>, <span class="pl-s1">batch_size</span><span class="pl-c1">=</span><span class="pl-c1">1000</span>, <span class="pl-s1">shuffle</span><span class="pl-c1">=</span><span class="pl-c1">False</span>)
 
-# 初始化模型和优化器
-model = SimpleModel()
-optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+<span class="pl-c"># 初始化模型和优化器</span>
+<span class="pl-s1">model</span> <span class="pl-c1">=</span> <span class="pl-en">SimpleModel</span>()
+<span class="pl-s1">optimizer</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">Adam</span>(<span class="pl-s1">model</span>.<span class="pl-c1">parameters</span>(), <span class="pl-s1">lr</span><span class="pl-c1">=</span><span class="pl-c1">0.001</span>, <span class="pl-s1">weight_decay</span><span class="pl-c1">=</span><span class="pl-c1">1e-4</span>)
 
-# 定义 CosineAnnealingLR 调度器
-scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
+<span class="pl-c"># 定义 CosineAnnealingLR 调度器</span>
+<span class="pl-s1">scheduler</span> <span class="pl-c1">=</span> <span class="pl-s1">optim</span>.<span class="pl-c1">lr_scheduler</span>.<span class="pl-c1">CosineAnnealingLR</span>(<span class="pl-s1">optimizer</span>, <span class="pl-v">T_max</span><span class="pl-c1">=</span><span class="pl-c1">200</span>)
 
-# 定义损失函数
-criterion = nn.CrossEntropyLoss()
+<span class="pl-c"># 定义损失函数</span>
+<span class="pl-s1">criterion</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">CrossEntropyLoss</span>()
 
-# 训练和验证函数
-def train(model, loader, optimizer, criterion):
-    model.train()
-    total_loss = 0
-    correct = 0
-    for inputs, targets in loader:
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
-        loss.backward()
-        optimizer.step()
-        total_loss += loss.item()
-        _, predicted = outputs.max(1)
-        correct += predicted.eq(targets).sum().item()
-    return total_loss / len(loader), correct / len(loader.dataset)
+<span class="pl-c"># 训练和验证函数</span>
+<span class="pl-k">def</span> <span class="pl-en">train</span>(<span class="pl-s1">model</span>, <span class="pl-s1">loader</span>, <span class="pl-s1">optimizer</span>, <span class="pl-s1">criterion</span>):
+    <span class="pl-s1">model</span>.<span class="pl-c1">train</span>()
+    <span class="pl-s1">total_loss</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-s1">correct</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-k">for</span> <span class="pl-s1">inputs</span>, <span class="pl-s1">targets</span> <span class="pl-c1">in</span> <span class="pl-s1">loader</span>:
+        <span class="pl-s1">optimizer</span>.<span class="pl-c1">zero_grad</span>()
+        <span class="pl-s1">outputs</span> <span class="pl-c1">=</span> <span class="pl-en">model</span>(<span class="pl-s1">inputs</span>)
+        <span class="pl-s1">loss</span> <span class="pl-c1">=</span> <span class="pl-en">criterion</span>(<span class="pl-s1">outputs</span>, <span class="pl-s1">targets</span>)
+        <span class="pl-s1">loss</span>.<span class="pl-c1">backward</span>()
+        <span class="pl-s1">optimizer</span>.<span class="pl-c1">step</span>()
+        <span class="pl-s1">total_loss</span> <span class="pl-c1">+=</span> <span class="pl-s1">loss</span>.<span class="pl-c1">item</span>()
+        <span class="pl-s1">_</span>, <span class="pl-s1">predicted</span> <span class="pl-c1">=</span> <span class="pl-s1">outputs</span>.<span class="pl-c1">max</span>(<span class="pl-c1">1</span>)
+        <span class="pl-s1">correct</span> <span class="pl-c1">+=</span> <span class="pl-s1">predicted</span>.<span class="pl-c1">eq</span>(<span class="pl-s1">targets</span>).<span class="pl-c1">sum</span>().<span class="pl-c1">item</span>()
+    <span class="pl-k">return</span> <span class="pl-s1">total_loss</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>), <span class="pl-s1">correct</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>.<span class="pl-c1">dataset</span>)
 
-def validate(model, loader, criterion):
-    model.eval()
-    total_loss = 0
-    correct = 0
-    with torch.no_grad():
-        for inputs, targets in loader:
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-            total_loss += loss.item()
-            _, predicted = outputs.max(1)
-            correct += predicted.eq(targets).sum().item()
-    return total_loss / len(loader), correct / len(loader.dataset)
+<span class="pl-k">def</span> <span class="pl-en">validate</span>(<span class="pl-s1">model</span>, <span class="pl-s1">loader</span>, <span class="pl-s1">criterion</span>):
+    <span class="pl-s1">model</span>.<span class="pl-c1">eval</span>()
+    <span class="pl-s1">total_loss</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-s1">correct</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-k">with</span> <span class="pl-s1">torch</span>.<span class="pl-c1">no_grad</span>():
+        <span class="pl-k">for</span> <span class="pl-s1">inputs</span>, <span class="pl-s1">targets</span> <span class="pl-c1">in</span> <span class="pl-s1">loader</span>:
+            <span class="pl-s1">outputs</span> <span class="pl-c1">=</span> <span class="pl-en">model</span>(<span class="pl-s1">inputs</span>)
+            <span class="pl-s1">loss</span> <span class="pl-c1">=</span> <span class="pl-en">criterion</span>(<span class="pl-s1">outputs</span>, <span class="pl-s1">targets</span>)
+            <span class="pl-s1">total_loss</span> <span class="pl-c1">+=</span> <span class="pl-s1">loss</span>.<span class="pl-c1">item</span>()
+            <span class="pl-s1">_</span>, <span class="pl-s1">predicted</span> <span class="pl-c1">=</span> <span class="pl-s1">outputs</span>.<span class="pl-c1">max</span>(<span class="pl-c1">1</span>)
+            <span class="pl-s1">correct</span> <span class="pl-c1">+=</span> <span class="pl-s1">predicted</span>.<span class="pl-c1">eq</span>(<span class="pl-s1">targets</span>).<span class="pl-c1">sum</span>().<span class="pl-c1">item</span>()
+    <span class="pl-k">return</span> <span class="pl-s1">total_loss</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>), <span class="pl-s1">correct</span> <span class="pl-c1">/</span> <span class="pl-en">len</span>(<span class="pl-s1">loader</span>.<span class="pl-c1">dataset</span>)
 
-# 训练和验证过程
-best_val_acc = 0
-patience = 10
-early_stopping_counter = 0
+<span class="pl-c"># 训练和验证过程</span>
+<span class="pl-s1">best_val_acc</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+<span class="pl-s1">patience</span> <span class="pl-c1">=</span> <span class="pl-c1">10</span>
+<span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
 
-for epoch in range(100):
-    train_loss, train_acc = train(model, train_loader, optimizer, criterion)
-    val_loss, val_acc = validate(model, val_loader, criterion)
+<span class="pl-k">for</span> <span class="pl-s1">epoch</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">100</span>):
+    <span class="pl-s1">train_loss</span>, <span class="pl-s1">train_acc</span> <span class="pl-c1">=</span> <span class="pl-en">train</span>(<span class="pl-s1">model</span>, <span class="pl-s1">train_loader</span>, <span class="pl-s1">optimizer</span>, <span class="pl-s1">criterion</span>)
+    <span class="pl-s1">val_loss</span>, <span class="pl-s1">val_acc</span> <span class="pl-c1">=</span> <span class="pl-en">validate</span>(<span class="pl-s1">model</span>, <span class="pl-s1">val_loader</span>, <span class="pl-s1">criterion</span>)
     
-    # 使用 CosineAnnealingLR 更新学习率
-    scheduler.step()
+    <span class="pl-c"># 使用 CosineAnnealingLR 更新学习率</span>
+    <span class="pl-s1">scheduler</span>.<span class="pl-c1">step</span>()
     
-    print(f'Epoch {epoch+1}: Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}, Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}')
+    <span class="pl-en">print</span>(<span class="pl-s">f'Epoch <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">epoch</span><span class="pl-c1">+</span><span class="pl-c1">1</span><span class="pl-kos">}</span></span>: Train Loss: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">train_loss</span>:.4f<span class="pl-kos">}</span></span>, Train Acc: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">train_acc</span>:.2f<span class="pl-kos">}</span></span>, Val Loss: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">val_loss</span>:.4f<span class="pl-kos">}</span></span>, Val Acc: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">val_acc</span>:.2f<span class="pl-kos">}</span></span>'</span>)
     
-    # 早停策略
-    if val_acc &gt; best_val_acc:
-        best_val_acc = val_acc
-        early_stopping_counter = 0
-        # 保存最好的模型
-        torch.save(model.state_dict(), 'best_model.pth')
-    else:
-        early_stopping_counter += 1
-        if early_stopping_counter &gt;= patience:
-            print("Early stopping")
-            break
-</code></pre>
+    <span class="pl-c"># 早停策略</span>
+    <span class="pl-k">if</span> <span class="pl-s1">val_acc</span> <span class="pl-c1">&gt;</span> <span class="pl-s1">best_val_acc</span>:
+        <span class="pl-s1">best_val_acc</span> <span class="pl-c1">=</span> <span class="pl-s1">val_acc</span>
+        <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+        <span class="pl-c"># 保存最好的模型</span>
+        <span class="pl-s1">torch</span>.<span class="pl-c1">save</span>(<span class="pl-s1">model</span>.<span class="pl-c1">state_dict</span>(), <span class="pl-s">'best_model.pth'</span>)
+    <span class="pl-k">else</span>:
+        <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">+=</span> <span class="pl-c1">1</span>
+        <span class="pl-k">if</span> <span class="pl-s1">early_stopping_counter</span> <span class="pl-c1">&gt;=</span> <span class="pl-s1">patience</span>:
+            <span class="pl-en">print</span>(<span class="pl-s">"Early stopping"</span>)
+            <span class="pl-k">break</span></pre></div>
 <h3>总结</h3>
 <ul>
 <li><code class="notranslate">CosineAnnealingLR</code> 使用余弦退火调整学习率，使学习率在每个周期内从初始值逐渐减小到最低值，然后周期性地恢复。</li>
@@ -799,7 +795,7 @@ if("05/28/2024"!=""){
 </script></div>
 </body>
 <script>
-var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
 var utterancesLoad=0;
 
 let themeSettings={
@@ -872,7 +868,70 @@ function iFrameLoading(){
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
 
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
 
 </script>
 <script>MathJax = {tex: {inlineMath: [["$", "$"]]}};</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
