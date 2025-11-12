@@ -1,5 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 11 Nov 2025 16:28:50 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>Day1 - 20251112</title><link>https://jibinghu.github.io/post/Day1%20-%2020251112.html</link><description>Day 1 – Building a Habit
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Wed, 12 Nov 2025 15:45:06 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>Day2 - 20251112</title><link>https://jibinghu.github.io/post/Day2%20-%2020251112.html</link><description>    Today I spent time studying the DeepSeek-OCR model, and my learning process could be divided into three main steps.
+First, I read several blogs and technical posts to understand its overall architecture and workflow.
+Second, I began reproducing the end-to-end model, but in this stage I still need to set proper breakpoints to clearly see what happens inside each part of the model.
+Third, because of the viral warts around my eyes, I had to spend about two or three hours getting them removed by laser treatment, which cost me some of my working time.
+
+    Even so, while reading those blogs, I came up with a few innovative ideas—for example, I think it might be possible to compress LaTeX layouts, so that we wouldn’t need SAM anymore since its function could be integrated into the compression model. I’m not entirely sure whether this idea is right, but it seems worth exploring further.
+
+    As for my graduation paper, I realized that I still have a lot more work to do, and I need to dedicate more effort to it. That’s all for today. I’m quite tired tonight, but I still have to spend at least an hour preparing for the civil service test.
+
+    Good night, my friend.
+
+。</description><guid isPermaLink="true">https://jibinghu.github.io/post/Day2%20-%2020251112.html</guid><pubDate>Wed, 12 Nov 2025 15:44:30 +0000</pubDate></item><item><title>Day1 - 20251112</title><link>https://jibinghu.github.io/post/Day1%20-%2020251112.html</link><description>Day 1 – Building a Habit
 
 I will start a new habit from today. On one hand, I want to record my daily life; on the other hand, I hope to share my thoughts on technology and career planning for my future development.
 
