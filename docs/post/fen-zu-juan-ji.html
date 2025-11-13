@@ -97,7 +97,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 个标准卷积核时，标准卷积会对完整的输入数据进行运算，最终得到的输出矩阵尺寸为 𝐻2×𝑊2×𝐶2<br>
 。这里我们假设卷积运算前后的特征图尺寸保持不变，则上述过程可以展示为 图1 。</p>
 <a href="https://paddlepedia.readthedocs.io/en/latest/_images/Standard_Convolution.png" rel="nofollow">
-    <img src="https://camo.githubusercontent.com/22c06325ddbee066b5aceb561603336898a44cb3154567dfadabb215f942f275/68747470733a2f2f706164646c6570656469612e72656164746865646f63732e696f2f656e2f6c61746573742f5f696d616765732f5374616e646172645f436f6e766f6c7574696f6e2e706e67" alt="Standard Convolution Image" width="500" data-canonical-src="https://paddlepedia.readthedocs.io/en/latest/_images/Standard_Convolution.png" style="max-width: 100%;">
+    <img src="https://camo.githubusercontent.com/09f5c4448341750b55625bc3af5c597dfffbaa859b60a05ec904eac2e5be59aa/68747470733a2f2f706164646c6570656469612e72656164746865646f63732e696f2f656e2f6c61746573742f5f696d616765732f5374616e646172645f436f6e766f6c7574696f6e2e706e67" alt="Standard Convolution Image" width="500" data-canonical-src="https://paddlepedia.readthedocs.io/en/latest/_images/Standard_Convolution.png" style="max-width: 100%;">
 </a>
 <p>分组卷积则是针对这一过程进行了改进。分组卷积中，通过指定组数 𝑔<br>
 来确定分组数量，将输入数据分成 𝑔<br>
@@ -111,7 +111,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 组输出矩阵进行拼接就可以得到最终的结果。这样拼接完成后，最终的输出尺寸就可以保持不变，仍然是 𝐻2×𝑊2×𝐶2<br>
 。分组卷积的运算过程如 图2 所示。</p>
 <a href="https://paddlepedia.readthedocs.io/en/latest/_images/Group_Convolution.png" rel="nofollow">
-    <img src="https://camo.githubusercontent.com/22c06325ddbee066b5aceb561603336898a44cb3154567dfadabb215f942f275/68747470733a2f2f706164646c6570656469612e72656164746865646f63732e696f2f656e2f6c61746573742f5f696d616765732f5374616e646172645f436f6e766f6c7574696f6e2e706e67" alt="Standard Convolution Image" width="500" data-canonical-src="https://paddlepedia.readthedocs.io/en/latest/_images/Standard_Convolution.png" style="max-width: 100%;">
+    <img src="https://camo.githubusercontent.com/09f5c4448341750b55625bc3af5c597dfffbaa859b60a05ec904eac2e5be59aa/68747470733a2f2f706164646c6570656469612e72656164746865646f63732e696f2f656e2f6c61746573742f5f696d616765732f5374616e646172645f436f6e766f6c7574696f6e2e706e67" alt="Standard Convolution Image" width="500" data-canonical-src="https://paddlepedia.readthedocs.io/en/latest/_images/Standard_Convolution.png" style="max-width: 100%;">
 </a></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
