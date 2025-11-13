@@ -1,5 +1,15 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Wed, 12 Nov 2025 15:50:43 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>Day2 - 20251112</title><link>https://jibinghu.github.io/post/Day2%20-%2020251112.html</link><description>    
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 13 Nov 2025 04:18:12 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>A 股量化交易开源项目清</title><link>https://jibinghu.github.io/post/A%20-gu-liang-hua-jiao-yi-kai-yuan-xiang-mu-qing.html</link><description># 🇨🇳 **一、完全适用于 A 股的主流开源框架（强烈推荐）**
+
+## **1️⃣ vn.py（国内最强，适用股票/期货/期权/CTA/HFT）**
+
+📌 **Github**：[https://github.com/vnpy/vnpy](https://github.com/vnpy/vnpy)
+📌 **语言**：Python
+📌 **适合**：A 股 / 期货 / 期权 / CTA / 高频 / 实盘
+
+### 📌 为什么推荐？
+
+* 国内量化的 **头号开源项目**，几乎行业标准。</description><guid isPermaLink="true">https://jibinghu.github.io/post/A%20-gu-liang-hua-jiao-yi-kai-yuan-xiang-mu-qing.html</guid><pubDate>Thu, 13 Nov 2025 04:17:46 +0000</pubDate></item><item><title>Day2 - 20251112</title><link>https://jibinghu.github.io/post/Day2%20-%2020251112.html</link><description>    
 Today I spent time studying the DeepSeek-OCR model, and my learning process could be divided into three main steps.
 First, I read several blogs and technical posts to understand its overall architecture and workflow.
 
