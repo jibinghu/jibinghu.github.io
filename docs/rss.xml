@@ -1,5 +1,189 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 13 Nov 2025 04:18:12 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>A 股量化交易开源项目清</title><link>https://jibinghu.github.io/post/A%20-gu-liang-hua-jiao-yi-kai-yuan-xiang-mu-qing.html</link><description># 🇨🇳 **一、完全适用于 A 股的主流开源框架（强烈推荐）**
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 17 Nov 2025 03:56:13 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>无锁队列的学习与实现(CUDA)</title><link>https://jibinghu.github.io/post/wu-suo-dui-lie-de-xue-xi-yu-shi-xian-%28CUDA%29.html</link><description>基于 ring buffer 和内存栅栏 __threadfence()：
+
+核心数据结构（无锁 SPSC 环形队列）
+
+``` cuda
+// lock_free_queue.cuh
+
+#pragma once
+#include &lt;cuda_runtime.h&gt;
+
+template &lt;typename T, int CapacityPow2&gt;
+struct LockFreeQueueSPSC {
+    // 要求容量是 2 的整数次幂，方便用位与取模
+    static_assert((CapacityPow2 &amp; (CapacityPow2 - 1)) == 0,
+                  'Capacity must be power of 2.');
+
+    // 环形缓冲区
+    T buffer[CapacityPow2];
+
+    // head：下一个要 pop 的位置索引
+    // tail：下一个要 push 的位置索引
+    // 约定：
+    //   - 只有消费者线程写 head
+    //   - 只有生产者线程写 tail
+    //   - 双方都可以读对方的索引
+    unsigned int head;
+    unsigned int tail;
+
+    __device__ void init() {
+        head = 0;
+        tail = 0;
+    }
+
+    // push：在队列尾部插入一个元素
+    // 返回 true 表示成功，false 表示队列已满
+    __device__ bool push(const T &amp;value) {
+        // 生产者线程
+
+        // 本线程写 tail，无数据竞争
+        unsigned int t = tail;
+        // 读消费者的 head，需要保证不被编译器乱优化，cast 成 volatile 指针
+        unsigned int h = *reinterpret_cast&lt;volatile unsigned int *&gt;(&amp;head);
+
+        // 如果 tail - head &gt;= capacity 就满了
+        if (t - h &gt;= CapacityPow2) {
+            return false; // full
+        }
+
+        // 写入数据到环形缓冲区
+        buffer[t &amp; (CapacityPow2 - 1)] = value;
+
+        // 保证 buffer 写入在 tail 更新前对其他线程可见
+        __threadfence();
+
+        // 更新 tail，让消费者看到新元素
+        *reinterpret_cast&lt;volatile unsigned int *&gt;(&amp;tail) = t + 1;
+        return true;
+    }
+
+    // pop：从队列头部取出一个元素
+    // 返回 true 表示成功，false 表示队列为空
+    __device__ bool pop(T &amp;out) {
+        // 消费者线程
+
+        // 本线程写 head，无数据竞争
+        unsigned int h = head;
+        // 读生产者的 tail
+        unsigned int t = *reinterpret_cast&lt;volatile unsigned int *&gt;(&amp;tail);
+
+        if (h == t) {
+            return false; // empty
+        }
+
+        // 在读取数据前，确保我们看到的是生产者已经完成写入的数据
+        __threadfence();
+
+        out = buffer[h &amp; (CapacityPow2 - 1)];
+
+        // 再加一道 fence，确保 out 读完后再移动 head（比较保守的写法）
+        __threadfence();
+
+        *reinterpret_cast&lt;volatile unsigned int *&gt;(&amp;head) = h + 1;
+        return true;
+    }
+
+    // 当前队列元素数量（近似值，非强一致）
+    __device__ unsigned int size() const {
+        unsigned int h = *reinterpret_cast&lt;const volatile unsigned int *&gt;(&amp;head);
+        unsigned int t = *reinterpret_cast&lt;const volatile unsigned int *&gt;(&amp;tail);
+        return t - h;
+    }
+
+    __device__ bool empty() const {
+        return size() == 0;
+    }
+
+    __device__ bool full() const {
+        return size() &gt;= CapacityPow2;
+    }
+};
+```
+
+example:
+
+``` cuda
+// main.cu
+
+#include &lt;cstdio&gt;
+#include 'lock_free_queue.cuh'
+
+constexpr int QUEUE_CAPACITY = 1024;  // 必须是 2 的幂
+constexpr int N_ITEMS        = 1000;  // 需要传输的元素数量
+
+__global__ void queue_kernel(int *output) {
+    // 单个 block 里共享一个队列对象（放在共享内存里也行，这里简单放全局）
+    __shared__ LockFreeQueueSPSC&lt;int, QUEUE_CAPACITY&gt; queue;
+
+    if (threadIdx.x == 0) {
+        // 生产者初始化队列
+        queue.init();
+    }
+
+    __syncthreads(); // 确保队列初始化完毕
+
+    if (threadIdx.x == 0) {
+        // 生产者
+        int produced = 0;
+        while (produced &lt; N_ITEMS) {
+            if (queue.push(produced)) {
+                produced++;
+            }
+            // 如果满了，会暂时 push 失败，就继续循环重试（自旋）
+        }
+    } else if (threadIdx.x == 1) {
+        // 消费者
+        int consumed = 0;
+        while (consumed &lt; N_ITEMS) {
+            int v;
+            if (queue.pop(v)) {
+                output[consumed] = v;
+                consumed++;
+            }
+            // 如果空了，就继续循环等待数据（自旋）
+        }
+    }
+}
+
+int main() {
+    int *d_out = nullptr;
+    int *h_out = new int[N_ITEMS];
+
+    cudaMalloc(&amp;d_out, N_ITEMS * sizeof(int));
+
+    // 启动一个 block，至少两个线程：
+    //   thread 0: producer
+    //   thread 1: consumer
+    queue_kernel&lt;&lt;&lt;1, 2&gt;&gt;&gt;(d_out);
+    cudaDeviceSynchronize();
+
+    cudaMemcpy(h_out, d_out, N_ITEMS * sizeof(int), cudaMemcpyDeviceToHost);
+
+    // 简单检查：应该是 0..N_ITEMS-1
+    bool ok = true;
+    for (int i = 0; i &lt; N_ITEMS; ++i) {
+        if (h_out[i] != i) {
+            printf('Mismatch at %d: got %d expected %d\n', i, h_out[i], i);
+            ok = false;
+            break;
+        }
+    }
+
+    if (ok) {
+        printf('Queue works! First 10 values: ');
+        for (int i = 0; i &lt; 10 &amp;&amp; i &lt; N_ITEMS; ++i) {
+            printf('%d ', h_out[i]);
+        }
+        printf('\n');
+    }
+
+    cudaFree(d_out);
+    delete[] h_out;
+    return 0;
+}
+```
+。</description><guid isPermaLink="true">https://jibinghu.github.io/post/wu-suo-dui-lie-de-xue-xi-yu-shi-xian-%28CUDA%29.html</guid><pubDate>Mon, 17 Nov 2025 03:55:42 +0000</pubDate></item><item><title>A 股量化交易开源项目清</title><link>https://jibinghu.github.io/post/A%20-gu-liang-hua-jiao-yi-kai-yuan-xiang-mu-qing.html</link><description># 🇨🇳 **一、完全适用于 A 股的主流开源框架（强烈推荐）**
 
 ## **1️⃣ vn.py（国内最强，适用股票/期货/期权/CTA/HFT）**
 
