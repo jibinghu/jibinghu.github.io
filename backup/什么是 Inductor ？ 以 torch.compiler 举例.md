@@ -70,3 +70,8 @@ def fused_linear_relu_kernel(X, W, B, Y, ...):
 
 编译结果缓存 = 只在“当前进程内”有效
 
+---
+
+https://zhuanlan.zhihu.com/p/595996564
+
+这篇 blog 讲的很好，但是AI 编译是一门大学问，只能点到为止了。
