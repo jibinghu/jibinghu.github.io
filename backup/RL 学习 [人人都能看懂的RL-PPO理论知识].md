@@ -103,6 +103,28 @@ policy-based下的强化学习优化目标：
 
 因为：
 
+轨迹 τ 在策略 πθ 下出现的概率（trajectory probability）
+
+> 轨迹概率 = 初始状态概率 × 环境概率 × 策略概率
+
 <img width="469" height="85" alt="Image" src="https://github.com/user-attachments/assets/1375a47b-ac96-4081-9f14-29a34d850973" />
 
+有
 
+<img width="696" height="138" alt="Image" src="https://github.com/user-attachments/assets/4dd1016e-a2c7-417e-bdff-65b03ce7446c" />
+
+被约去的两项是因为这里我们是在对策略求梯度，而这两项和环境相关，不和策略相关。
+
+综上，最终策略的梯度表达式为：
+
+<img width="402" height="113" alt="Image" src="https://github.com/user-attachments/assets/de8ba20c-d18f-446a-b3b5-093759ed0004" />
+
+所以：！！！
+
+<img width="483" height="234" alt="Image" src="https://github.com/user-attachments/assets/4b9e73c9-f0a1-49be-84d0-81ea9253b469" />
+
+<img width="746" height="91" alt="Image" src="https://github.com/user-attachments/assets/4fa6fa43-5d48-44d3-b28d-757e17b05864" />
+
+在实践中，我们可以通过采样足够多的轨迹来估计这个期望。假设采样N条轨迹，N足够大，每条轨迹涵盖 $T_n$ 步，则上述优化目标可以再次被写成：
+
+<img width="418" height="387" alt="Image" src="https://github.com/user-attachments/assets/d3ea9f64-f360-4c9a-82dc-29c425e01570" />
