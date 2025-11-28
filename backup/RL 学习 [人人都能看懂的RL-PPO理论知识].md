@@ -131,5 +131,4 @@ policy-based下的强化学习优化目标：
 
 <img width="615" height="464" alt="Image" src="https://github.com/user-attachments/assets/cf47465d-123a-4d49-a4ec-0d2b82fba205" />
 
-
 公式中连乘有两个部分，上述很重要。
