@@ -128,3 +128,8 @@ policy-based下的强化学习优化目标：
 在实践中，我们可以通过采样足够多的轨迹来估计这个期望。假设采样N条轨迹，N足够大，每条轨迹涵盖 $T_n$ 步，则上述优化目标可以再次被写成：
 
 <img width="418" height="387" alt="Image" src="https://github.com/user-attachments/assets/d3ea9f64-f360-4c9a-82dc-29c425e01570" />
+
+<img width="615" height="464" alt="Image" src="https://github.com/user-attachments/assets/cf47465d-123a-4d49-a4ec-0d2b82fba205" />
+
+
+公式中连乘有两个部分，上述很重要。
