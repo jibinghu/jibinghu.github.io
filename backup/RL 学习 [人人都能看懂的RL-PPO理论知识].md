@@ -1,5 +1,8 @@
 学习自：[人人都能看懂的 RL-PPO 理论知识](https://zhuanlan.zhihu.com/p/7461863937)
 
+
+12.1 [更] 还是没能学完，
+
 参考资料是Sutton的这本[强化学习导论](http://incompleteideas.net/book/the-book-2nd.html)。在现有的很多教材中，一般会按照这本导论的介绍方式，从MDP(马尔可夫决策过程）和价值函数定义介绍起，然后按照value-based，policy-based，actor-critic的顺序介绍。但是由于本文的重点是actor-critic，所以我在写文章时，按照自己的思考方式重新做了整理：
 
 - 我们会先介绍policy-based下的优化目标。
@@ -132,3 +135,90 @@ policy-based下的强化学习优化目标：
 <img width="615" height="464" alt="Image" src="https://github.com/user-attachments/assets/cf47465d-123a-4d49-a4ec-0d2b82fba205" />
 
 公式中连乘有两个部分，上述很重要。
+
+
+---
+
+接下来引入价值：
+
+策略的梯度可以表示成：
+
+<img width="440" height="150" alt="Image" src="https://github.com/user-attachments/assets/92b60320-b27d-4876-811e-81bcdc25765a" />
+
+也就是说在长为 $T_n$ 的轨迹中，策略的选取以及环境的反馈以及奖励函数的整体期望得到最终基于策略的期望，但是环境只与采取的动作有关，（我理解是按照链式法则来看，整体的梯度求导只与策略的参数 $\theta$ 有关即可，与环境相关被剔除）。
+
+<img width="728" height="305" alt="Image" src="https://github.com/user-attachments/assets/31bad809-e31e-4038-b31a-f8651dd5ec6d" />
+
+<img width="725" height="234" alt="Image" src="https://github.com/user-attachments/assets/40026a71-de3b-499f-9e74-960d2b46b92b" />
+
+所以把整条轨迹上的奖励函数替换成一个更可行的价值函： $\psi$ 。
+
+<img width="720" height="275" alt="Image" src="https://github.com/user-attachments/assets/23e60a21-4b5c-4992-b08e-111f6ff65cea" />
+
+接下来逐一进行说明：
+
+<img width="462" height="202" alt="Image" src="https://github.com/user-attachments/assets/ecef3a4c-b91a-404c-a837-f688f110349f" />
+
+<img width="723" height="180" alt="Image" src="https://github.com/user-attachments/assets/62c92010-c154-4ae3-9bc5-00b85bdafaf4" />
+
+<img width="740" height="342" alt="Image" src="https://github.com/user-attachments/assets/0dc88feb-8fb7-4a6d-8fe0-c7c1a3a9a2ec" />
+
+<img width="584" height="268" alt="Image" src="https://github.com/user-attachments/assets/6292bcbe-680b-4585-bfbb-845599a3fcb5" />
+
+<img width="742" height="871" alt="Image" src="https://github.com/user-attachments/assets/62e37d19-ce2b-4a52-911c-7413ede710ba" />
+
+这就说明，当优势越大时，说明一个动作比其他动作更好，因为已经减去了随机采样得到的基线（当然这里也可以选择其他方式来确定 baseline），所以这时候我们要提升这个动作的概率。
+
+<img width="560" height="249" alt="Image" src="https://github.com/user-attachments/assets/182a8014-2bd6-4e99-b95a-b484e97c7111" />
+
+注意，这时候我们已经可以知道 状态价值函数、动作价值函数的抽象概念是什么意思了(基于上述的说法)。
+
+
+<img width="719" height="562" alt="Image" src="https://github.com/user-attachments/assets/b6eba9d7-5e35-4fb6-9762-55e876d15d7c" />
+
+
+<img width="729" height="702" alt="Image" src="https://github.com/user-attachments/assets/301f4fde-961f-48e3-b8c4-e14c8d43063d" />
+
+我觉得有必要自己推导一下整个过程：
+
+<img width="242" height="54" alt="Image" src="https://github.com/user-attachments/assets/05e25f45-f0ad-4743-b2f6-3400a572f97d" />
+
+<img width="425" height="48" alt="Image" src="https://github.com/user-attachments/assets/f1e63572-de4c-4920-8a90-5b0ad9e07305" />
+
+<img width="280" height="42" alt="Image" src="https://github.com/user-attachments/assets/7fe0ba3f-dfd9-42b5-b30e-d6794c8119af" />
+
+<img width="742" height="82" alt="Image" src="https://github.com/user-attachments/assets/9bafdfa5-9fbd-4ac4-b094-47d5e0ccbd3d" />
+
+这时
+
+<img width="746" height="296" alt="Image" src="https://github.com/user-attachments/assets/64cc1341-1ac5-4c55-9f46-fa3a0dbc008c" />
+
+<img width="627" height="397" alt="Image" src="https://github.com/user-attachments/assets/88f1a5bf-6d06-427c-9a28-377534e9c313" />
+
+基于贝尔曼方程：https://datawhalechina.github.io/easy-rl/#/chapter2/chapter2
+
+<img width="749" height="398" alt="Image" src="https://github.com/user-attachments/assets/fcb097e3-c84f-414d-92ed-022c4a4b14f4" />
+
+<img width="748" height="671" alt="Image" src="https://github.com/user-attachments/assets/b572a5fe-b862-4df0-9767-f4420c79bd33" />
+
+<img width="473" height="674" alt="Image" src="https://github.com/user-attachments/assets/15151ed8-d096-435e-be0b-4ec5f0bc6f9a" />
+
+<img width="733" height="672" alt="Image" src="https://github.com/user-attachments/assets/dc9de55c-5b02-4e3e-8f9f-0db6aed27841" />
+
+<img width="715" height="212" alt="Image" src="https://github.com/user-attachments/assets/dacb0cdb-492d-474a-a750-649442761b47" />
+
+<img width="634" height="257" alt="Image" src="https://github.com/user-attachments/assets/14af2134-7390-4827-9005-7e62ee6324d3" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
