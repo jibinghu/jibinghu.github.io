@@ -253,7 +253,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <p>NVIDIA Tesla V100（Volta 架构，Compute Capability = 7.0）的比较全面的硬件／资源参数汇总：</p>
 <hr>
 <h2>基本架构参数</h2>
-<markdown-accessiblity-table><table border="1" cellpadding="4" cellspacing="0" role="table">
+<markdown-accessiblity-table><table cellpadding="4" cellspacing="0" role="table">
   <tbody><tr><th>项目</th><th>数值 / 描述</th></tr>
   <tr><td>架构 / 代号</td><td>Volta / GV100 :contentReference[oaicite:0]{index=0}</td></tr>
   <tr><td>完整 GV100 芯片的 SM 总数</td><td>84 个 SM :contentReference[oaicite:1]{index=1}</td></tr>
@@ -267,7 +267,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </tbody></table></markdown-accessiblity-table>
 <hr>
 <h2>SM 级资源 / 线程 / 寄存器 / 共享内存 限制</h2>
-<markdown-accessiblity-table><table border="1" cellpadding="4" cellspacing="0" role="table">
+<markdown-accessiblity-table><table cellpadding="4" cellspacing="0" role="table">
   <tbody><tr><th>资源类型</th><th>限制 / 说明</th></tr>
   <tr><td>最大并发 warp 数</td><td>64 个 warp（即 64 × 32 = 2048 线程）:contentReference[oaicite:8]{index=8}</td></tr>
   <tr><td>最大并发线程数／SM</td><td>2,048 线程 :contentReference[oaicite:9]{index=9}</td></tr>
@@ -284,7 +284,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </tbody></table></markdown-accessiblity-table>
 <hr>
 <h2>不同精度 / Tensor Core 吞吐能力</h2>
-<markdown-accessiblity-table><table border="1" cellpadding="4" cellspacing="0" role="table">
+<markdown-accessiblity-table><table cellpadding="4" cellspacing="0" role="table">
   <tbody><tr><th>精度 / 类型</th><th>理论峰值算力 / 吞吐</th><th>说明 / 备注</th></tr>
   <tr><td>FP64（双精度）</td><td>约 7.8 TFLOPS（在 SXM / GV100 版本）:contentReference[oaicite:20]{index=20}</td><td>每 SM 有 32 个 FP64 核心</td></tr>
   <tr><td>FP32（单精度）</td><td>约 15.7 TFLOPS（Boost 时钟下）:contentReference[oaicite:21]{index=21}</td><td>标准 CUDA 核心用于标量浮点运算</td></tr>
@@ -301,7 +301,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </ul>
 <hr>
 <h2>子结构 / 缓存 / 内存 / 带宽 等</h2>
-<markdown-accessiblity-table><table border="1" cellpadding="4" cellspacing="0" role="table">
+<markdown-accessiblity-table><table cellpadding="4" cellspacing="0" role="table">
   <tbody><tr><th>子系统</th><th>参数 / 大小 / 吞吐</th><th>说明 / 备注</th></tr>
   <tr><td>L2 缓存</td><td>6,144 KB（6 MB）:contentReference[oaicite:29]{index=29}</td><td>整卡共享，用于跨 SM 缓存加速</td></tr>
   <tr><td>共享内存 + L1 混合空间</td><td>每 SM 最多可配置 96 KB :contentReference[oaicite:30]{index=30}</td><td>Volta 架构中共享内存与 L1 缓存资源是可配置混合使用的</td></tr>
