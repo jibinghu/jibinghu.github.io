@@ -1,5 +1,20 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 08 Dec 2025 09:00:59 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>生词</title><link>https://jibinghu.github.io/post/sheng-ci.html</link><description>readily 
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 08 Dec 2025 09:23:51 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>FA by Triton</title><link>https://jibinghu.github.io/post/FA%20by%20Triton.html</link><description>首先把老生常谈的 scale dot-product attention formula 拿出来：
+
+$$
+Attention(Q, K, V) = softmax(\frac{QK^T}{\sqrt{d_k}})V
+$$
+
+存储类型 | 全称 | 能否读写 | 典型延迟 | 典型用途 | 是否进入 GPU 性能模型
+-- | -- | -- | -- | -- | --
+SRAM | Static RAM | ✅ 读写 | 1–30 cycles | 寄存器、LDS、Shared、L1 | ✅ 核心
+DRAM | Dynamic RAM | ✅ 读写 | 300–1000 cycles | 外部显存 | ✅ 核心
+HBM | High Bandwidth DRAM | ✅ 读写 | 300–800 cycles | GPU 显存 | ✅ 核心（DRAM 的一种）
+SROM / ROM | Static Read-Only Memory | ❌ 只读 | 快 | 存微码、固件 | ❌ 不讨论
+
+&lt;img width='2000' height='783' alt='Image' src='https://github.com/user-attachments/assets/4fc1ddc5-0adf-4d4e-90c8-6f9f1b8b7ea3' /&gt;
+
+这个经典的 FA 图，左边就是多级显存的访存效率，右边的图说明了以 GPT-2为例，pyTorch 原生实现的 Attention 和 FlashAttention 进行 Kernel Fusion后的时间对比。</description><guid isPermaLink="true">https://jibinghu.github.io/post/FA%20by%20Triton.html</guid><pubDate>Mon, 08 Dec 2025 09:23:20 +0000</pubDate></item><item><title>生词</title><link>https://jibinghu.github.io/post/sheng-ci.html</link><description>readily 
 simultaneously
 strain
 theater
