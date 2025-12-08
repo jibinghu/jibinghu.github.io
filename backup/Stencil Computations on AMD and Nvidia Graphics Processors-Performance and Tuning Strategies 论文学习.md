@@ -68,7 +68,45 @@ Naive stencil kernel（无 LDS / 无 fusion） | ✅ 还能有“中高等性能
 是否适合“通用 stencil 模板” | ✅ 适合 | ❌ 不适合，必须架构定制
 工程调优难度 | ⭐⭐（相对友好） | ⭐⭐⭐⭐⭐（明显更硬核）
 
+NVIDIA 的 L1 与共享内存位于同一片片上 SRAM，L1 对 stencil 的局部性非常友好且行为稳定，因此在很多情况下可以仅依靠硬件缓存而不显式使用 shared memory。而在 AMD GPU 上，L1 cache 的行为对 stencil 的空间与时间复用并不稳定，无法保证数据持续驻留在片上缓存中。尽管 AMD 的 LDS 与 NVIDIA 的 shared 一样是低延迟片上存储，但它提供的是“可控、确定性的复用”。由于 stencil 的算术强度极低，无法通过计算隐藏 HBM 延迟，因此在 AMD 上必须依赖显式 LDS 管理来获得可预测的高性能。
 
+---
+
+扩展AMD 的 GPU 架构 GCN -> RDNA/CDNA
+
+对比维度 | GCN（Graphics Core Next） | RDNA（Radeon DNA） | CDNA（Compute DNA）
+-- | -- | -- | --
+首次发布时间 | 2012 | 2019 | 2020
+设计初衷 | 通用：图形 + 计算二合一 | 纯游戏 / 图形 | 纯 HPC / AI 计算
+产品线 | RX 480、Vega 64、MI50、MI100 | RX 5700、RX 6800、RX 7900 | MI100、MI250X、MI300
+是否支持图形渲染 | ✅ 支持 | ✅ 极强 | ❌ 不支持
+是否支持光线追踪 | ❌ | ✅ | ❌
+是否面向超算 | ⚠️ 勉强支持 | ❌ 不支持 | ✅ 核心目标
+是否面向大模型 / AI | ❌ | ❌ | ✅ 核心目标
+目标精度类型 | FP32 为主 | FP32 / FP16 为主 | ✅ FP64 / FP32 / BF16
+FP64 与 FP32 比例 | 1/2 ～ 1/4 | ❌ 1/16 ～ 1/32 | ✅ 1/2 或更高
+HBM 显存支持 | ⚠️ 少数型号支持 | ❌ 全部不支持 | ✅ 全系列标配
+片上共享存储（LDS） | ✅ 有 | ✅ 有 | ✅ 极其核心
+LDS 是否为关键性能资源 | ⚠️ 中等 | ❌ 次要 | ✅ 绝对核心
+L1 Cache 行为特点 | 偏旧式 cache | 面向图形流 | ❌ 对 stencil 不稳定
+LDS 与 L1 是否复用物理 SRAM | ❌ 否 | ❌ 否 | ❌ 否
+LDS 是否可编程控制 | ✅ 是 | ✅ 是 | ✅ 是
+L1 Cache 是否可编程控制 | ❌ 否 | ❌ 否 | ❌ 否
+执行单元名称 | CU（Compute Unit） | WGP（Work Group Processor） | CU（Compute Unit）
+最小执行粒度 | Wavefront = 64 | 可 32 / 64 | Wavefront = 64
+面向的线程模型 | OpenCL / HIP | DX12 / Vulkan | HIP / ROCm / MPI
+是否支持 Tensor / Matrix Core | ❌ | ❌ | ✅
+是否适合 Stencil / PDE | ⚠️ 可用但不高效 | ❌ 不适合 | ✅ 最佳架构
+Stencil 的主要瓶颈 | HBM + cache | 完全不适配 | ✅ LDS 复用与冲突
+Stencil 是否必须显式用 LDS | ⚠️ 可选 | ❌ 不重要 | ✅ 必须
+Kernel Fusion 在 stencil 中的重要性 | ⭐⭐ | ❌ 无意义 | ⭐⭐⭐⭐⭐ 刚需
+是否适合 GEMM / BLAS | ⚠️ 一般 | ❌ | ✅ 极强
+是否适合 CFD / 气候模式 | ⚠️ 勉强 | ❌ | ✅ 最佳
+是否适合大模型训练 | ❌ | ❌ | ✅ MI250X / MI300
+典型能效目标 | 中等 | 面向功耗墙下的帧率 | ✅ Exascale 性能/瓦
+是否适合 CUDA 风格直接迁移 | ⚠️ 勉强 | ❌ 完全不适合 | ✅ HIP 可迁移但需重调
+是否适合 Triton / CUTLASS 风格 | ❌ | ❌ | ⚠️ 需专门适配
+AMD 当前的战略地位 | ❌ 已淘汰 | ✅ 游戏主力 | ✅ 超算与 AI 战略核心
 
 
 
