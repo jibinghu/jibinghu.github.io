@@ -23,3 +23,35 @@ In this study, we evaluate the performance and energy efficiency of stencil comp
 
 [Magnetohydrodynamics with GAMER](https://www.themoonlight.io/extension/dist/web/pdf.html?origin=https%3A%2F%2Farxiv.org%2Fpdf%2F2406.08923&file=blob%3Ahttps%3A%2F%2Fwww.themoonlight.io%2Fa3877b5d-df17-4970-8e9c-626af5813d03&paperId=8a823000-7090-4748-a2e3-d8d3aee2d27f&isPaperOwner=true#6)
 
+<img width="525" height="308" alt="Image" src="https://github.com/user-attachments/assets/c241228e-ac88-4afa-8508-8dc83d645fa2" />
+
+以一维 Stencil 计算为例，通过将处理边界后的输入经过模板函数的处理得到输出。
+
+> 并介绍了一些在本文使用的术语。
+
+Nvidia 和 AMD 的 GPU 制造上的差异(缓存配置)：
+
+
+在Nvidia Volta及更新的GPU上，L1的一部分可以分配为共享内存(On Chip)，用于在CU上运行的一组线程之间的协作。在AMD CDNA 2 GPU上，共享内存分配在单独的内存单元上，称为本地数据共享（LDS），它位于CU之外。内存区域的容量也不同。例如，MI250X的共享内存容量大约比A100小2.5倍，但其每个CU的计算FP64性能大约高2.4倍。因此，程序必须以更低共享内存容量实现更高的运算强度，才能在MI250X上达到机器平衡。
+
+<img width="948" height="289" alt="Image" src="https://github.com/user-attachments/assets/8a5913e4-a67e-488d-8b99-c3a6a45cdeb6" />
+
+---
+
+结论：
+
+模板计算本质上受内存限制且对缓存敏感。每个网格点仅参与少量邻居更新，导致算术强度非常低。与GEMM不同，模板内核无法通过大量计算摊销全局内存延迟，因此严重依赖缓存或显式管理的共享/LDS内存进行数据重用。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
