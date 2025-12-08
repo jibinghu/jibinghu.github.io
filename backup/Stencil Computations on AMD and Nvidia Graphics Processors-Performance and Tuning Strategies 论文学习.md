@@ -44,6 +44,29 @@ Nvidia 和 AMD 的 GPU 制造上的差异(缓存配置)：
 
 本文旨在提出一种新的模板离散化或数值方案。相反，它解决了一个关键的性能工程问题：为Nvidia GPU开发的模板调整策略在现代AMD架构上是否仍然有效。通过对缓存和内存密集型模板内核进行广泛的跨平台基准测试，作者们证明了模板优化高度依赖于架构。他们进一步确定了关于缓存使用、显式共享/LDS内存管理、内核融合以及能效权衡的特定平台调整策略。
 
+优化维度 | NVIDIA GPU（A100 / H100 / V100） | AMD GPU（MI100 / MI250X / CDNA2）
+-- | -- | --
+架构核心特征 | SM 内部 L1 与 Shared 复用同一片 on-chip SRAM | LDS 是独立存储单元，与 CU 分离
+硬件缓存可靠性 | ✅ L1/L2 非常可靠，stencil 可高度依赖 | ⚠️ L1/L2 对 stencil 的稳定性不如 NVIDIA
+共享内存（shared/LDS）角色 | “可选加速器”：不用也能跑得不错 | “必需组件”：不用 LDS 性能大幅下降
+典型最优策略核心 | ✅ Cache-first → 再考虑 shared | ✅ LDS-first → cache 作为补充
+Kernel Fusion（多时间步融合） | ⭐ 有收益，但不是决定性 | ⭐⭐⭐⭐⭐ 几乎是刚需
+时间步复用（temporal reuse） | 可部分由 L1/L2 自动完成 | 必须显式放入 LDS 并跨 time-step 复用
+空间复用（spatial reuse） | 由 L1 自动提供一部分 | 必须通过 LDS tile 布局显式控制
+Block / Workgroup 尺寸敏感性 | ✅ 相对不敏感（容错性强） | ❗ 高度敏感（与 wavefront、LDS 冲突强相关）
+Warp/Wavefront 模型影响 | 32 线程 Warp，block 设计自由度高 | 64 线程 Wavefront，block 设计受限更强
+Occupancy 容忍度 | ✅ 即使 occupancy 稍低也能隐藏 latency | ❗ 过低 occupancy 会直接拖垮性能
+Register 压力容忍度 | ✅ 容忍度较高 | ❗ register 多 → occupancy 迅速下降
+典型性能上限瓶颈 | ✅ 多数 stencil 最终是 HBM-bandwidth-bound | ❗ 多数 stencil 是 LDS-bound / reuse-bound
+共享内存冲突影响 | 相对温和 | ❗ bank 冲突 + LDS 端口压力非常致命
+Naive stencil kernel（无 LDS / 无 fusion） | ✅ 还能有“中高等性能” | ❌ 性能通常非常差
+调优主要目标 | 把 stencil 推到 HBM 屋顶线（roofline top） | 把 stencil 从 LDS 限制中“解放出来”
+对 tile 尺寸的要求 | 中等即可（如 16×16，32×8） | 必须精细匹配 LDS（如 8×8×Z，小而密）
+对 kernel 结构的要求 | 单 kernel + 硬件 cache 已可接受 | 必须重构 kernel 结构（fusion / split）
+代码“可迁移性” | ✅ CUDA stencil kernel 迁移性很好 | ❌ CUDA 思路直接搬到 HIP 上风险极大
+能效最优点（Perf/Watt） | 多数与“性能最优点”接近 | ❗ 多数 早于性能最优点出现
+是否适合“通用 stencil 模板” | ✅ 适合 | ❌ 不适合，必须架构定制
+工程调优难度 | ⭐⭐（相对友好） | ⭐⭐⭐⭐⭐（明显更硬核）
 
 
 
