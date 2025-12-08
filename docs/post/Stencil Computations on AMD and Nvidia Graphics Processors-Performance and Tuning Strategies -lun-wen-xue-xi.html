@@ -124,7 +124,8 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/8a5913e4-a67e-488d-8b99-c3a6a45cdeb6"><img width="948" height="289" alt="Image" src="https://github.com/user-attachments/assets/8a5913e4-a67e-488d-8b99-c3a6a45cdeb6" style="max-width: 100%; height: auto; max-height: 289px;"></a></p>
 <hr>
 <p>结论：</p>
-<p>模板计算本质上受内存限制且对缓存敏感。每个网格点仅参与少量邻居更新，导致算术强度非常低。与GEMM不同，模板内核无法通过大量计算摊销全局内存延迟，因此严重依赖缓存或显式管理的共享/LDS内存进行数据重用。</p></div>
+<p>模板计算本质上受内存限制且对缓存敏感。每个网格点仅参与少量邻居更新，导致算术强度非常低。与GEMM不同，模板内核无法通过大量计算摊销全局内存延迟，因此严重依赖缓存或显式管理的共享/LDS内存进行数据重用。</p>
+<p>本文旨在提出一种新的模板离散化或数值方案。相反，它解决了一个关键的性能工程问题：为Nvidia GPU开发的模板调整策略在现代AMD架构上是否仍然有效。通过对缓存和内存密集型模板内核进行广泛的跨平台基准测试，作者们证明了模板优化高度依赖于架构。他们进一步确定了关于缓存使用、显式共享/LDS内存管理、内核融合以及能效权衡的特定平台调整策略。</p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
