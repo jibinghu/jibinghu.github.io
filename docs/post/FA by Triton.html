@@ -10,7 +10,9 @@
         let theme = localStorage.getItem("meek_theme") || "light";
         document.documentElement.setAttribute("data-color-mode", theme);
     </script>
-<meta name="description" content="首先把老生常谈的 scale dot-product attention formula 拿出来：
+<meta name="description" content="# FA1
+
+首先把老生常谈的 scale dot-product attention formula 拿出来：
 
 $$
 Attention(Q, K, V) = softmax(\frac{QK^T}{\sqrt{d_k}})V
@@ -27,7 +29,9 @@ SROM / ROM | Static Read-Only Memory | ❌ 只读 | 快 | 存微码、固件 | �
 
 这个经典的 FA 图，左边就是多级显存的访存效率，右边的图说明了以 GPT-2为例，pyTorch 原生实现的 Attention 和 FlashAttention 进行 Kernel Fusion后的时间对比。">
 <meta property="og:title" content="FA by Triton">
-<meta property="og:description" content="首先把老生常谈的 scale dot-product attention formula 拿出来：
+<meta property="og:description" content="# FA1
+
+首先把老生常谈的 scale dot-product attention formula 拿出来：
 
 $$
 Attention(Q, K, V) = softmax(\frac{QK^T}{\sqrt{d_k}})V
@@ -113,7 +117,8 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
 </div>
     <div id="content">
-<div class="markdown-body" id="postBody"><p>首先把老生常谈的 scale dot-product attention formula 拿出来：</p>
+<div class="markdown-body" id="postBody"><h1>FA1</h1>
+<p>首先把老生常谈的 scale dot-product attention formula 拿出来：</p>
 <p>$$
 Attention(Q, K, V) = softmax(\frac{QK^T}{\sqrt{d_k}})V
 $$</p>
@@ -268,6 +273,11 @@ $$</p>
     <span class="pl-s1">pre_max</span> <span class="pl-c1">=</span> <span class="pl-s1">cur_max</span> 
     <span class="pl-s1">pre_sum</span> <span class="pl-c1">=</span> <span class="pl-s1">cur_sum</span> 
   <span class="pl-k">return</span> <span class="pl-s1">acc</span></pre></div>
+<p>关于 fa1，有一些优化可以提出来：</p>
+<ol>
+<li>比如Q的循环可以放在外面，消除每次KV外循环都要去访问Q的开销；</li>
+<li>每次外循环都需要去用presum/cursum去rescale中间结果以得到最终结果，这些计算可以通过算法消除；---&gt;&gt;&gt; 这里我的理解就是可以将这个缩放调整因子放到GEMM 中来增加 tensorcore 的flops；</li>
+</ol>
 <hr>
 <p>补充，PCIe 和 NVlink 带宽：</p>
 <markdown-accessiblity-table><table role="table">
@@ -315,7 +325,9 @@ $$</p>
 <td>✅ 实测可达</td>
 </tr>
 </tbody>
-</table></markdown-accessiblity-table></div>
+</table></markdown-accessiblity-table>
+<h1>FA2</h1>
+<p>之前我们理解到，在 fa1 中，kv 的列维度为外循环，qo 的行维度为内循环，fa2 的话</p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>

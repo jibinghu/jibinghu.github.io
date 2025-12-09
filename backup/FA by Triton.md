@@ -1,3 +1,5 @@
+# FA1
+
 首先把老生常谈的 scale dot-product attention formula 拿出来：
 
 $$
@@ -147,7 +149,10 @@ def tiled_softmax_then_matmul(S, V):
   return acc
 ```
 
+关于 fa1，有一些优化可以提出来：
 
+1. 比如Q的循环可以放在外面，消除每次KV外循环都要去访问Q的开销；
+2. 每次外循环都需要去用presum/cursum去rescale中间结果以得到最终结果，这些计算可以通过算法消除；--->>> 这里我的理解就是可以将这个缩放调整因子放到GEMM 中来增加 tensorcore 的flops；
 
 ---
 
@@ -164,4 +169,6 @@ NVLink V4（H100） | ~150 GB/s/链路 | ~140 GB/s
 GPU HBM 本地带宽 | 1–3 TB/s | ✅ 实测可达
 
 
+# FA2
 
+之前我们理解到，在 fa1 中，kv 的列维度为外循环，qo 的行维度为内循环，fa2 的话
