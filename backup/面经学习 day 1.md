@@ -2,6 +2,8 @@ https://zhuanlan.zhihu.com/p/1920946738270810330
 
 知识点：
 
+- BF16/FP16
+
 - cpu 和 gpu 的算子库
 
 - cutlass
