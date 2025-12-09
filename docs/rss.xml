@@ -1,5 +1,19 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Mon, 08 Dec 2025 15:37:49 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>FA by Triton</title><link>https://jibinghu.github.io/post/FA%20by%20Triton.html</link><description>首先把老生常谈的 scale dot-product attention formula 拿出来：
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 09 Dec 2025 04:57:51 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>面经学习 day 1</title><link>https://jibinghu.github.io/post/mian-jing-xue-xi-%20day%201.html</link><description>https://zhuanlan.zhihu.com/p/1920946738270810330
+
+知识点：
+
+- cpu 和 gpu 的算子库
+
+- cutlass
+	- https://mp.weixin.qq.com/s?__biz=Mzg2ODk4MzE2MQ==&amp;mid=2247484590&amp;idx=1&amp;sn=ce85ec7834824c82d208261dc3f2bc69&amp;scene=21&amp;poc_token=HHuqN2mj3D4wsQAeSiRD2Vl_rk5ki-CKUmGoeUnU
+
+- xxxdnn primitive cache
+
+- 项目里面xxx kernel的时候，你会如何判断该kernel是否还有优化空间？
+
+- 在写你的xxx kernel时候，用到了哪些优化手段
+	- 访存上，coalesced，消除bank conflict，xxx。</description><guid isPermaLink="true">https://jibinghu.github.io/post/mian-jing-xue-xi-%20day%201.html</guid><pubDate>Tue, 09 Dec 2025 04:56:51 +0000</pubDate></item><item><title>FA by Triton</title><link>https://jibinghu.github.io/post/FA%20by%20Triton.html</link><description>首先把老生常谈的 scale dot-product attention formula 拿出来：
 
 $$
 Attention(Q, K, V) = softmax(\frac{QK^T}{\sqrt{d_k}})V
