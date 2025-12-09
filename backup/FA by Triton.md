@@ -106,7 +106,44 @@ $$
 
 
 
+---
 
+``` python
+# 计算公式
+# S = Q * (K.transpose(-1, -2))
+# P = softmax(S) 
+# O = P * V
+import numpy as np
+
+N = 4
+d = 2
+
+# 这里的 N 就是 seq_len，以一行作为示例
+S = np.random.random(size=(1, N))
+V = np.random.random(size=(N, d))
+
+def tiled_softmax_then_matmul(S, V):
+  # 分数
+  acc = np.zeros(shape=(1, d)) # 到目前为止输出的加权和
+  pre_max = float("-inf") # 到目前为止的最大值
+  pre_sum = 0 # 到目前为止 logits 的指数和
+  for i  in range(N): # 每个token，KV的列维度，为了简洁，这里把Q的行维度设为了1，因此没有了内循环
+    s_i = S[:,i] # 每列S
+    cur_max = max(pre_max, s_i) # 当前分块和之前分块一起的最大值
+   # 将之间的 调整因子调整为减去 cur_sum
+    pre_sum *= (np.exp(pre_max - cur_max)) # L10
+    # 当前分块和之前分块一起的指数和
+    cur_sum = pre_sum + np.exp(s_i - cur_max)
+    # 当前分块的softmax结果
+    score = np.exp(s_i - cur_max) / cur_sum # 到目前为止，当前块的 score 已经计算完毕，但是之前的 logits 还是以 pre_sum 作为底来计算的，所以还需要调整
+    scale = pre_sum / cur_sum # 因为上一个分块的结果是基于当时的softmax中间sum组成的分母（presum），现在这个分块又得到了新的中间sum（cursum），所以需要更新：对上一个分块的结果acc做一个scale，保证结果的正确性
+    acc *= scale # 进行更新之前的 logits 
+    acc += score * V[i,] # scale后的中间结果加上当前分块的P * V = O
+    # 更新
+    pre_max = cur_max 
+    pre_sum = cur_sum 
+  return acc
+```
 
 
 
