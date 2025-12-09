@@ -171,4 +171,34 @@ GPU HBM 本地带宽 | 1–3 TB/s | ✅ 实测可达
 
 # FA2
 
-之前我们理解到，在 fa1 中，kv 的列维度为外循环，qo 的行维度为内循环，fa2 的话
+之前我们理解到，在 fa1 中，kv 的列维度为外循环，qo 的行维度为内循环；
+
+> 以A100为例，其FP16/BF16 tensorcore的理论峰值吞吐量为312 TFLOPS，但FP32非矩阵乘法在CUDA core上仅有19.5 TFLOPS.
+
+这里引入 diag，左乘就是对矩阵每行都进行相同的处理(矩阵的常规处理居然忘了)
+
+<img width="1063" height="841" alt="Image" src="https://github.com/user-attachments/assets/45664faa-0851-451f-a9d2-f48df2bf0b7d" />
+
+上图中FA1 其实隐含了 Tile，但是没有显式提出来。
+
+fa2 的话，为了尽可能减少非矩阵乘的计算量，做了改进：省略了每次的分母的更新，在上图中的第二点，才是真正分块实现时候的表示，FA1 加入了调整因子；FA2 不需要对分母调整，只需要对分子调整即可，注意这里的 diag 也没有了 ^{-1}，而 FA2 在最后再进行全局的 $diag(l)^{-1}$ .
+
+上边说到，将Q 和 KV 的循环顺序进行修改能够得到性能提升，我有点不解，在这里解释：其实 Q 和 KV 循环调换我没理解透，但是 /l 来避免全局的同步点会有很大提升。
+
+对seqlen维度充分并行：这一点主要考虑到batchsize*numheads小于SM个数的情况下，无法打满SM算力，此时seqlen一般都很大，需要对seqlen维度充分并行。主要的实现就是在于FlashAttention-2将Q移到了外循环，KV移到了内循环，由于改进了算法使得warps之间不再需要相互通信去处理Q，所以外循环可以放在不同的block上。这个交换的优化方法是由Triton的作者提出并实现的。如下图，左图需要各个warp之间做reduce才能算出一行的结果，右图则不需要，它每个warp都可以独立计算出一整块softmax和一整块O结果。
+
+<img width="1020" height="385" alt="Image" src="https://github.com/user-attachments/assets/ec0ab3e0-610e-4f9d-8b6d-68ba0244e0e2" />
+
+<img width="1080" height="516" alt="Image" src="https://github.com/user-attachments/assets/0a9708c1-68b8-4950-82d0-6f903ac4245e" />
+
+<img width="1080" height="615" alt="Image" src="https://github.com/user-attachments/assets/ba1db24a-a9f5-45e0-987f-e18e22ad29d8" />
+
+
+
+
+
+
+
+
+
+
