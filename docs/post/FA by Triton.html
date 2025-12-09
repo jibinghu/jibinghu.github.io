@@ -233,6 +233,7 @@ $$</p>
 <hr>
 <p>上述即 FA1 的原理实现，下面用 Triton 进行实现：</p>
 <hr>
+<p>下面的代码是在串行合并，所以只有一个 pre_max -&gt; cur_max 的更新，如果一旦变成并行分块，就会出现多个分块来进行分割的结构。</p>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-c"># 计算公式</span>
 <span class="pl-c"># S = Q * (K.transpose(-1, -2))</span>
 <span class="pl-c"># P = softmax(S) </span>
