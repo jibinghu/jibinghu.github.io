@@ -45,14 +45,58 @@ FlashAttention利用了Tiling(forward)+Recompute(backward)对Attention计算进�
 
 <img width="340" height="239" alt="Image" src="https://github.com/user-attachments/assets/2031fb1c-d2f4-4050-9dad-1398b9bc27bb" />
 
-这样的话三个式子之间的依赖都依靠引入调整因子这个多余的计算量解决了。
+这样的话前两个式子之间的依赖都依靠引入调整因子这个多余的计算量解决了。
 
+<img width="520" height="244" alt="Image" src="https://github.com/user-attachments/assets/c3ce6bf6-d57d-43bc-8d81-f62fe8040859" />
 
+这里需要提醒，我们这里的 x 是 $QK^T$ ，维度为 (seq_len, seq_len)，我们避免了每次都需要将整个 $O(N^2)$ 的矩阵都从 HBM 中读写，而是分块来读取到共享内存中来实现。但是这里需要注意，我们在此只考虑了 softmax，对于 softmax 之前的 matmul 还需要考虑，而之前还有 $Q$ 和 $K^T$ 两个矩阵需要处理。
 
+> 要么在算法中online计算，每次循环中去load一部分Q，K到片上内存，计算得到x。
 
+这样我们就可以实现累加的并行了(通过分块和引入计算量来实现)，但是仍然需要得到 $d_N$ 之后才进行第二个循环(即分数的实现)，引入对 acc 的额外计算的话在事实上还是要再来一轮循环来调整做无用功，所以 softmax 事实上只能做到 2-pass 最优。但 Attention 可以做到 1-pass：
 
+Flash Attention：
 
+我们首先来看 Standard Self-Attention 是如何实现的：
 
+<img width="663" height="293" alt="Image" src="https://github.com/user-attachments/assets/49aed06d-7246-4aae-8598-68db33418728" />
+
+这是第一个循环， $Q 和 K^T$ matmul 得到 $x_i$ ，然后进行 online softmax (2-pass) 中的第一个循环，得到 softmax 的分子和分母；
+
+<img width="729" height="144" alt="Image" src="https://github.com/user-attachments/assets/6add7bfc-46e2-4efb-a9b0-89550dbc1991" />
+
+在第二个循环中根据 $d_N$ 得到最终的概率 (seq_len, seq_len)，注意这个时候因为 11 和 12 之间有依赖，最主要的是第二个循环依赖了 $m_N$ ，所以不能融合到第一个循环中。所以我们要像2-pass online softmax那样，找到 $o^'_i$ 与 $o^'_{i-1}$ 的不依赖于 $m_N$ 的递归关系。
+
+1-pass Flash Attention：
+
+首先定义：
+
+<img width="214" height="63" alt="Image" src="https://github.com/user-attachments/assets/2e8e2a8d-c243-450b-ad06-c7b3b091afb7" />
+
+可以看到他们还是依赖于 $m_N 和 d_N$ 的结束，但是可以用同样的 trick 来进行替代：
+
+<img width="214" height="77" alt="Image" src="https://github.com/user-attachments/assets/87369abd-f3eb-4de4-b114-b0f1f1a52860" />
+
+所以现在需要对概率也进行调整因子的调整以及加和。
+
+<img width="564" height="240" alt="Image" src="https://github.com/user-attachments/assets/d5eb3d48-de39-4257-8b01-4c8f849fa837" />
+
+如此之后，式子没有依赖地实现 1-pass Flash Attention 之后就可以 Tiling 来实现了：
+
+<img width="545" height="153" alt="Image" src="https://github.com/user-attachments/assets/cdbf36d1-21e3-4f8d-9574-63f5ec34230a" />
+
+每个 tile 内有 b 个 token，也就是 b 个 sel_len。接下来就以 tile 为单位进行计算：
+
+<img width="634" height="331" alt="Image" src="https://github.com/user-attachments/assets/64994439-f18c-42fc-ae1d-59dd5d542847" />
+
+注意，这里将 K 矩阵分成了多个块(实际上也可以切分 Q)，切分后的小块 load 到 SRAM 中，然后计算 $x_i$ ，接着进行剩余的计算。从算法逻辑上看，现在只需load Q,K,V一次，就能把Attention计算在kernel中全部完成。由3-pass的原始Self Attention，到1-pass 的FlashAttention，节省了S和P矩阵的显存，并且减少了Q,K的HBM IO Accesses。
+
+<img width="380" height="445" alt="Image" src="https://github.com/user-attachments/assets/8fe1ed5f-de0b-4789-81b6-40fcf61ca88c" />
+
+上图说明了 FlashAttention 在硬件上的计算方式。蓝色块代表位于 SRAM 中的块，而红色块对应第 i 行。L 表示序列长度，它可以非常大（例如 16k）；D 表示头维度，在 Transformer 中通常很小（例如 GPT3 的 128）；B 是可控的块大小。
+值得注意的是，整体 SRAM 内存占用仅取决于 B 和 D，与 L 无关。因此，该算法可以扩展到长上下文而不会遇到内存问题（对于 H100 架构，GPU 共享内存很小，为 228kb/SM）。在计算过程中，我们从左到右遍历 KT 和 A 的块，从上到下遍历 V 的块，并相应地更新 m、d 和 O 的状态。
+
+上图中，Q[i] 被放在 SRAM 中，在循环最外层；K_Tile和 V_Tile 被放在 SRAM 中。Q[i] 固定在最外层，对每个 K 的 tile 做乘法，得到一个 (1×B) 的 block logits；这个 block logits 立即参与在线 softmax，并与对应的 V tile (B×D) 融合相乘，累加到 (1×D) 的输出向量中；随着 K^T 和 V 沿着 L 方向逐 tile 滚动，最终完成一整行 O[i] 的计算。
 
 
 
