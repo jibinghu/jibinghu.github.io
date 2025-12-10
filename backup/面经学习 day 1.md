@@ -11,11 +11,11 @@ https://zhuanlan.zhihu.com/p/1920946738270810330
 
 <img width="589" height="176" alt="Image" src="https://github.com/user-attachments/assets/354cf422-cdda-4bf9-9082-7fc4d926e27e" />
 
-	- 总结下来就是 BGF16 用同样的存储位数，表示了更大的动态范围，但是损失了一定的精度表示。在 softmax、matmul、reduction 中 BF16 避免了溢出/下溢。比如 exp(12) = $1.63×10^5$ ，已经超过指数位 5 位可表示的最大范围 $6.55×10^4$ 。
+- 总结下来就是 BGF16 用同样的存储位数，表示了更大的动态范围，但是损失了一定的精度表示。在 softmax、matmul、reduction 中 BF16 避免了溢出/下溢。比如 exp(12) = $1.63×10^5$ ，已经超过指数位 5 位可表示的最大范围 $6.55×10^4$ 。
 
 <img width="316" height="40" alt="Image" src="https://github.com/user-attachments/assets/0ea7b30f-8d28-4037-9636-943024977d4c" />
 
-	- 反向传播时也更适合 BF16 来避免梯度消失/爆炸
+- 反向传播时也更适合 BF16 来避免梯度消失/爆炸
 	- 所以训练阶段更多用 BF16
 	- 而推理阶段在部分架构，尤其是 Tensore Core 中，FP16 的吞吐要比 BF16 快，而且没有训练时的一系列反向传播和误差计算等，所以影响比较小。
 
@@ -54,7 +54,22 @@ https://zhuanlan.zhihu.com/p/1920946738270810330
 	- weight only int4更适合对显存要求苛刻的场景
 
 - 为什么只量化weight，不量化activation？
+        - Weight 是静态常量，适合 aggressive 量化，Activation 是动态变量，量化会引入不可控累计噪声。现代硬件只要求 weight 是 int8，就能跑满算力，Transformer 中 activation 量化会在 softmax 处被指数级放大。 
 
 - 动态量化和静态量化有听说过吗？区别是？
-
 - 什么时候适合动态量化，什么时候适合静态量化？
+
+<img width="602" height="327" alt="Image" src="https://github.com/user-attachments/assets/cf6b98cd-19e7-40c7-b8bf-e8205a6a727e" />
+
+<img width="572" height="244" alt="Image" src="https://github.com/user-attachments/assets/1bdcb5ec-f9c5-48ee-8701-b82f5c4f9f4a" />
+
+<img width="740" height="383" alt="Image" src="https://github.com/user-attachments/assets/bb551410-6819-449d-9414-0a24366ff342" />
+
+补充，对称量化/非对称量化：
+
+<img width="609" height="338" alt="Image" src="https://github.com/user-attachments/assets/ea9c764d-6c5c-4e56-97c1-0a3d1b7bf332" />
+
+<img width="602" height="305" alt="Image" src="https://github.com/user-attachments/assets/2aa16344-70d2-4795-9665-e4a84fe1e04a" />
+
+注意，动态量化在实际工程中只存在于激活量化中，因为实际推理时权重是常量矩阵。
+
