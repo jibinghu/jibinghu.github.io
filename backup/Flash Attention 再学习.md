@@ -1,7 +1,7 @@
 上篇粗略介绍了 Flash Attention v1 和 v2 版本，接下来依托 `https://zhuanlan.zhihu.com/p/668888063?share_code=1qZngTA5I8sYX&utm_psn=1981879033806468061` 和 `https://www.bilibili.com/video/BV1zM4m1S7gg/?spm_id_from=333.337.search-card.all.click&vd_source=84db1f19043807302b768c2fc15ba091` 来实现更透彻的实现，俗话说不求甚解，但是在技术的实现上一定需要手把手复现一遍才能有更充分的话语权来解决类似问题：
 
 
-原始的 Standard Self-Attention 的实现在不考虑 Mask 和 Scale 的情况下：
+## 原始的 Standard Self-Attention 的实现在不考虑 Mask 和 Scale 的情况下：
 
 <img width="387" height="56" alt="Image" src="https://github.com/user-attachments/assets/1b56204e-bcb8-4397-814c-cbe6038ae3cd" />
 
@@ -55,7 +55,7 @@ FlashAttention利用了Tiling(forward)+Recompute(backward)对Attention计算进�
 
 这样我们就可以实现累加的并行了(通过分块和引入计算量来实现)，但是仍然需要得到 $d_N$ 之后才进行第二个循环(即分数的实现)，引入对 acc 的额外计算的话在事实上还是要再来一轮循环来调整做无用功，所以 softmax 事实上只能做到 2-pass 最优。但 Attention 可以做到 1-pass：
 
-Flash Attention：
+## Flash Attention v1：
 
 我们首先来看 Standard Self-Attention 是如何实现的：
 
@@ -116,9 +116,102 @@ Flash Attention：
 
 这样设置的目的是，为了确保SRAM能够放下所有Q, K, V的小块，其中 $M$ 就是系统可用的SRAM上限。那么，对于每一个Q 的分块 $Q_i, O_i$ ，以及K, V的分块 $K_j, V_j$ 需要的共享内存为：
 
+$B_r$ 指的是一次从 Q 中读取的行数；
+$B_c$ 指的是 K/V 方向的分块 Tile 的大小。
+
+事实上，这里 $B_r$ 的大小要小于 $B_c$ 但是FA中将这部分四等分了。另外还有一个点：
+
+<img width="248" height="86" alt="Image" src="https://github.com/user-attachments/assets/c5e7bc9b-b0c6-47b5-a2da-61320ccc9f27" />
+
+> Br 是 tile 中一次处理的 Q 的行数（Br × d），而这些 Br 行必须能和 d 维 head 匹配到 GPU 的线程组织（warp）与 shared memory 访问模式中。
+如果 Br > d，GPU 无法为这一 tile 建立合理的 2D thread mapping、寄存器排布和 shared memory swizzle，会浪费大量线程、产生 bank conflict、甚至无法形成 warp-level MMA 调度。
+
+> 关于SRAM的认知，比如A100，我们常说，他的L1 Cache(SRAM)是192KB，这个值的颗粒度是SM，也就是每个SM都有192KB的SRAM，而A100有108个SM，因此，A100单卡上总共有20MB的SRAM。但是由于每个thread block只能被调度到一个SM上执行，SM之间的SRAM是不共享的。因此，实际算法设计时，考虑的是thread block的编程模型，要按照192KB去计算SRAM上能放的数据量。
+
+FlashAttention backward pass最主要的优化就是：Recompute。对比Standard Self Attention，FlashAttention在前向不需要保留S和P矩阵，但是backward pass又需要S和P矩阵的值来计算梯度。那么怎么办呢？那自然就是就是和forward一样，利用Tiling技术，将Q,K,V分块load到SRAM，然后通过online recompute计算得到当前块的S和P值。具体到backward pass中计算逻辑就是：
+
+<img width="1440" height="430" alt="Image" src="https://github.com/user-attachments/assets/8db3fa59-4ff3-4b59-864f-bfae46c71d43" />
+
+另外，FA1 在反向阶段只有两种方式来实现：
+
+1. 重新计算 S_blk（即 Q 与当前 K_block 再乘一次）
+2. 利用 forward 中保留的标量 mᵢ 和 lᵢ 重建 softmax 值
+
+由于我主要关注推理加速部分，所以关于训练我了解即可，总的来说引入了计算量，但是同样地被 IO 的减少所弥补。
+
+## Flash Attention v2：
+
+1. 减少大量非matmul的冗余计算，增加Tensor Cores运算比例
+2. forward pass/backward pass均增加seqlen维度的并行，forward pass交替Q,K,V循环顺序
+3. 更好的Warp Partitioning策略，避免Split-K（感觉这部分是为了故事完整加上的...）
+
+传统地，回顾一遍 v1：
+
+以K，V为外循环，Q为内循环。
+
+j = 0，遍历 i：
+
+<img width="1440" height="693" alt="Image" src="https://github.com/user-attachments/assets/6a88725c-324a-48e2-9eb0-37f3c8017ddc" />
+
+j = 1，遍历 i：
+
+<img width="1440" height="693" alt="Image" src="https://github.com/user-attachments/assets/ddab0769-cc77-41ed-8be9-e1cb2acc4e46" />
+
+上图中实际上 O 在最后会累加，得到的只有三块 O。而且这里一定要注意区分 内循环和外循环，外循环就是固定了 K 和 V，内循环就是每行 Q 不断迭代。这个地方可能会有点晕，虽然按照流程来说 Q 是首先读取的，但实际中 QKV 是在一起读取的，所以可以将 Q 作为内循环来执行。
+
+<img width="829" height="223" alt="Image" src="https://github.com/user-attachments/assets/417eae16-213b-43b2-b12b-5f8c9eeff9c6" />
+
+上图中的讲解已经很清楚了， $O_{00}和O_{01}$ 是相关的数据，完全没必要再中间进行 HBM 的一次倒腾。所以我们就可以想到，把 Q 作为内循环转为 KV 作为内循环，这样就可以直接生成 $O_{00}和O_{01}$ ，而没必要像图中那样先将 $O_{00}, O_{10}, O_{20}$ 先生成出来没地方存，只能存到 HBM 中了。同时 Softmax 操作也是在 Row 维度的，所以这样循环会更方便。
+
+<img width="1440" height="828" alt="Image" src="https://github.com/user-attachments/assets/6208028d-16e1-4358-8ab8-4743bf33915e" />
+
+其实我们在 v1 的理解中就是以 v2 的角度来理解的(softmax 的实现)，v2 中把整个过程用 row 的方式实现了，所以不需要在最后进行 HBM 的额外存取。另外在第 10 行中可以看到并没有 $diag(l^{j}_i)$^{-1} $，这是为了减少非矩阵的计算。因为矩阵计算可以利用Tensor Cores加速，而不是用 CUDA Cores 来实现，加速比可以达到 16✖️。
+
+<img width="822" height="170" alt="Image" src="https://github.com/user-attachments/assets/b4204976-f809-4522-906f-79d485bd9462" />
+
+再者，v2 对cuda gemm层面优化：为什么相比于V1，V2在划分thread block时，要新增Q的seq_len维度上的划分呢？
+先说结论，这样做的目的是尽量让SM打满。我们知道block是会被发去SM上执行的。以1块A100 GPU为例，它有108个SM，如果此时我们的block数量比较大（例如论文中所说>=80时），我们就认为GPU的计算资源得到了很好的利用。现在回到我们的输入数据上来，当batch_size和num_heads都比较大时，block也比较多，此时SM利用率比较高。但是如果我们的数据seq_len比较长，此时往往对应着较小的batch_size和num_heads，这是就会有SM在空转了。而为了解决这个问题，我们就可以引入在Q的seq_len上的划分。
+
+v1 的 Thread Block：
+
+<img width="1091" height="971" alt="Image" src="https://github.com/user-attachments/assets/e9a6c907-d4b3-4b50-b7d5-bb01a5e5c778" />
+
+假设batch_size = 1，num_heads = 2，我们用不同的颜色来表示不同的head。我们知道在Multihead Attention中，各个head是可以独立进行计算的，在计算完毕后将结果拼接起来即可。所以我们将1个head划分给1个block，这样就能实现block间的并行计算，如此每个block只要在计算完毕后把结果写入自己所维护的O的对应位置即可。
+
+v2 的 Thread Block：
+
+<img width="1091" height="971" alt="Image" src="https://github.com/user-attachments/assets/36cd8d8d-2950-453a-8c5d-20e0dbc28ad0" />
+
+现在我们继续假设batch_size = 1，num_heads = 2。与V1不同的是，我们在Q的seq_len维度上也做了切分，将其分成四份，即num_m_block = 4。所以现在我们共有1*2*4 = 8个block在跑。这些block之间的运算也是独立的，因为：
+
+- head的计算是独立的，所以红色block和蓝色block互不干扰
+- 采用Q做外循环，KV做内循环时，行与行之间的block是独立的，因此不同行的block互相不干扰。
+
+每个block从Q上加载对应位置的切块，同时从KV上加载head0的切块，计算出自己所维护的那部分O，然后写入O的对应位置。
+
+而在 前向和后向的过程中划分 Thread Block 的方式也会有所不同：
+
+<img width="1440" height="825" alt="Image" src="https://github.com/user-attachments/assets/2c7f170e-86a1-444d-b905-eba363c07d3a" />
+
+Warp 级别并行：
+
+<img width="1280" height="518" alt="Image" src="https://github.com/user-attachments/assets/c6260ffd-6529-4171-b7ef-2356a654a4d3" />
+
+上图中，左图表示 v1，右图表示 v2，不管是V1还是V2，在Ampere架构下，每个block内进一步被划分为4个warp，在Hopper架构下则是8个warp。
+
+在左图（V1）中，每个warp都从shared memory上读取相同的Q块以及自己所负责计算的KV块。在V1中，每个warp只是计算出了列方向上的结果，这些列方向上的结果必须汇总起来，才能得到最终O矩阵行方向上的对应结果。所以每个warp需要把自己算出来的中间结果写到shared memory上，再由一个warp（例如warp1）进行统一的整合。所以各个warp间需要通讯、需要写中间结果，这就影响了计算效率。
+
+在右图（V2）中，每个warp都从shared memory上读取相同的KV块以及自己所负责计算的Q块。在V2中，行方向上的计算是完全独立的，即每个warp把自己计算出的结果写到O的对应位置即可，warp间不需要再做通讯，通过这种方式提升了计算效率。不过这种warp并行方式在V2的BWD过程中就有缺陷了：由于bwd中dK和dV是在行方向上的AllReduce，所以这种切分方式会导致warp间需要通讯。
+
+
+
+
+
+
 
 
 参考：
 
 https://link.zhihu.com/?target=https%3A//courses.cs.washington.edu/courses/cse599m/23sp/notes/flashattn.pdf
 
+https://zhuanlan.zhihu.com/p/691067658?share_code=1k9KBkbDbSt50&utm_psn=1982503349581521425
