@@ -152,6 +152,13 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <p>上图中，Q[i] 被放在 SRAM 中，在循环最外层；K_Tile和 V_Tile 被放在 SRAM 中。Q[i] 固定在最外层，对每个 K 的 tile 做乘法，得到一个 (1×B) 的 block logits；这个 block logits 立即参与在线 softmax，并与对应的 V tile (B×D) 融合相乘，累加到 (1×D) 的输出向量中；随着 K^T 和 V 沿着 L 方向逐 tile 滚动，最终完成一整行 O[i] 的计算。</p>
 <p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/4c11d3e6-398c-4217-bc17-63a0dc99096d"><img width="1308" height="274" alt="Image" src="https://github.com/user-attachments/assets/4c11d3e6-398c-4217-bc17-63a0dc99096d" style="max-width: 100%; height: auto; max-height: 274px;"></a></p>
 <p>之前已经说过了 diag 左乘就是对矩阵的一行进行一致处理。</p>
+<p>在 Flash Attention v2 中，就是将 online-softmax 分块的逻辑，将递归转成分块：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/5ea2ba61-756c-4da2-91a2-acc402a27a2a"><img width="1163" height="375" alt="Image" src="https://github.com/user-attachments/assets/5ea2ba61-756c-4da2-91a2-acc402a27a2a" style="max-width: 100%; height: auto; max-height: 375px;"></a></p>
+<p>同样地，把 O 的计算考虑进来：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/c23fdbc7-e8e4-4506-b8f6-ee09c5f80d6b"><img width="1047" height="105" alt="Image" src="https://github.com/user-attachments/assets/c23fdbc7-e8e4-4506-b8f6-ee09c5f80d6b" style="max-width: 100%; height: auto; max-height: 105px;"></a></p>
+<p>需要注意的是，FlashAttention的算法中有个Block Size的概念，也就是 $B_r$ 和 $B_c$ ：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/06754fdb-5062-4932-b56d-c9b1de9cc005"><img width="621" height="134" alt="Image" src="https://github.com/user-attachments/assets/06754fdb-5062-4932-b56d-c9b1de9cc005" style="max-width: 100%; height: auto; max-height: 134px;"></a></p>
+<p>这样设置的目的是，为了确保SRAM能够放下所有Q, K, V的小块，其中 $M$ 就是系统可用的SRAM上限。那么，对于每一个Q 的分块 $Q_i, O_i$ ，以及K, V的分块 $K_j, V_j$ 需要的共享内存为：</p>
 <p>参考：</p>
 <p><a href="https://link.zhihu.com/?target=https%3A//courses.cs.washington.edu/courses/cse599m/23sp/notes/flashattn.pdf" rel="nofollow">https://link.zhihu.com/?target=https%3A//courses.cs.washington.edu/courses/cse599m/23sp/notes/flashattn.pdf</a></p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>

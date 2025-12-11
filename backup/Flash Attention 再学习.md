@@ -102,6 +102,22 @@ Flash Attention：
 
 之前已经说过了 diag 左乘就是对矩阵的一行进行一致处理。
 
+在 Flash Attention v2 中，就是将 online-softmax 分块的逻辑，将递归转成分块：
+
+<img width="1163" height="375" alt="Image" src="https://github.com/user-attachments/assets/5ea2ba61-756c-4da2-91a2-acc402a27a2a" />
+
+同样地，把 O 的计算考虑进来：
+
+<img width="1047" height="105" alt="Image" src="https://github.com/user-attachments/assets/c23fdbc7-e8e4-4506-b8f6-ee09c5f80d6b" />
+
+需要注意的是，FlashAttention的算法中有个Block Size的概念，也就是 $B_r$ 和 $B_c$ ：
+
+<img width="621" height="134" alt="Image" src="https://github.com/user-attachments/assets/06754fdb-5062-4932-b56d-c9b1de9cc005" />
+
+这样设置的目的是，为了确保SRAM能够放下所有Q, K, V的小块，其中 $M$ 就是系统可用的SRAM上限。那么，对于每一个Q 的分块 $Q_i, O_i$ ，以及K, V的分块 $K_j, V_j$ 需要的共享内存为：
+
+
+
 参考：
 
 https://link.zhihu.com/?target=https%3A//courses.cs.washington.edu/courses/cse599m/23sp/notes/flashattn.pdf
