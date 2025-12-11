@@ -195,7 +195,7 @@ v2 的 Thread Block：
 
 Warp 级别并行：
 
-<img width="1280" height="518" alt="Image" src="https://github.com/user-attachments/assets/c6260ffd-6529-4171-b7ef-2356a654a4d3" />
+<img width="1440" height="624" alt="Image" src="https://github.com/user-attachments/assets/d4695544-d855-439d-9d3c-ba2df00be2fa" />
 
 上图中，左图表示 v1，右图表示 v2，不管是V1还是V2，在Ampere架构下，每个block内进一步被划分为4个warp，在Hopper架构下则是8个warp。
 
@@ -203,8 +203,13 @@ Warp 级别并行：
 
 在右图（V2）中，每个warp都从shared memory上读取相同的KV块以及自己所负责计算的Q块。在V2中，行方向上的计算是完全独立的，即每个warp把自己计算出的结果写到O的对应位置即可，warp间不需要再做通讯，通过这种方式提升了计算效率。不过这种warp并行方式在V2的BWD过程中就有缺陷了：由于bwd中dK和dV是在行方向上的AllReduce，所以这种切分方式会导致warp间需要通讯。
 
+<img width="832" height="208" alt="Image" src="https://github.com/user-attachments/assets/76d36aed-fa14-4d0a-bf56-e7220b9bbdcd" />
 
+有时间需要看一下：
 
+https://zhuanlan.zhihu.com/p/665170554
+
+目前的时间和深入度可能对 Flash Attention 的理解就到这里了(佬们还有困惑的时候呢，更何况我小菜鸡)，等之后有时间再把这部分 BW、Warp Level 并行以及 v3 等细细品味。
 
 
 
