@@ -211,7 +211,7 @@ https://zhuanlan.zhihu.com/p/665170554
 
 目前的时间和深入度可能对 Flash Attention 的理解就到这里了(佬们还有困惑的时候呢，更何况我小菜鸡)，等之后有时间再把这部分 BW、Warp Level 并行以及 v3 等细细品味。
 
-
+另外 https://lubits.ch/flash/Part-1 ，从头实现 Flash Attention 2 算法的高效 CUDA 内核（kernel），并逐步优化到接近官方性能水平。一定要试试做。LeetCUDA 也是很好的项目，未来要学习的东西还很多，主要是能做出来一些东西，只学习是远远不够的，要给出 PR、开源或论文等输出的成果。期待期待(✧∀✧)
 
 
 
