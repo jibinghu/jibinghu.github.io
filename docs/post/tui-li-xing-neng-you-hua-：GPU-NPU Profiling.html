@@ -144,6 +144,11 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <p>通过放大profiling，找到GAQ在python中的时序图位置。有几个细节：</p>
 <ul>
 <li>时序条的操作与操作之间存在空白，这并不代表执行不连续。</li>
+</ul>
+<blockquote>
+<p>Timeline 上 kernel 之间的空白不等价于 GPU 停机。很多时候 GPU 正在执行其他 stream 的 kernel、进行 DMA 拷贝、等待 sync、或者 profiler 没显示某些事件。只有当 SM 利用率下降到 0 时，才能判断 GPU 真正 idle。</p>
+</blockquote>
+<ul>
 <li>在O linear计算完成后有个all reduce操作，这是因为开启TP并行，即OKV矩阵运算时的权重W进行了列切分、O矩阵运算采用W行切分，最后结果需要一个all reduce校正结果。</li>
 </ul>
 <blockquote>

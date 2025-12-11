@@ -70,6 +70,9 @@ Qwen2.5 dense的模型主体是GQA+FFN，这些层的运算在profiling中可找
 通过放大profiling，找到GAQ在python中的时序图位置。有几个细节：
 
 - 时序条的操作与操作之间存在空白，这并不代表执行不连续。
+
+> Timeline 上 kernel 之间的空白不等价于 GPU 停机。很多时候 GPU 正在执行其他 stream 的 kernel、进行 DMA 拷贝、等待 sync、或者 profiler 没显示某些事件。只有当 SM 利用率下降到 0 时，才能判断 GPU 真正 idle。
+
 - 在O linear计算完成后有个all reduce操作，这是因为开启TP并行，即OKV矩阵运算时的权重W进行了列切分、O矩阵运算采用W行切分，最后结果需要一个all reduce校正结果。
 
 > 这里有些需要澄清的地方，在 TP(Tensor Parallel，相对于 DP/PP)  中，TP 发生在 大矩阵维度，不是在单个 head 内部。Multi-head attention 是模型设计上的逻辑维度切分；Tensor Parallel 是运行时为了利用多 GPU 资源而进行的权重张量物理切分。两者互不重叠，一个负责表示能力，一个负责计算并行性。
