@@ -1,5 +1,35 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 11 Dec 2025 02:31:07 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>Flash Attention 再学习</title><link>https://jibinghu.github.io/post/Flash%20Attention%20-zai-xue-xi.html</link><description>上篇粗略介绍了 Flash Attention v1 和 v2 版本，接下来依托 `https://zhuanlan.zhihu.com/p/668888063?share_code=1qZngTA5I8sYX&amp;utm_psn=1981879033806468061` 和 `https://www.bilibili.com/video/BV1zM4m1S7gg/?spm_id_from=333.337.search-card.all.click&amp;vd_source=84db1f19043807302b768c2fc15ba091` 来实现更透彻的实现，俗话说不求甚解，但是在技术的实现上一定需要手把手复现一遍才能有更充分的话语权来解决类似问题：
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Thu, 11 Dec 2025 03:02:27 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>面经 day2</title><link>https://jibinghu.github.io/post/mian-jing-%20day2.html</link><description>## 一、  GPU架构，包括硬件架构和软件编程架构
+
+#### 1. 硬件架构：
+
+1. 核心执行单元是 SM/CU：
+
+名称 | NVIDIA | AMD
+-- | -- | --
+计算簇 | SM (Streaming Multiprocessor) | CU (Compute Unit)
+最小调度单元 | Warp = 32 threads | Wavefront = 64 threads
+向量执行 | 32 FP ALU / tensor core | 64 ALU / MFMA
+
+SM/CU 内部包含：
+  标量/向量 ALU（FP32/FP16/BF16/INT8）
+  Tensor Core / Matrix Core (NVIDIA)
+  MFMA Matrix Core (AMD)
+  寄存器文件（Register File）
+  共享内存 / LDS（SRAM）
+  L1 Cache（可与共享内存融合）
+  
+2. 层次化存储结构：
+
+层级 | 类型 | 延迟 | 带宽 | 大小
+-- | -- | -- | -- | --
+寄存器 | SRAM | 几个 cycle | 极高 | 每线程几十～上百
+Shared Memory / LDS | SRAM | 10~20 cycles | 很高 | 48–164 KB/SM
+L1 Cache | SRAM | ~20 cycles | 高 | 128 KB ~ 256 KB
+L2 Cache | SRAM | 数百 cycles | 中 | 数 MB
+HBM/DRAM | DRAM | 几百 cycles | 高但慢于SRAM两个数量级 | GB级
+
+GPU 计算性能非常强，但 DRAM 访问极慢，因此一切优化都围绕减少 HBM 访问展开。</description><guid isPermaLink="true">https://jibinghu.github.io/post/mian-jing-%20day2.html</guid><pubDate>Thu, 11 Dec 2025 03:01:52 +0000</pubDate></item><item><title>Flash Attention 再学习</title><link>https://jibinghu.github.io/post/Flash%20Attention%20-zai-xue-xi.html</link><description>上篇粗略介绍了 Flash Attention v1 和 v2 版本，接下来依托 `https://zhuanlan.zhihu.com/p/668888063?share_code=1qZngTA5I8sYX&amp;utm_psn=1981879033806468061` 和 `https://www.bilibili.com/video/BV1zM4m1S7gg/?spm_id_from=333.337.search-card.all.click&amp;vd_source=84db1f19043807302b768c2fc15ba091` 来实现更透彻的实现，俗话说不求甚解，但是在技术的实现上一定需要手把手复现一遍才能有更充分的话语权来解决类似问题：
 
 
 原始的 Standard Self-Attention 的实现在不考虑 Mask 和 Scale 的情况下：
