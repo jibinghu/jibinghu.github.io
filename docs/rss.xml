@@ -1,10 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Fri, 12 Dec 2025 03:53:00 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>TileRT 简单了解以及 vLLM 和 SGLang 回忆 + 学习</title><link>https://jibinghu.github.io/post/TileRT%20-jian-dan-le-jie-yi-ji-%20vLLM%20-he-%20SGLang%20-hui-yi-%20%2B%20-xue-xi.html</link><description>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Fri, 12 Dec 2025 06:04:16 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>TileRT 简单了解以及 vLLM 和 SGLang 回忆 + 学习</title><link>https://jibinghu.github.io/post/TileRT%20-jian-dan-le-jie-yi-ji-%20vLLM%20-he-%20SGLang%20-hui-yi-%20%2B%20-xue-xi.html</link><description>
 ## [TileRT](https://github.com/tile-ai/TileRT)
 
-TileRT（tile-ai/TileRT）是 tile-ai 团队做的一个“面向极低延迟（ultra-low-latency）LLM 推理”的实验性运行时项目。</description><guid isPermaLink="true">https://jibinghu.github.io/post/TileRT%20-jian-dan-le-jie-yi-ji-%20vLLM%20-he-%20SGLang%20-hui-yi-%20%2B%20-xue-xi.html</guid><pubDate>Fri, 12 Dec 2025 02:30:26 +0000</pubDate></item><item><title>单词 3</title><link>https://jibinghu.github.io/post/dan-ci-%203.html</link><description>
-
-tax / traiff 关税 / traiff barrier 关税壁垒 / levy 征税
+TileRT（tile-ai/TileRT）是 tile-ai 团队做的一个“面向极低延迟（ultra-low-latency）LLM 推理”的实验性运行时项目。</description><guid isPermaLink="true">https://jibinghu.github.io/post/TileRT%20-jian-dan-le-jie-yi-ji-%20vLLM%20-he-%20SGLang%20-hui-yi-%20%2B%20-xue-xi.html</guid><pubDate>Fri, 12 Dec 2025 02:30:26 +0000</pubDate></item><item><title>单词 3</title><link>https://jibinghu.github.io/post/dan-ci-%203.html</link><description>tax / traiff 关税 / traiff barrier 关税壁垒 / levy 征税
 inlelligence 智能/情报
 driverless / autonomous 主动的/无人的
 racial discrimination / differentiation/ Sexism / racist / racism / stereotype
@@ -70,6 +68,9 @@ utility 公用设施 power grid 电网
 infrastructure 基础设施
 resume 简历/恢复
 news report
+
+---
+
 
 。</description><guid isPermaLink="true">https://jibinghu.github.io/post/dan-ci-%203.html</guid><pubDate>Thu, 11 Dec 2025 15:13:55 +0000</pubDate></item><item><title>MLA 的矩阵融合 PASS 主要是在 Decode 阶段</title><link>https://jibinghu.github.io/post/MLA%20-de-ju-zhen-rong-he-%20PASS%20-zhu-yao-shi-zai-%20Decode%20-jie-duan.html</link><description>&lt;p&gt;&lt;strong&gt;MLA（Multi-Head Latent Attention）的矩阵融合版本主要用于 &lt;em&gt;Decode 阶段&lt;/em&gt;&lt;/strong&gt;，&lt;br&gt;
 但 &lt;strong&gt;Prefill 阶段也可以做部分融合&lt;/strong&gt;，只是融合收益不如 Decode 显著，工程实现上通常重点优化 Decode。</description><guid isPermaLink="true">https://jibinghu.github.io/post/MLA%20-de-ju-zhen-rong-he-%20PASS%20-zhu-yao-shi-zai-%20Decode%20-jie-duan.html</guid><pubDate>Thu, 11 Dec 2025 14:28:41 +0000</pubDate></item><item><title>推理性能优化：GPU/NPU Profiling</title><link>https://jibinghu.github.io/post/tui-li-xing-neng-you-hua-%EF%BC%9AGPU-NPU%20Profiling.html</link><description>https://zhuanlan.zhihu.com/p/1981436859470074335?share_code=bZtoKsWUIpcD&amp;utm_psn=1981881255978096583
