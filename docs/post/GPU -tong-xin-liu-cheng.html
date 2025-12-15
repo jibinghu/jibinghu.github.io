@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="### 1. 核心修正：谁是路，谁是车？
+
+RDMA 不是这些硬件之间的“交换渠道”，而是一种**交通规则（机制）**。">
+<meta property="og:title" content="GPU 通信流程">
+<meta property="og:description" content="### 1. 核心修正：谁是路，谁是车？
+
+RDMA 不是这些硬件之间的“交换渠道”，而是一种**交通规则（机制）**。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/GPU%20-tong-xin-liu-cheng.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>GPU 通信流程</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">GPU 通信流程</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/216" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h3>1. 核心修正：谁是路，谁是车？</h3>
+<p>RDMA 不是这些硬件之间的“交换渠道”，而是一种<strong>交通规则（机制）</strong>。</p>
+<p>我们可以把<strong>数据传输</strong>比作<strong>快递运输</strong>：</p>
+<ul>
+<li><strong>数据 (Payload)</strong>：你要寄的货物（KV Cache）。</li>
+<li><strong>RDMA</strong>：<strong>“VIP 直送服务”</strong>（一种不经过中转站/CPU 处理的规则）。</li>
+<li><strong>InfiniBand (IB) / RoCE</strong>：<strong>高速公路</strong>（连接两台机器的网线/光纤协议）。</li>
+<li><strong>网卡 (NIC/HCA)</strong>：<strong>货车</strong>（负责在公路上跑的硬件）。</li>
+<li><strong>PCIe</strong>：<strong>公司大门到仓库的水泥路</strong>（网卡连接到主板/GPU 的内部通道）。</li>
+<li><strong>NVLink</strong>：<strong>任意门/虫洞</strong>（NVIDIA 专用的、比 PCIe 快得多的 GPU 之间互联通道）。</li>
+</ul>
+<hr>
+<p>在一次**跨机 GPU 通信（GPUDirect RDMA）**中是这样串联的：</p>
+<p><strong>完整路径是：</strong></p>
+<p>$$\text{GPU显存 (A)} \xrightarrow{\text{PCIe/NVLink}} \text{网卡 (A)} \xrightarrow{\text{InfiniBand/Ethernet}} \text{网卡 (B)} \xrightarrow{\text{PCIe/NVLink}} \text{GPU显存 (B)}$$</p>
+<p>在这个过程中：</p>
+<ol>
+<li><strong>CPU (中央处理器)</strong>：<strong>完全被旁路（Bypass）</strong>。它只负责最开始发个号令说“开始传吧”，然后就去睡觉或干别的了，不参与搬运数据。</li>
+<li><strong>GPU (图形处理器)</strong>：是数据的<strong>源头</strong>或<strong>终点</strong>，但 GPU 的<strong>计算核心 (CUDA Cores)</strong> 不参与通信，只是显存被读取/写入。</li>
+<li><strong>PCIe vs NVLink</strong>：
+<ul>
+<li>如果网卡插在 PCIe 插槽上，数据就走 PCIe。</li>
+<li>如果用的是 NVIDIA 的超级节点（如 DGX GH200），网卡可能直接通过 NVLink Switch 互联，那就不走 PCIe，速度更快。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3>3. 深入辨析：NVLink 的特殊地位</h3>
+<p><strong>NVLink</strong> 和 <strong>PCIe/InfiniBand</strong> 放在一起提，这是一个非常好的直觉，因为它们都在竞争“数据通道”的角色。</p>
+<ul>
+<li><strong>PCIe</strong>：是通用的标准（大家都用）。目前的 PCIe 5.0 x16 带宽大概是 <strong>64 GB/s</strong>。</li>
+<li><strong>InfiniBand (NDR)</strong>：目前主流的高性能网络，带宽单口 <strong>50 GB/s (400Gbps)</strong> 左右。</li>
+<li><strong>NVLink (4.0)</strong>：NVIDIA 自己的私有协议，单条通道带宽看似不高，但通常它是 18 条甚至更多一起用，总带宽能达到 <strong>900 GB/s</strong>！</li>
+</ul>
+<p><strong>关键区别：</strong></p>
+<ul>
+<li><strong>InfiniBand/RDMA</strong> 主要解决 <strong>“节点与节点之间” (Server to Server)</strong> 的通信。</li>
+<li><strong>NVLink</strong> 主要解决 <strong>“卡与卡之间” (GPU to GPU)</strong> 的通信。</li>
+</ul>
+<p><strong>但是在 NVIDIA 的野心中，界限正在模糊：</strong><br>
+现在的 <strong>GB200 NVL72</strong> 架构，实际上是想用 NVLink 技术把 72 张 GPU 连成一张超级大卡，原本需要走 InfiniBand RDMA 的跨机通信，现在在机柜内部直接变成了走 NVLink。</p>
+<h3>4. 总结</h3>
+<p>修正后的准确表述应该是：</p>
+<blockquote>
+<p><strong>RDMA 是一种通信机制，它利用网卡 (NIC) 的硬件能力，通过 PCIe 或 NVLink 通道直接读取 GPU/内存中的数据，并通过 InfiniBand 或 Ethernet 网络发送到远端，整个过程不经过 CPU 的干预和内存拷贝。</strong></p>
+</blockquote>
+<hr>
+<p>GPU 显存和显存之间 不仅可以用 NVLink 传输，而且在 CUDA 编程模型中，这种传输甚至可以不表现为“传输（Copy）”，而表现为直接的<strong>内存访问（Load/Store）</strong>。</p>
+<p>这里有三个层面的解释，帮你把理解从“物理连接”提升到“编程模型”：</p>
+<h3>1. 物理层：不仅是传输，更是“合并”</h3>
+<p>如果两张显卡（GPU A 和 GPU B）之间用 NVLink 连上了：</p>
+<ul>
+<li>
+<p><strong>没有 NVLink 时（走 PCIe）</strong>：<br>
+GPU A 要把数据给 GPU B，通常路径是：<br>
+<code class="notranslate">GPU A HBM -&gt; PCIe -&gt; CPU RAM (中转) -&gt; PCIe -&gt; GPU B HBM</code><br>
+（虽然有 PCIe P2P 技术可以绕过 CPU RAM，但还要走 PCIe 总线，带宽受限且延迟高）。</p>
+</li>
+<li>
+<p><strong>有 NVLink 时</strong>：<br>
+GPU A 和 GPU B 之间就像搭了一座<strong>私有的高速立交桥</strong>。<br>
+<code class="notranslate">GPU A HBM &lt;===&gt; NVLink &lt;===&gt; GPU B HBM</code><br>
+这个过程完全<strong>不经过 CPU</strong>，也<strong>不经过 PCIe</strong>。</p>
+</li>
+</ul>
+<h3>2. 逻辑层：Peer-to-Peer (P2P) Access</h3>
+<p>这是 HPC 开发中最关键的概念。</p>
+<p>NVLink 的强大之处在于它支持 <strong>P2P Direct Access</strong>。这意味着 GPU A 的 CUDA Core 可以直接读取或写入 GPU B 的显存地址，就像读写自己的显存一样。</p>
+<ul>
+<li><strong>CUDA 代码体现</strong>：<br>
+你只需要在代码里调用 <code class="notranslate">cudaDeviceEnablePeerAccess(target_gpu_id, 0)</code>。<br>
+之后，你在 GPU A 上运行的 Kernel，可以直接解引用一个指向 GPU B 显存的指针。
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> GPU A 的 Kernel</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">kernel</span>(<span class="pl-k">float</span>* ptr_to_gpu_b) {
+    <span class="pl-c"><span class="pl-c">//</span> 直接读取另一张卡的显存，数据通过 NVLink 瞬间拉过来</span>
+    <span class="pl-k">float</span> val = *ptr_to_gpu_b; 
+}</pre></div>
+</li>
+<li><strong>NUMA 架构</strong>：<br>
+在操作系统眼里，这实际上构成了一个 <strong>NUMA (Non-Uniform Memory Access)</strong> 架构。显存实际上变成了一个统一的地址空间，只是访问“隔壁显卡”的显存比访问自己的稍微慢那么一点点（延迟极低），但带宽极高（600-900 GB/s）。</li>
+</ul>
+<h3>3. 架构层：NVSwitch 的作用</h3>
+<p>如果只有 2 张卡，它们可以用 NVLink 直连。<br>
+但如果你有 8 张卡（比如一台 HGX H800 服务器），它们怎么两两互联？</p>
+<p>这时候就需要 <strong>NVSwitch</strong> 芯片。它就像一个路口的“环岛”或“交换机”。<br>
+8 张 GPU 全部连到 NVSwitch 上，任意两张 GPU 都可以通过 NVSwitch 进行 NVLink 通信。<br>
+<strong>效果</strong>：这 8 张 GPU 在逻辑上可以被视为<strong>一张拥有超大显存的巨型 GPU</strong>。</p>
+<hr>
+<h3>总结与对比</h3>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th align="left">特性</th>
+<th align="left">PCIe (传统通道)</th>
+<th align="left">NVLink (高速通道)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><strong>主要用途</strong></td>
+<td align="left">CPU与GPU通信，网卡通信</td>
+<td align="left">GPU与GPU之间互联 (甚至 CPU-GPU，如 Grace Hopper)</td>
+</tr>
+<tr>
+<td align="left"><strong>带宽 (双向)</strong></td>
+<td align="left">~64 GB/s (Gen5 x16)</td>
+<td align="left"><strong>900 GB/s</strong> (H100 NVLink)</td>
+</tr>
+<tr>
+<td align="left"><strong>延迟</strong></td>
+<td align="left">较高 (微秒级)</td>
+<td align="left"><strong>极低 (纳秒级)</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>语义</strong></td>
+<td align="left">主要是 Copy (搬运)</td>
+<td align="left">支持 <strong>Load/Store</strong> (直接读写地址)</td>
+</tr>
+<tr>
+<td align="left"><strong>在 AI 中的地位</strong></td>
+<td align="left"><strong>瓶颈</strong></td>
+<td align="left"><strong>生命线</strong> (用于 Tensor Parallelism)</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p><strong>回到你的应用场景（Chunked Prefill / PD 分离）：</strong></p>
+<ul>
+<li>如果你的 Prefill 和 Decode 任务是在<strong>同一台服务器的通过 NVLink 连接的两张卡</strong>上，那么 KV Cache 的传输是<strong>瞬间完成</strong>的（甚至不需要传输，只需要传个指针）。</li>
+<li>只有当它们在<strong>不同的物理机</strong>上时，才需要用到我们刚才聊的 <strong>RDMA/InfiniBand</strong>。</li>
+</ul></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+<script>MathJax = {tex: {inlineMath: [["$", "$"]]}};</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</html>
