@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="Chunked Prefill ：简单来说，它的实现是将一个很长的 Prompt 拆分成多个小的 'Chunk'（块），分多次迭代（Iteration）进入 GPU 进行计算，而不是一次性算完。">
+<meta property="og:title" content="Chunked Prefill">
+<meta property="og:description" content="Chunked Prefill ：简单来说，它的实现是将一个很长的 Prompt 拆分成多个小的 'Chunk'（块），分多次迭代（Iteration）进入 GPU 进行计算，而不是一次性算完。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/Chunked%20Prefill.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>Chunked Prefill</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">Chunked Prefill</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/215" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p>Chunked Prefill ：简单来说，它的实现是将一个很长的 Prompt 拆分成多个小的 "Chunk"（块），分多次迭代（Iteration）进入 GPU 进行计算，而不是一次性算完。</p>
+<blockquote>
+<p>大模型推理中有两个阶段：Prefill（预填充/首词生成） 和 Decode（解码/后续生成）。Chunked Prefill（分块预填充），在学术界也常被称为 Sarathi-serve 或 Split-K Prefill，其核心目的是为了解决 Head-of-Line (HoL) Blocking（队头阻塞） 问题，并最大化 GPU 的计算/访存利用率。</p>
+</blockquote>
+<p>以下是 Chunked Prefill 的底层实现逻辑，主要包含 调度策略 和 算子实现 两个层面：</p>
+<ol>
+<li>核心动机：为什么要拆？<br>
+在传统的 Continuous Batching（连续批处理）中：</li>
+</ol>
+<ul>
+<li>Prefill 阶段是 Compute-bound（计算密集型），因为是矩阵乘法（GEMM）。</li>
+<li>Decode 阶段是 Memory-bound（访存密集型），因为是矩阵向量乘法（GEMV）。</li>
+</ul>
+<p>如果一个 Batch 里来了一个 32k 长度的 Prompt，传统的做法是一口气算完这 32k 的 Prefill。这会导致：</p>
+<ul>
+<li>阻塞 Decode：正在进行 Decode 的短请求必须等待这个 32k Prefill 完成才能生成下一个 token，导致延迟骤增。</li>
+<li>显存压力：一次性计算大 Prompt 需要巨大的中间激活显存（Activation Memory）。</li>
+</ul>
+<ol start="2">
+<li>调度层实现 (Scheduler)：</li>
+</ol>
+<p>调度器是实现 Chunked Prefill 的大脑。它的逻辑不再是“基于请求调度”，而是“基于 Token Budget（预算）调度”。</p>
+<p>实现步骤：</p>
+<ul>
+<li>设定 Budget：系统设定一个 max_num_batched_tokens（例如 512 或 2048）。这是 GPU 显存和计算能力能承受的最佳吞吐量。</li>
+<li>混合队列（Mixed Batch）：优先放入所有的 Decode 请求（因为它们对延迟敏感，且计算量小）。计算 Decode 占用的 Token 数： $N_{decode}$ 。剩余预算： $R = Budget - N_{decode}$ 。</li>
+<li>截断 Prefill：从等待队列中取出一个 Prefill 请求。如果该请求的 Prompt 长度  $L &amp;gt; R$ ，则只取前  $R$  个 token 进行计算。剩下的  $L - R$  个 token 留给下一个 Iteration 处理。状态保存：调度器必须标记该请求为 "Preempted" 或 "Chunking" 状态，确保下一轮调度时能接上。</li>
+</ul>
+<p>伪代码：</p>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">def</span> <span class="pl-en">schedule</span>(<span class="pl-s1">waiting_queue</span>, <span class="pl-s1">running_queue</span>, <span class="pl-s1">budget</span><span class="pl-c1">=</span><span class="pl-c1">2048</span>):
+    <span class="pl-s1">batch</span> <span class="pl-c1">=</span> <span class="pl-en">Batch</span>()
+    <span class="pl-s1">current_tokens</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    
+    <span class="pl-c"># 1. 先满足 Decode 请求 (高优先级，低开销)</span>
+    <span class="pl-k">for</span> <span class="pl-s1">req</span> <span class="pl-c1">in</span> <span class="pl-s1">running_queue</span>:
+        <span class="pl-k">if</span> <span class="pl-s1">current_tokens</span> <span class="pl-c1">&lt;</span> <span class="pl-s1">budget</span>:
+            <span class="pl-s1">batch</span>.<span class="pl-c1">add_decode</span>(<span class="pl-s1">req</span>) <span class="pl-c"># 贡献 1 个 token 计算量</span>
+            <span class="pl-s1">current_tokens</span> <span class="pl-c1">+=</span> <span class="pl-c1">1</span>
+            
+    <span class="pl-c"># 2. 用剩余预算处理 Prefill (填满 GPU)</span>
+    <span class="pl-s1">remaining_budget</span> <span class="pl-c1">=</span> <span class="pl-s1">budget</span> <span class="pl-c1">-</span> <span class="pl-s1">current_tokens</span>
+    
+    <span class="pl-k">if</span> <span class="pl-s1">remaining_budget</span> <span class="pl-c1">&gt;</span> <span class="pl-c1">0</span> <span class="pl-c1">and</span> <span class="pl-c1">not</span> <span class="pl-s1">waiting_queue</span>.<span class="pl-c1">empty</span>():
+        <span class="pl-s1">req</span> <span class="pl-c1">=</span> <span class="pl-s1">waiting_queue</span>.<span class="pl-c1">peek</span>()
+        <span class="pl-c"># 核心逻辑：只取一部分 Prompt</span>
+        <span class="pl-s1">num_tokens_to_process</span> <span class="pl-c1">=</span> <span class="pl-en">min</span>(<span class="pl-s1">req</span>.<span class="pl-c1">remaining_prompt_len</span>, <span class="pl-s1">remaining_budget</span>)
+        
+        <span class="pl-s1">batch</span>.<span class="pl-c1">add_prefill_chunk</span>(<span class="pl-s1">req</span>, <span class="pl-s1">start_idx</span><span class="pl-c1">=</span><span class="pl-s1">req</span>.<span class="pl-c1">processed_len</span>, 
+                                <span class="pl-s1">length</span><span class="pl-c1">=</span><span class="pl-s1">num_tokens_to_process</span>)
+        
+        <span class="pl-s1">req</span>.<span class="pl-c1">processed_len</span> <span class="pl-c1">+=</span> <span class="pl-s1">num_tokens_to_process</span>
+        
+    <span class="pl-k">return</span> <span class="pl-s1">batch</span></pre></div>
+<p>3. 算子与显存层实现 (Kernel &amp; Memory)</p>
+<p>这是最硬核的部分。将 Prompt 拆开后，Attention 的计算方式必须改变。</p>
+<p>假设一个 Prompt 是 <code class="notranslate">[A, B, C, D]</code>，我们拆成两块：<code class="notranslate">Chunk1=[A, B]</code> 和 <code class="notranslate">Chunk2=[C, D]</code>。</p>
+<h4>第一步：处理 Chunk 1 ([A, B])</h4>
+<ul>
+<li>
+<strong>计算</strong>：标准的 Self-Attention。</li>
+<li>
+<strong>KV Cache</strong>：计算出的 $K_A, V_A, K_B, V_B$ 被写入 KV Cache 管理器（如 PagedAttention 的 Block 表中）。</li>
+<li>
+<strong>输出</strong>：对于 Prefill 阶段，通常我们只关心最后一个 Token 的输出（用于预测下一个），但在 Chunked 模式下，如果这不是最后一块，我们甚至不需要输出 logits，只需要更新 KV Cache。</li>
+</ul>
+<h4>第二步：处理 Chunk 2 ([C, D])</h4>
+<p>这是关键点。在计算 <code class="notranslate">[C, D]</code> 的 Attention 时，它们不仅要看自己（C看C，D看C和D），<strong>还要看之前已经算好的 <code class="notranslate">[A, B]</code></strong>。</p>
+<ul>
+<li><strong>Q (Query)</strong>: 只有 <code class="notranslate">[C, D]</code> 的 Query 向量。</li>
+<li><strong>K, V (Key/Value)</strong>:
+<ul>
+<li>当前计算出的 <code class="notranslate">[C, D]</code> 的 K, V。</li>
+<li><strong>加上</strong> 之前存在显存里的 <code class="notranslate">[A, B]</code> 的 K, V。</li>
+</ul>
+</li>
+<li><strong>FlashAttention 调用</strong>：<br>
+现在的 FlashAttention 接口（如 <code class="notranslate">flash_attn_varlen_func</code>）支持传入 <code class="notranslate">kv_cache</code> 指针。
+<ul>
+<li><code class="notranslate">q</code>:  Shape <code class="notranslate">[2, Head, Dim]</code> (对应 C, D)</li>
+<li><code class="notranslate">k_cache</code>: 指向包含 A, B 的物理显存块。</li>
+<li><code class="notranslate">k_new</code>: Shape <code class="notranslate">[2, Head, Dim]</code> (对应 C, D)</li>
+</ul>
+</li>
+</ul>
+<p><strong>数学表达：</strong><br>
+对于 Chunk 2 的 Attention 输出：<br>
+$$\text{Attn}(Q_{chunk2}, K_{total}, V_{total}) = \text{Softmax}(\frac{Q_{chunk2} \cdot [K_{chunk1}; K_{chunk2}]^T}{\sqrt{d}}) \cdot [V_{chunk1}; V_{chunk2}]$$</p>
+<p>这意味着底层的 Attention Kernel 必须支持**“读取历史 KV Cache + 写入当前 KV Cache + 计算当前 Query”** 的混合模式。vLLM 和 FlashInfer 都在算子层面做了这种适配。</p>
+<p>4. 优缺点分析 (Trade-off)</p>
+<ul>
+<li><strong>优点</strong>：
+<ul>
+<li><strong>极佳的 Latency 稳定性</strong>：Decode 请求不会被长 Prefill 卡住，TTFT (Time To First Token) 变差了（对长 Prompt 而言），但 P99 Decode Latency 显著降低。</li>
+<li><strong>计算与访存重叠 (Overlap)</strong>：将 Compute-bound 的 Prefill 切碎，塞进 Memory-bound 的 Decode 缝隙里，充分利用了 GPU 的 Tensor Core 和显存带宽。</li>
+</ul>
+</li>
+<li><strong>缺点</strong>：
+<ul>
+<li><strong>重复读取 KV</strong>：处理 Chunk 2 时，必须重新从显存加载 Chunk 1 的 KV Cache。相比于一次性全算完（KV 都在片上 SRAM/L2 Cache 里），这增加了一些全局显存带宽开销。</li>
+<li><strong>复杂性</strong>：状态管理变得极其复杂（如果在 Chunk 中间系统崩溃了怎么办？调度器逻辑更难写）。</li>
+</ul>
+</li>
+</ul>
+<p>Q&amp;A：</p>
+<ol>
+<li>但是对于每一个 sequence 来说，prefill 一定要在 decode 的前面的吧？(依赖性)</li>
+</ol>
+<p>结论：是的，这是因果律（Causal Dependency），不可打破。<br>
+对于同一个 Request (Sequence) 而言，你必须先消化完 Prompt（Prefill），生成并存好之前所有 token 的 KV Cache，才能根据最后一个 token 的 hidden state 去预测生成第一个新 token（Decode 开始）。</p>
+<ul>
+<li>Chunked Prefill 不会改变这个顺序：它只是把“一口气吃完 Prompt”变成了“细嚼慢咽”。</li>
+<li>但是，在整个 Batch 的层面上，Prefill 和 Decode 是可以**乱序混合（Interleaved）**的。即：Request A 的 Decode 步骤可以和 Request B 的 Prefill Chunk 步骤在同一个 Batch 中一起执行。</li>
+</ul>
+<ol start="2">
+<li>另外 chunked prefill 我觉得是引入了额外的显存消耗的，就是为了TTFT 和 TTOF 的折中。因为如果优先新来的 prefill 的话，decode 就会很卡顿。但如果先来先服务的话，对于长 seq耗费时间很长，那么后来的 TTFT 就会很长。</li>
+</ol>
+<p>关于“显存消耗”这一点，我们需要区分 容量 (Capacity) 和 带宽 (Bandwidth)。</p>
+<ul>
+<li>显存容量 (Memory Capacity)：Chunked Prefill 实际上通常会降低峰值显存占用。传统 Full Prefill：处理长度 32k 的 Prompt，中间的 Activation（如 $QK^T$ 矩阵）非常大，容易 OOM。Chunked Prefill：每次只算 2k token，中间 Activation 很小。Trade-off：你说的“额外消耗”可能指调度器的元数据维护，或者 KV Cache 的碎片化，但这通常很小。</li>
+<li>显存带宽 (Memory Bandwidth)：你是对的，这里有额外消耗。正如我们之前讨论的，计算 Chunk 2 时，需要重新从 HBM 读取 Chunk 1 的 KV Cache。这比数据都在 SRAM/L2 里的 Full Prefill 慢，浪费了带宽。</li>
+</ul>
+<p>TTFT (Time To First Token) 和 TBT (Time Between Tokens, 也叫 Inter-Token Latency) 的博弈完全正确：</p>
+<ul>
+<li>
+<p>FCFS (先来先服务, 无 Chunking)：</p>
+<ul>
+<li>Decode 请求：被迫等待前面那个 32k Prompt 跑完。TBT 极差（卡顿感明显）。(prefill 插队)</li>
+<li>长 Prompt 请求：一口气跑完。TTFT 最优。</li>
+</ul>
+</li>
+<li>
+<p>Chunked Prefill：</p>
+<ul>
+<li>Decode 请求：插队执行。TBT 极佳（丝般顺滑）。 (decode 插队)</li>
+<li>长 Prompt 请求：被迫分多次跑，还要被 Decode 插队。TTFT 变差。</li>
+</ul>
+</li>
+</ul>
+<p>结论：对于 Chat/Serving 场景，用户对“生成过程中卡顿”（TBT）的容忍度远低于“开始生成前多等一秒”（TTFT）。所以 Chunked Prefill 是用 TTFT 的劣化 换取 TBT 的稳定。</p>
+<ol start="3">
+<li>现在 chunked prefill 将 prefill 的 Prompt 切分开，类似 decode 的 gemv，形成小的 gemm。首先将优先级给到 decode，也就是之前没算完的 decode；但是同时类似 vllm 的 pageattention，如果有空闲的显存 block，就留给 prefill。当然这也引入了一些 prefill 处理的策略。比如 prefill 的多个 chunk，前几个 chunk 块只需要记录 kv cache 即可，不需要计算得出最终的 probabilities 向量。而只需要保存最后一个 chunk 的 probabilities 向量即可。而 decode 因为是 gemv 的原因其实影响不大。</li>
+</ol>
+<p>在 Prefill 阶段（无论是 Full 还是 Chunked）：假设 Prompt 是 [A, B, C, D]。我们计算 Attention 实际上是为了更新 A, B, C, D 的 KV Cache。Logits (Probability) 是为了预测 Next Token。</p>
+<p>优化逻辑：</p>
+<ol>
+<li>
+<p>中间 Chunks (如处理 [A, B] )：我们只需要它们的 $K, V$ 存入显存。我们完全不需要计算它们的 Logits，甚至不需要把 Hidden States 投影回词表维度（Unembedding Layer，通常是 Hidden_Size * Vocab_Size 的大矩阵乘，非常慢）。操作：Kernel 执行完 Attention 和 FFN 后，写入 KV Cache 直接返回，跳过最后的 Linear 层和 Softmax。</p>
+</li>
+<li>
+<p>最后一个 Chunk (如处理 [C, D] )：C：依然只需要 KV，不需要 Logits（因为我们已知下一个是 D）。D：只有这最后一个 Token 需要计算 Logits，用来采样生成第一个回复 E。为什么这在 Chunked Prefill 中很重要？因为 Decode 是高优先级的。如果一个 Prefill 被切成 10 份，前 9 份都省去了 Unembedding 和 Softmax 的计算，这节省了大量的 Compute 资源，让 GPU 能更快地释放出来去响应高优先级的 Decode 请求。</p>
+</li>
+<li>
+<p>在没有应用 chunked prefill 的时候，传统的 schedule 是采取 prefill 插队，而不是 prefill + decode 排队是吗？</p>
+</li>
+</ol>
+<p>传统 Schedule 的策略：是 "Prefill 插队" 还是 "排队"？<br>
+在没有 Chunked Prefill 的传统 Continuous Batching（如早期的 vLLM 或 TGI）中，策略通常是 First-Come-First-Serve (FCFS)，但表现出来的现象是 "Head-of-Line Blocking" (队头阻塞)。<br>
+并不是 Prefill 真的“插队”了： 通常调度器会维护一个 Waiting Queue（新来的）和 Running Queue（正在 Decode 的）。 当一轮 Decode 结束，显存有空余时，调度器会从 Waiting Queue 取出一个 Prefill 请求加入 Batch。<br>
+现象是“一粒老鼠屎坏了一锅粥”： 一旦这个 Prefill 请求进入了 GPU，因为它不可切分（假设是 32k 长度），GPU 就必须一口气算完这 32k tokens。<br>
+Decode 视角的感受：原本我也在车上（Running Queue），结果新上了一个胖子（Prefill），车门关死，开了 500ms 才到下一站。<br>
+结论：传统的调度策略通常是 "混合 Batch，但 Prefill 一旦上车就独占时间片"。如果显存够大，Prefill 和 Decode 是一起跑的；如果显存不够，调度器甚至会暂停 Decode（Preempt），腾出显存先让 Prefill 跑完（这种情况才是你说的 Prefill 插队/抢占）。<br>
+对比 Chunked Prefill： Chunked Prefill 是允许这个胖子“先伸进一只手”，算 50ms，然后大家一起处理 Decode，下一轮胖子再“伸进一只脚”。</p>
+<ol start="5">
+<li>显卡对于大规模 GEMM 更效率更高？那是不是切分 chunk 也不能切分过小。</li>
+</ol>
+<p>Chunk 不能切得太小。这涉及到 GPU 的 Roofline Model 和 Arithmetic Intensity (算术强度)。为什么 GEMM 效率高？矩阵乘法（GEMM）的计算量是 $O(N^3)$ ，访存量是 $O(N^2)$ 。随着 $N$ （在这里对应 Chunk Size）增大，计算/访存比变大，更能跑满 Tensor Core 的算力，这叫 Compute-bound。切太小会怎样？如果 Chunk Size 切到 1（极端情况），它就变成了 GEMV（矩阵向量乘），计算/访存比极低，受限于 HBM 带宽，GPU 利用率（SM Occupancy）会掉到 1% - 5%，这就叫 Memory-bound。这不仅没有加速，反而因为 Kernel Launch 的开销（Overhead）导致整体吞吐下降。最佳实践值：在业界实践（如 vLLM, DeepSeek, SGLang）中，Chunk Size 通常有一个 Min Threshold，一般是 128, 256 或 512。小于 128：效率急剧下降，得不偿失。512 - 2048：通常是 Sweet Spot，既能保持高 GEMM 效率，又不会让 Decode 等太久。</p>
+<ol start="6">
+<li>但其实对于中间 chunk 和最后一个 chunk 的处理也是不得不做的，因为长 Prompt (未切分)的时候本来也就不需要映射到词表以及大矩阵的 Softmax 操作。</li>
+</ol>
+<p>你的理解很透彻：这是本来就有的特性，但 Chunked Prefill 让它变得更"显式"了。</p>
+<p>你是对的：即使在未切分的长 Prompt Prefill 中，我们本来也只需要计算最后一个 token 的 Logits。</p>
+<p>流程对比：</p>
+<p>Unchunked (Full) Prefill: 输入 [A, B, C, D] -&gt; Transformer Layers -&gt; 拿到 Hidden States [Ha, Hb, Hc, Hd] -&gt; 只取 Hd -&gt; lm_head -&gt; Softmax -&gt; Output. (中间的 Ha, Hb, Hc 在过了最后一层 Transformer 后就被丢弃了，根本不进 lm_head)</p>
+<p>Chunked Prefill:</p>
+<p>Iter 1 输入 [A, B] -&gt; Transformer -&gt; 存 KV Cache -&gt; 直接 Return (完全不碰 lm_head)。</p>
+<p>Iter 2 输入 [C, D] -&gt; Transformer (读取 AB KV) -&gt; 存 KV -&gt; 只取 Hd -&gt; lm_head -&gt; Output.</p>
+<p>这里的区别在于： 在 Chunked Prefill 的代码实现中，我们需要在 Kernel 层面 显式地告诉系统：“如果是中间的 Chunk，请在最后一层 Transformer 结束后直接退出，不要分配 Logits 的显存，也不要走后续流程”。</p>
+<p>虽然从数学上讲和 Unchunked 是一样的，但在工程实现上，Chunked Prefill 需要更精细的状态机管理，确保中间 Chunk 不会触发任何多余的 Memory Allocation（比如误分配了一个 [Batch, Seq_Len, Vocab_Size] 的 logits tensor，那显存直接爆炸）。</p>
+<ol start="7">
+<li>提到的第一点和 Paged Attention 的原理很像，只不过 Paged Attention 是在硬件层面实现，而 Chunked Prefill 是在算法层面实现。</li>
+</ol>
+<p>关于 PagedAttention 和 Chunked Prefill 的关系</p>
+<p>有一点需要纠正：<strong>PagedAttention 并不是在硬件层面实现的，它依然是纯软件（Software/Kernel）层面的实现。</strong></p>
+<p>理清 <strong>PagedAttention</strong>、<strong>Chunked Prefill</strong> 和 <strong>Prefix Caching</strong> 这三者的关系，它们其实是不同层面的东西：</p>
+<ul>
+<li>
+<p><strong>PagedAttention (显存管理机制)</strong>：</p>
+<ul>
+<li><strong>核心原理</strong>：模仿操作系统的 <strong>Virtual Memory（虚拟内存）</strong> 分页机制。它在软件层维护了一张“页表”，允许 KV Cache 在显存（HBM）中是不连续存储的。</li>
+<li><strong>是不是硬件？</strong> 不是。它是一套写在 CUDA Kernel 里的逻辑和 Host 端的管理代码。GPU 硬件本身（MMU）支持通用虚拟内存，但 PagedAttention 是在应用层专门为 Attention 算子写的一套逻辑。</li>
+<li><strong>作用</strong>：解决了显存碎片化问题。</li>
+</ul>
+</li>
+<li>
+<p><strong>Prefix Caching / Radix Attention (复用策略)</strong>：</p>
+<ul>
+<li><strong>核心原理</strong>：基于 PagedAttention，给每个物理块（Block）打上指纹（Hash）。如果新来的 Prompt 前缀和之前的一样，直接引用显存里已有的块，不用重算。</li>
+<li><strong>你的直觉是对的</strong>：它确实和 PagedAttention 是一体的，有了 PagedAttention 的非连续存储能力，才有了高效复用的可能。</li>
+</ul>
+</li>
+<li>
+<p><strong>Chunked Prefill (调度执行策略)</strong>：</p>
+<ul>
+<li><strong>核心原理</strong>：把计算任务切碎。</li>
+<li><strong>与 PagedAttention 的关系</strong>：Chunked Prefill <strong>高度依赖</strong> PagedAttention。</li>
+<li><strong>为什么？</strong> 想象一下，你处理 Chunk 1 产生了一些 KV，存到了显存的某些块里。然后 GPU 转头去处理别人的 Decode 任务了。等你回来处理 Chunk 2 时，你需要申请新的显存块。如果没有 PagedAttention，你可能要求显存必须连续，那这就很难插空；有了 PagedAttention，Chunk 2 的 KV 可以随便找个角落存，只要在页表里链上 Chunk 1 即可。</li>
+</ul>
+</li>
+</ul>
+<p><strong>总结修正</strong>：<br>
+PagedAttention 是<strong>地基</strong>（解决怎么存），Chunked Prefill 是<strong>施工队</strong>（解决怎么算）。它们都是<strong>软件/算法</strong>层面的优化，运行在通用的 GPU 硬件上。</p>
+<ol start="8">
+<li>什么是 RDMA？</li>
+</ol>
+<p>为什么要 RDMA？（对比传统 TCP/IP）</p>
+<p>假设要把 Prefill 节点 A 上的 KV Cache（比如 1GB 数据）传给 Decode 节点 B。</p>
+<p><strong>传统 TCP/IP 方式（慢，累）：</strong></p>
+<ol>
+<li><strong>节点 A 应用层</strong>：数据从 GPU 拷到 CPU 内存。</li>
+<li><strong>系统调用</strong>：CPU 把数据从用户态（User Space）拷到内核态（Kernel Space）。</li>
+<li><strong>CPU 封装</strong>：CPU 负责打 TCP 包，计算校验和。</li>
+<li><strong>网卡发送</strong>：数据走网卡发出去。</li>
+<li><strong>节点 B 接收</strong>：节点 B 的 CPU 收到中断，把数据解包，从内核态拷回用户态，再拷到 GPU。</li>
+</ol>
+<p><strong>问题</strong>：</p>
+<ul>
+<li><strong>CPU 负载高</strong>：CPU 忙着搬砖（拷贝数据）和打包，没空做调度和推理逻辑。</li>
+<li><strong>延迟高</strong>：多次内存拷贝（Context Switch）增加了巨大的 Latency。</li>
+</ul>
+<p><strong>RDMA 方式（快，省）：</strong></p>
+<ol>
+<li><strong>Zero Copy (零拷贝)</strong>：网卡（NIC）直接读取节点 A 的内存（甚至通过 GPUDirect RDMA 直接读 GPU 显存）。</li>
+<li><strong>Kernel Bypass (内核旁路)</strong>：完全不经过 CPU，不需要操作系统内核参与，没有系统调用。</li>
+<li><strong>直接写入</strong>：网卡直接把数据写入节点 B 的内存（或显存）。</li>
+</ol>
+<p><strong>这就好比：</strong></p>
+<ul>
+<li><strong>TCP/IP</strong>：你要给邻居送一箱苹果。你（CPU）先把苹果从仓库搬到客厅，打包，交给快递员。快递员送到邻居家，邻居（CPU）拆包，再搬到他家仓库。</li>
+<li><strong>RDMA</strong>：你家仓库和邻居家仓库之间装了一个传送带。你按个按钮，苹果直接从你家仓库飞进他家仓库，<strong>你和邻居（CPU）此时都在躺着看电视，完全不用动手。</strong></li>
+</ul>
+<h4>2.2 RDMA 在 AI 中的应用</h4>
+<p>在 <strong>PD 分离</strong> 架构中，传输 KV Cache 的速度决定了生死的瞬间：</p>
+<ul>
+<li><strong>Prefill 节点</strong> 算完 Prompt，生成了 KV Cache。</li>
+<li><strong>Decode 节点</strong> 等着米下锅。</li>
+<li>如果用 TCP/IP，传输这几百 MB 数据可能要几十毫秒，甚至比计算还慢，那 PD 分离就没意义了。</li>
+<li>使用 <strong>RDMA (通常基于 InfiniBand 或 RoCE 网络)</strong>，传输延迟可以压到微秒级，且不消耗 CPU 资源，使得“跨机推理”像“本机推理”一样快。</li>
+</ul>
+<hr>
+<p>补充知识：</p>
+<ol>
+<li>Chunked Prefill 与 Radix Attention (Prefix Caching) 的天作之合</li>
+</ol>
+<p>Chunked Prefill 不仅仅是为了防阻塞，它和 Prefix Caching（前缀缓存，即复用相同 System Prompt 的 KV Cache）结合时威力最大。</p>
+<ul>
+<li>场景：多个请求都有相同的 10k 长度 System Prompt。</li>
+<li>机制：如果没有 Chunking，新的请求可能要重算这 10k。但在 Chunked 机制下，调度器发现前 5 个 Chunk（共 10k）已经在显存里了，直接跳过计算，只把新的 User Prompt 作为第 6 个 Chunk 放入计算队列。</li>
+</ul>
+<p>面试点：Chunked Prefill 让“细粒度的显存复用”成为可能。</p>
+<ol start="2">
+<li>位置编码 (RoPE) 的处理陷阱</li>
+</ol>
+<p>在写 Kernel 或看源码时要注意：Rotary Positional Embeddings (RoPE) 的计算依赖绝对位置。<br>
+问题：处理 Chunk 2（例如第 512-1024 个 token）时，传入 Kernel 的输入 tensor 索引是 0-512。<br>
+解决：必须显式传入一个 position_ids 张量。Kernel 计算 Attention Score 时，Q 和 K 的旋转角度必须基于 position_ids（512-1024），而不是基于当前 tensor 的局部索引（0-512）。如果这点搞错，模型会输出乱码。</p>
+<ol start="3">
+<li>Attention Mask 的复杂性</li>
+</ol>
+<p>对于 FlashAttention 的调用，Chunked Prefill 需要处理 Block-Diagonal Mask（块对角掩码）或者更复杂的 Jagged Mask。<br>
+因为一个 Batch 里可能混合了 Request A 的 Chunk 2 和 Request B 的 Chunk 1。<br>
+算子必须确保 Request A 的 Q 只能看到 Request A 的 K（包括历史 KV），绝对不能看到 Request B 的数据。这比标准的 Causal Mask 实现要麻烦得多。</p>
+<p>##（架构级替代方案）</p>
+<p>Chunked Prefill 是在单卡/单节点内部解决资源争抢。如果我们把视角拉大到整个集群，有一个更宏大的替代/互补方案，也是目前大厂（如 Kimi/Moonshot, DeepSeek, OpenAI）的主流架构：</p>
+<p>Prefill-Decode Disaggregation (PD 分离 / 分离式推理)<br>
+核心思想： 既然 Prefill 是 Compute-bound，Decode 是 Memory-bound，干脆把它们拆开，用不同的机器跑！</p>
+<ol>
+<li>
+<p>Prefill Instances (P 节点)：专门负责处理 Prompt。</p>
+<ul>
+<li>硬件：使用算力强的卡（如 H800），甚至不需要太大的 HBM（如果 Prompt 没那么长）。</li>
+<li>行为：一口气算完（Full Prefill），不搞 Chunking，利用率 100%。</li>
+<li>输出：将生成的 KV Cache 通过高速网络（RDMA/InfiniBand）传输给 D 节点。</li>
+</ul>
+</li>
+<li>
+<p>Decode Instances (D 节点)：</p>
+<ul>
+<li>专门负责生成 Token。</li>
+<li>硬件：使用显存带宽大、容量大的卡（如 HBM3e），甚至可以用稍旧的卡（如 A800/A100），只要带宽够。</li>
+<li>行为：接收 P 节点传来的 KV Cache，直接开始 Decode。</li>
+</ul>
+</li>
+</ol></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+<script>MathJax = {tex: {inlineMath: [["$", "$"]]}};</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</html>
