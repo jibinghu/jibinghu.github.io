@@ -10,12 +10,12 @@
         let theme = localStorage.getItem("meek_theme") || "light";
         document.documentElement.setAttribute("data-color-mode", theme);
     </script>
-<meta name="description" content="cudaMemcpy 和 cudaMemcpyAsync：
+<meta name="description" content="# cudaMemcpy 和 cudaMemcpyAsync：
 
 - `cudaMemcpy`：
 一定阻塞 CPU 线程，直到拷贝完成才返回。">
 <meta property="og:title" content="实现轻量模型引擎笔记_一">
-<meta property="og:description" content="cudaMemcpy 和 cudaMemcpyAsync：
+<meta property="og:description" content="# cudaMemcpy 和 cudaMemcpyAsync：
 
 - `cudaMemcpy`：
 一定阻塞 CPU 线程，直到拷贝完成才返回。">
@@ -89,7 +89,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
 </div>
     <div id="content">
-<div class="markdown-body" id="postBody"><p>cudaMemcpy 和 cudaMemcpyAsync：</p>
+<div class="markdown-body" id="postBody"><h1>cudaMemcpy 和 cudaMemcpyAsync：</h1>
 <ul>
 <li>
 <p><code class="notranslate">cudaMemcpy</code>：<br>
@@ -119,7 +119,59 @@ cudaMemcpyAsync → CPU 继续跑</p>
 <p>默认流和其他流串行，但其他流之间是并行的：</p>
 <div class="highlight highlight-source-cuda-c++"><pre class="notranslate">stream0: |---- <span class="pl-c1">memcpy</span> ----|
 stream1:                                 |---- kernel ----|
-stream2:                                |---- kernel ----|</pre></div></div>
+stream2:                                |---- kernel ----|</pre></div>
+<hr>
+<h1>1️⃣ <code class="notranslate">public NoCopyable</code> —— 为什么禁止拷贝构造？</h1>
+<p><strong>意义：防止“资源被复制导致双重释放或语义错误”。</strong></p>
+<p><code class="notranslate">Buffer</code> 管理的是<strong>底层资源</strong>（CPU/GPU 内存指针）：</p>
+<ul>
+<li>
+<p>拷贝构造会复制：</p>
+<ul>
+<li><code class="notranslate">ptr_</code>（同一块内存地址）</li>
+<li><code class="notranslate">allocator_</code></li>
+</ul>
+</li>
+<li>
+<p>结果可能是：</p>
+<ul>
+<li><strong>两个对象指向同一块内存</strong></li>
+<li>析构时 <strong>释放两次</strong></li>
+<li>或谁该释放不清楚（尤其 <code class="notranslate">use_external_</code>）</li>
+</ul>
+</li>
+</ul>
+<p><strong>适用场景：</strong></p>
+<ul>
+<li>GPU/CPU buffer</li>
+<li>文件句柄</li>
+<li>socket</li>
+<li>mutex</li>
+<li>CUDA stream / event</li>
+</ul>
+<p>一句话：</p>
+<blockquote>
+<p><strong>“资源所有权唯一”的对象，必须禁止拷贝。</strong></p>
+</blockquote>
+<hr>
+<h1>2️⃣ <code class="notranslate">std::enable_shared_from_this&lt;Buffer&gt;</code> —— 为什么允许 shared？</h1>
+<p><strong>意义：对象需要在“成员函数内部”安全地把自己交给外部长期持有。</strong></p>
+<p>如果没有它：</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate">std::shared_ptr&lt;Buffer&gt; <span class="pl-en">p</span>(<span class="pl-c1">this</span>); <span class="pl-c"><span class="pl-c">//</span> ❌ 会导致双重 delete</span></pre></div>
+<p>有了它：</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">auto</span> p = shared_from_this(); <span class="pl-c"><span class="pl-c">//</span> ✅ 引用计数正确</span></pre></div>
+<p>shared_from_this() 只能在对象已经由 std::shared_ptr 管理的前提下使用；<br>
+std::enable_shared_from_this 的作用是让类在成员函数内部安全地获得指向自身的 shared_ptr（通过内部维护的 weak_ptr 保证引用计数正确），否则直接用 this 构造 shared_ptr 会导致双重释放。</p>
+<hr>
+<p>单例工厂模式：</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-en">CPUDeviceAllocatorFactory</span> {
+<span class="pl-k">public:</span>
+  <span class="pl-k">static</span> std::shared_ptr&lt;CPUDeviceAllocator&gt; <span class="pl-en">get_instance</span>() {
+    <span class="pl-k">if</span> (instance == <span class="pl-c1">nullptr</span>) {
+      instance = std::make_shared&lt;CPUDeviceAllocator&gt;();
+    }
+    <span class="pl-k">return</span> instance;
+  }</pre></div></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
