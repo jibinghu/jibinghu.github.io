@@ -292,7 +292,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <p>torch.jit.trace：把一次“实际运行”录成静态计算图<br>
 torch.jit.script：把模型“逻辑本身”编译成静态计算图</p>
 </blockquote>
-<p><code class="notranslate">trace</code> 和 <code class="notranslate">script</code> 得到的对象都是 <code class="notranslate">torch.jit.ScriptModule（或 ScriptFunction）</code>，它是一个“可调用的、无 Python 依赖的、静态计算图对象”，不再执行 python forward，而是指向 pytorchscript IR，</p></div>
+<p><code class="notranslate">trace</code> 和 <code class="notranslate">script</code> 得到的对象都是 <code class="notranslate">torch.jit.ScriptModule（或 ScriptFunction）</code>，它是一个“可调用的、无 Python 依赖的、静态计算图对象”，不再执行 python forward，而是指向 pytorchscript IR，区别是script保持python控制流trace不保持，原理前者采样后者编译。</p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
