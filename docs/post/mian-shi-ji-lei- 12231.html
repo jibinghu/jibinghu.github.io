@@ -1034,7 +1034,58 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">my_kernel</span>(.
 <li>为什么要做 Residual 连接，Residual 连接解决了什么问题？</li>
 </ol>
 <p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/5fc55534-2127-431f-88ed-01f4bab1b7ed"><img width="765" height="497" alt="Image" src="https://github.com/user-attachments/assets/5fc55534-2127-431f-88ed-01f4bab1b7ed" style="max-width: 100%; height: auto; max-height: 497px;"></a></p>
-<hr></div>
+<hr>
+<ol start="36">
+<li>expert ffn 是怎样实现的，当我经过 Attention 层之后，有一个 [b,s,h] 的张量，接下来如何实现 MoE？</li>
+</ol>
+<p>理解的核心在于：如何将稀疏的逻辑（每个 Token 找不同的专家）转化为密集的矩阵乘法（GEMM）以利用 GPU 算力。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/97463f64-2b1f-4839-a6c9-fcff841e4033"><img width="679" height="672" alt="Image" src="https://github.com/user-attachments/assets/97463f64-2b1f-4839-a6c9-fcff841e4033" style="max-width: 100%; height: auto; max-height: 672px;"></a></p>
+<p>这里输出两个张量，然后准备重排：</p>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">expert_idx</span>  ∈ [<span class="pl-s1">n</span>, <span class="pl-s1">k</span>]   <span class="pl-c1">//</span> <span class="pl-s1">第</span> <span class="pl-s1">i</span> <span class="pl-s1">个</span> <span class="pl-s1">token</span> <span class="pl-s1">选中的</span> <span class="pl-s1">k</span> <span class="pl-s1">个</span> <span class="pl-s1">expert</span>
+<span class="pl-s1">gate_score</span> ∈ [<span class="pl-s1">n</span>, <span class="pl-s1">k</span>]   <span class="pl-c1">//</span> <span class="pl-s1">对应权重</span>（<span class="pl-s1">softmax</span> <span class="pl-c1">/</span> <span class="pl-s1">normalized</span>）</pre></div>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/9f1f088e-36bf-44c7-89be-19c7cdcf7e61"><img width="773" height="561" alt="Image" src="https://github.com/user-attachments/assets/9f1f088e-36bf-44c7-89be-19c7cdcf7e61" style="max-width: 100%; height: auto; max-height: 561px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/152b96a2-9e56-4182-8476-ffa4fcc9a8a7"><img width="768" height="719" alt="Image" src="https://github.com/user-attachments/assets/152b96a2-9e56-4182-8476-ffa4fcc9a8a7" style="max-width: 100%; height: auto; max-height: 719px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/60aa0d3d-7a54-4318-b656-aeeb57107f35"><img width="772" height="527" alt="Image" src="https://github.com/user-attachments/assets/60aa0d3d-7a54-4318-b656-aeeb57107f35" style="max-width: 100%; height: auto; max-height: 527px;"></a></p>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-c"># 输入 x: [batch * seq_len, hidden_dim]</span>
+
+<span class="pl-c"># 1. Router</span>
+<span class="pl-s1">gate_logits</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">gate</span>(<span class="pl-s1">x</span>) <span class="pl-c"># [N, num_experts]</span>
+<span class="pl-s1">weights</span>, <span class="pl-s1">selected_experts</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">topk</span>(<span class="pl-s1">gate_logits</span>, <span class="pl-s1">self</span>.<span class="pl-c1">top_k</span>) 
+<span class="pl-s1">weights</span> <span class="pl-c1">=</span> <span class="pl-c1">F</span>.<span class="pl-c1">softmax</span>(<span class="pl-s1">weights</span>, <span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">-</span><span class="pl-c1">1</span>)
+
+<span class="pl-c"># 2. 准备做 Grouped GEMM 或 Loop (面试手写简版通常用 Loop 或 Mask)</span>
+<span class="pl-s1">results</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">zeros_like</span>(<span class="pl-s1">x</span>)
+
+<span class="pl-k">for</span> <span class="pl-s1">i</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-s1">self</span>.<span class="pl-c1">num_experts</span>):
+    <span class="pl-c"># a. 找出属于专家 i 的 token</span>
+    <span class="pl-c"># (实际高效实现不会用 Python loop，而是用 CUDA kernel 里的 index mapping)</span>
+    <span class="pl-s1">batch_idx</span>, <span class="pl-s1">nth_expert</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">where</span>(<span class="pl-s1">selected_experts</span> <span class="pl-c1">==</span> <span class="pl-s1">i</span>)
+    
+    <span class="pl-k">if</span> <span class="pl-en">len</span>(<span class="pl-s1">batch_idx</span>) <span class="pl-c1">==</span> <span class="pl-c1">0</span>: <span class="pl-k">continue</span>
+    
+    <span class="pl-c"># b. 提取 Token (Gather)</span>
+    <span class="pl-s1">current_tokens</span> <span class="pl-c1">=</span> <span class="pl-s1">x</span>[<span class="pl-s1">batch_idx</span>] <span class="pl-c"># [n_tokens, h]</span>
+    
+    <span class="pl-c"># c. 专家计算 (FFN)</span>
+    <span class="pl-c"># expert_out = Expert_i(current_tokens)</span>
+    <span class="pl-s1">expert_out</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">experts</span>[<span class="pl-s1">i</span>](<span class="pl-s1">current_tokens</span>)
+    
+    <span class="pl-c"># d. 加权 (Scale)</span>
+    <span class="pl-c"># 找到对应的权重: weights[batch_idx, nth_expert]</span>
+    <span class="pl-s1">current_weights</span> <span class="pl-c1">=</span> <span class="pl-s1">weights</span>[<span class="pl-s1">batch_idx</span>, <span class="pl-s1">nth_expert</span>].<span class="pl-c1">unsqueeze</span>(<span class="pl-c1">1</span>)
+    <span class="pl-s1">expert_out</span> <span class="pl-c1">=</span> <span class="pl-s1">expert_out</span> <span class="pl-c1">*</span> <span class="pl-s1">current_weights</span>
+    
+    <span class="pl-c"># e. 还原 (Scatter Add)</span>
+    <span class="pl-c"># 把结果加回到对应的位置</span>
+    <span class="pl-s1">results</span>.<span class="pl-c1">index_add_</span>(<span class="pl-c1">0</span>, <span class="pl-s1">batch_idx</span>, <span class="pl-s1">expert_out</span>)
+
+<span class="pl-c"># 3. 如果有 Shared Expert (DeepSeek)</span>
+<span class="pl-s1">shared_out</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">shared_expert</span>(<span class="pl-s1">x</span>)
+<span class="pl-s1">final_output</span> <span class="pl-c1">=</span> <span class="pl-s1">results</span> <span class="pl-c1">+</span> <span class="pl-s1">shared_out</span>
+
+<span class="pl-c"># 4. Reshape back</span>
+<span class="pl-k">return</span> <span class="pl-s1">final_output</span>.<span class="pl-c1">view</span>(<span class="pl-s1">b</span>, <span class="pl-s1">s</span>, <span class="pl-s1">h</span>)</pre></div>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/d37ab647-096e-4767-8cf3-10d2693b5bf8"><img width="786" height="690" alt="Image" src="https://github.com/user-attachments/assets/d37ab647-096e-4767-8cf3-10d2693b5bf8" style="max-width: 100%; height: auto; max-height: 690px;"></a></p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
