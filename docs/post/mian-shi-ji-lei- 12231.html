@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="1. 如果我需要输出特征图，或者获取一个model中命名规律的几个层e.g. l_1 l_2的输入输出，应该怎么做？
+
+最常用：forward hook 抓中间层输入/输出
+- 适合你说的“命名规律的层（l_1、l_2）”，不用改模型结构。">
+<meta property="og:title" content="面试积累 12231">
+<meta property="og:description" content="1. 如果我需要输出特征图，或者获取一个model中命名规律的几个层e.g. l_1 l_2的输入输出，应该怎么做？
+
+最常用：forward hook 抓中间层输入/输出
+- 适合你说的“命名规律的层（l_1、l_2）”，不用改模型结构。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/mian-shi-ji-lei-%2012231.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>面试积累 12231</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+<style>.markdown-alert{padding:0.5rem 1rem;margin-bottom:1rem;border-left:.25em solid var(--borderColor-default,var(--color-border-default));}.markdown-alert .markdown-alert-title {display:flex;font-weight:var(--base-text-weight-medium,500);align-items:center;line-height:1;}.markdown-alert>:first-child {margin-top:0;}.markdown-alert>:last-child {margin-bottom:0;}</style><style>.markdown-alert.markdown-alert-important {border-left-color:var(--borderColor-done-emphasis, var(--color-done-emphasis));background-color:var(--color-done-subtle);}.markdown-alert.markdown-alert-important .markdown-alert-title {color: var(--fgColor-done,var(--color-done-fg));}</style><style>.markdown-alert.markdown-alert-caution {border-left-color:var(--borderColor-danger-emphasis, var(--color-danger-emphasis));background-color:var(--color-danger-subtle);}.markdown-alert.markdown-alert-caution .markdown-alert-title {color: var(--fgColor-danger,var(--color-danger-fg));}</style>
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">面试积累 12231</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/234" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><ol>
+<li>如果我需要输出特征图，或者获取一个model中命名规律的几个层e.g. l_1 l_2的输入输出，应该怎么做？</li>
+</ol>
+<p>最常用：forward hook 抓中间层输入/输出</p>
+<ul>
+<li>适合你说的“命名规律的层（l_1、l_2）”，不用改模型结构。</li>
+</ul>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+
+<span class="pl-s1">acts</span> <span class="pl-c1">=</span> {}
+
+<span class="pl-k">def</span> <span class="pl-en">make_hook</span>(<span class="pl-s1">name</span>):
+    <span class="pl-k">def</span> <span class="pl-en">hook</span>(<span class="pl-s1">mod</span>, <span class="pl-s1">inp</span>, <span class="pl-s1">out</span>):
+        <span class="pl-c"># inp 是 tuple，通常取 inp[0]</span>
+        <span class="pl-s1">acts</span>[<span class="pl-s1">name</span>] <span class="pl-c1">=</span> {
+            <span class="pl-s">"in"</span>:  <span class="pl-s1">inp</span>[<span class="pl-c1">0</span>].<span class="pl-c1">detach</span>().<span class="pl-c1">cpu</span>(),
+            <span class="pl-s">"out"</span>: <span class="pl-s1">out</span>.<span class="pl-c1">detach</span>().<span class="pl-c1">cpu</span>() <span class="pl-k">if</span> <span class="pl-s1">torch</span>.<span class="pl-c1">is_tensor</span>(<span class="pl-s1">out</span>) <span class="pl-k">else</span> <span class="pl-s1">out</span>
+        }
+    <span class="pl-k">return</span> <span class="pl-s1">hook</span>
+
+<span class="pl-s1">handles</span> <span class="pl-c1">=</span> []
+<span class="pl-k">for</span> <span class="pl-s1">name</span>, <span class="pl-s1">m</span> <span class="pl-c1">in</span> <span class="pl-s1">model</span>.<span class="pl-c1">named_modules</span>():
+    <span class="pl-k">if</span> <span class="pl-s1">name</span> <span class="pl-c1">in</span> {<span class="pl-s">"l_1"</span>, <span class="pl-s">"l_2"</span>}:   <span class="pl-c"># 或者 name.startswith("l_")</span>
+        <span class="pl-s1">handles</span>.<span class="pl-c1">append</span>(<span class="pl-s1">m</span>.<span class="pl-c1">register_forward_hook</span>(<span class="pl-en">make_hook</span>(<span class="pl-s1">name</span>)))
+
+<span class="pl-s1">model</span>.<span class="pl-c1">eval</span>()
+<span class="pl-k">with</span> <span class="pl-s1">torch</span>.<span class="pl-c1">no_grad</span>():
+    <span class="pl-s1">_</span> <span class="pl-c1">=</span> <span class="pl-en">model</span>(<span class="pl-s1">x</span>)   <span class="pl-c"># 跑一遍 forward，acts 里就有了</span>
+
+<span class="pl-c"># 用完记得移除 hook，避免内存泄露/重复注册</span>
+<span class="pl-k">for</span> <span class="pl-s1">h</span> <span class="pl-c1">in</span> <span class="pl-s1">handles</span>:
+    <span class="pl-s1">h</span>.<span class="pl-c1">remove</span>()
+
+<span class="pl-c"># 例如拿 l_1 的输出特征图</span>
+<span class="pl-s1">feat</span> <span class="pl-c1">=</span> <span class="pl-s1">acts</span>[<span class="pl-s">"l_1"</span>][<span class="pl-s">"out"</span>]   <span class="pl-c"># [N,C,H,W] or [N,T,C] 等</span></pre></div>
+<p>把hook 注册进模型的每一层 nn.modules()，使得前向时可以抓取到每一层的输入和输出。在 eager 下先用 hook 抓，确认对了再去 trace/script。真要 TorchScript 下也抓：更倾向方案 2（显式返回），因为 hook 在部署环境里不好维护。</p>
+<blockquote>
+<p>detach() 防止把计算图挂住导致显存涨<br>
+.cpu() 方便保存/可视化<br>
+handle.remove() 必须做</p>
+</blockquote>
+<hr>
+<ol start="2">
+<li>相对于CNN，RNN，transformer的优势在哪里?</li>
+</ol>
+<p>相对于 CNN 和 RNN，Transformer 的主要优势有三点：</p>
+<p><strong>并行性更好（对比 RNN）</strong></p>
+<ul>
+<li>Transformer 没有时间步依赖，整个序列可以一次性并行计算；</li>
+<li>RNN 必须按时间步串行，长序列训练和推理都慢。</li>
+</ul>
+<p><strong>建模长程依赖更直接</strong><br>
+Self-Attention 可以直接让任意两个位置交互；<br>
+RNN 依赖多步传播，容易梯度衰减；<br>
+CNN 需要很深或很大的 kernel 才能看到远距离。</p>
+<p><strong>结构统一、可扩展性强</strong><br>
+同一套 attention 结构可以用在：</p>
+<ul>
+<li>NLP（token）</li>
+<li>Vision（patch）</li>
+<li>Multimodal（token + patch）</li>
+</ul>
+<blockquote>
+<p>代价是 显存和计算开销大，所以在 infra 里才会有 PagedAttention、FlashAttention、KV cache 这些优化。</p>
+</blockquote>
+<hr>
+<ol start="3">
+<li>为什么要用layernorm，有什么用？</li>
+</ol>
+<p>LayerNorm 的核心作用是：稳定训练。具体来说有三点：</p>
+<ul>
+<li>
+<p>缓解梯度不稳定问题<br>
+对每一层的特征做归一化，防止数值随着网络加深变得过大或过小，训练更稳定。</p>
+</li>
+<li>
+<p>不依赖 batch size<br>
+LayerNorm 是在 特征维度上做归一化，不像 BatchNorm 依赖 batch 统计量，<br>
+所以在 小 batch、变长序列、RNN / Transformer 里更合适。</p>
+</li>
+<li>
+<p>让不同 token / 时间步的分布更一致<br>
+在 Transformer 里，每一层 attention 和 FFN 输出的分布被拉回到一个可控范围，<br>
+这样后面的层更容易学。</p>
+</li>
+</ul>
+<blockquote>
+<p>CNN 里常用 BatchNorm，Transformer / RNN 里几乎都用 LayerNorm。对于 NLP 中常用的 LayerNorm，是在 [Batch Size, Sequence Length, Hidden Dim] 中的 Hidden Dim 维度进行归一化的，即是在特征维度进行归一化的。避免 latent vector 中某些维度数值过大或过小，从而影响后续层的数值稳定性和梯度传播。</p>
+</blockquote>
+<p>❌：LN 不是 顺着句子长度（Sequence Length）把所有词揉在一起算均值；而是针对每一个词（Token），把它自己的特征向量（Hidden Dim）“抹平”。</p>
+<p>Layer Norm 公式：</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/1461b3a6-345a-4215-bd8a-c2fda103ac7a"><img width="641" height="260" alt="Image" src="https://github.com/user-attachments/assets/1461b3a6-345a-4215-bd8a-c2fda103ac7a" style="max-width: 100%; height: auto; max-height: 260px;"></a></p>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>方法</th>
+<th>场景</th>
+<th>输入 Tensor 形状</th>
+<th>归一化计算涉及的轴 (被求和的轴)</th>
+<th>统计量数量</th>
+<th>物理含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LayerNorm</td>
+<td>NLP</td>
+<td>$[B, S, H]$</td>
+<td>
+$H$ (Hidden)</td>
+<td>
+$B \times S$ 组</td>
+<td>无论句子多长、Batch 多大，每个词自己管自己缩放。</td>
+</tr>
+<tr>
+<td>BatchNorm</td>
+<td>CV</td>
+<td>$[B, C, H, W]$</td>
+<td>$B, H, W$</td>
+<td>
+$C$ 组</td>
+<td>整个批次所有图片在同一个通道上共享同一套均值标准差。</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/47fcef9a-7a89-4149-8f6d-9a2a496b50ba"><img width="532" height="366" alt="Image" src="https://github.com/user-attachments/assets/47fcef9a-7a89-4149-8f6d-9a2a496b50ba" style="max-width: 100%; height: auto; max-height: 366px;"></a></p>
+<ul>
+<li>为了激活函数 (ReLU/GELU) 和 Softmax： 神经网络的非线性函数对输入数值范围非常敏感。如果某个词的特征值飙升到 100，经过 Softmax 后梯度就会消失（Vanishing Gradient），网络就学不动了。LayerNorm 强行把特征值拉回 $[-1, 1]$ 左右的“舒适区”，保证梯度能正常流动。</li>
+<li>各向同性： 它假设 Hidden Dim 里的各个维度在初始状态下应该有相同的贡献机会，不让某一个巨大的特征值主导整个计算。</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/c61d3299-0e96-48e8-a06b-b9d7d00c98d7"><img width="773" height="254" alt="Image" src="https://github.com/user-attachments/assets/c61d3299-0e96-48e8-a06b-b9d7d00c98d7" style="max-width: 100%; height: auto; max-height: 254px;"></a></p>
+<hr>
+<ol start="4">
+<li>norm有哪几种？</li>
+</ol>
+<p>常见的 <strong>Normalization</strong> 主要有这几类：</p>
+<p>**Batch Normalization（BN） **</p>
+<ul>
+<li><strong>在 batch 维度上做归一化</strong></li>
+<li>依赖 batch size</li>
+<li>常用于 <strong>CNN</strong></li>
+<li>训练和推理行为不同（有 running mean / var）</li>
+</ul>
+<p>**Layer Normalization（LN） **</p>
+<ul>
+<li><strong>在特征维度上做归一化</strong></li>
+<li>不依赖 batch size</li>
+<li>常用于 <strong>RNN / Transformer</strong></li>
+<li>训练和推理行为一致</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/064f6b27-866c-4c1b-ac6f-825f5f13c039"><img width="548" height="532" alt="Image" src="https://github.com/user-attachments/assets/064f6b27-866c-4c1b-ac6f-825f5f13c039" style="max-width: 100%; height: auto; max-height: 532px;"></a></p>
+<p>**Instance Normalization（IN） **</p>
+<ul>
+<li>对 <strong>单个样本、单个通道</strong> 做归一化</li>
+<li>常见于 <strong>风格迁移、图像生成</strong></li>
+<li>更强调“去风格”</li>
+</ul>
+<p>**Group Normalization（GN） **</p>
+<ul>
+<li>把通道分成若干组再做归一化</li>
+<li>介于 BN 和 LN 之间</li>
+<li>在 <strong>小 batch 的 CNN</strong> 中表现好</li>
+</ul>
+<p>**RMSNorm（常见于大模型） **</p>
+<ul>
+<li>只用 <strong>RMS，不减均值</strong></li>
+<li>计算更简单</li>
+<li>常用于 <strong>LLM（LLaMA、Qwen 等）</strong></li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/a896b230-3987-4cba-864a-900da59d44e3"><img width="563" height="569" alt="Image" src="https://github.com/user-attachments/assets/a896b230-3987-4cba-864a-900da59d44e3" style="max-width: 100%; height: auto; max-height: 569px;"></a></p>
+<blockquote>
+<p><strong>CNN 更多用 BN / GN，<br>
+Transformer 更多用 LN / RMSNorm。</strong></p>
+</blockquote>
+<hr>
+<ol start="5">
+<li>什么是attention层，QKV分别是什么，为什么这么计算，为什么要除以根号d，不除可不可以？</li>
+</ol>
+<p>Attention 用来让每个 token 根据相关性，动态地聚合其他 token 的信息。</p>
+<blockquote>
+<p>Q（Query）：我在找什么信息<br>
+K（Key）：我拥有什么信息标签<br>
+V（Value）：真正要被聚合的内容</p>
+</blockquote>
+<p>为什么要除以 $\sqrt{d}$ ?</p>
+<p>防止 SoftMax 饱和，稳定训练。因为指数函数对差值很敏感，一旦某个 $z_i$ 比其他几个大几倍，那么 $s^{z_i}$ 会指数级放大，甚至直接变为 one-hot。</p>
+<hr>
+<ol start="5">
+<li>什么是 KV Cache？为什么需要 KV Cache？</li>
+</ol>
+<p>KV Cache 是在自回归生成时，缓存每一层 Attention 里已经算过的 Key 和 Value。将历史序列中计算过的 K 和 V 保存在显存中，这样新的 Token 只需要算所以的 Q 和当前的 K 和 V 即可。复杂度从 $O(t^2) 变为了 O(t)$ 。</p>
+<p>这里 (1, hidden dim) * (hidden dim, hidden dim) 后，每个 K/V 的 Cache 大小是 (1, hidden dim)。</p>
+<hr>
+<ol start="6">
+<li>pd分离中，pd复杂度分别是多少，为什么p是计算密集而d是访存密集？</li>
+</ol>
+<p>Prefill (P)： $O(N^2)$ （Attention部分），计算密集型 (Compute-bound)。<br>
+Decode (D)： $O(N)$ （单步），访存密集型 (Memory-bound)。</p>
+<p>Prefill 阶段 (首 token 延迟 / 预处理)在这一步，模型一次性接收 $N$ 个 Token，并行计算它们的 KV Cache。线性变换 (Projection / FFN): 输入矩阵是 $[N, D]$，权重是 $[D, D]$。矩阵乘法复杂度为 $O(N \cdot D^2)$ 。Attention 计算:$Q \cdot K^T$: $[N, D] \times [D, N] \rightarrow [N, N]$。复杂度为 $O(N^2 \cdot D)$ 。Score $\cdot V$ : $[N, N] \times [N, D] \rightarrow [N, D]$ 。复杂度为 $O(N^2 \cdot D)$ 。结论： 当 Context 很长时，Attention 的 $O(N^2)$ 占主导；当 Context 较短时，线性层的 $O(D^2)$ 占主导。但无论如何，因为 $N$ 通常较大（几百到几千），总计算量非常大。</p>
+<p>Decode 阶段 (逐 token 生成)在这一步，输入只有 1 个 Token (当前生成的)，但需要和过去所有的 $N$ 个 KV Cache 进行交互。线性变换 (Projection / FFN): 输入是 $[1, D]$ ，权重 $[D, D]$ 。复杂度为 $O(D^2)$ 。Attention 计算:$Q_{new} \cdot K_{cache}^T$: $[1, D] \times [D, N] \rightarrow [1, N]$ 。复杂度为 $O(N \cdot D)$ 。Score $\cdot V_{cache}$: $[1, N] \times [N, D] \rightarrow [1, D]$ 。复杂度为 $O(N \cdot D)$ 。结论： 每生成一个 Token，复杂度随上下文长度 $N$ 线性增长，即 $O(N)$ 。</p>
+<p>PD Separate 和 Chunked Prefill：核心区别：架构 vs. 调度</p>
+<ul>
+<li>PD Separation (Prefill-Decode Separation / Disaggregation)</li>
+</ul>
+<blockquote>
+<p>本质： 是 架构级（Architecture/Deployment） 的策略。<br>
+做法： 也就是通常说的 Splitwise。把集群里的 GPU 分成两拨，一拨专门做 Prefill（P节点），一拨专门做 Decode（D节点）。<br>
+流程： 请求先去 P 节点算完 Prompt，生成 KV Cache，然后通过网络（RDMA）把 KV Cache 传给 D 节点，D 节点接着生成后续 Token。<br>
+解决的问题： 彻底隔离计算密集型和访存密集型任务，让 P 节点可以用高算力卡（如 H800），D 节点可以用高带宽卡（甚至量化后用推理卡），实现硬件层面的资源解耦。</p>
+</blockquote>
+<ul>
+<li>Chunked Prefill</li>
+</ul>
+<blockquote>
+<p>本质： 是 调度级（Scheduling/Batching） 的策略。<br>
+做法： 也就是 Sarathi 或 Orca 中的某些策略。它不一定需要分拆机器。<br>
+流程： 当一个很长的 Prompt 进来时，不要一次性占满 GPU 算完（因为这会阻塞住其他正在排队等着 Decode 的短请求，即 Head-of-Line Blocking）。而是把这个 Long Prompt 切成很多个小 Chunk（比如 512 token 一块）。在每一个调度步（Step）里，GPU 既处理一部分 Decode 请求，也“顺便”处理这 512 个 Prefill token。<br>
+解决的问题： 平滑延迟（Latency Smoothing）。防止一个大任务进来把 GPU 显存或计算单元锁死几百毫秒，导致其他并发用户的 Inter-Token Latency 骤增。</p>
+</blockquote>
+<hr>
+<ol start="7">
+<li>GPU的内存hierarchy是什么？</li>
+</ol>
+<p>对于 Nvidia 卡来说：</p>
+<pre class="notranslate"><code class="notranslate">Register、 Shared Memory/ L1 Cache、 L2 Cache、 Global Memory(HBM/ DRAM)
+</code></pre>
+<p>其中，</p>
+<ul>
+<li>寄存器每个线程独有，切换 warp 时在一个 cycle 内完成(仅仅是改变一下索引指针，甚至Zero-Cycle OverHead)，不会像 cpu 一样切换上下文。同一个 Warp 内的线程寄存器可以 Warp-Shuffle 来交换数据。</li>
+<li>Shared Memory 每个 SM 独有，供分配在当前 SM 的每个 Block 内 Thread 共享(但是 Block 间是隔离的)，用于 Block 内数据共享。对于 Nvidia 卡来说，Shared Memory 和 L1 Cache 是在同一块物理 SRAM 的，所以如果数据局部性比较好，不用 Shared Memory 也能达到比较不错的效果；而对于 AMD 的CDNA 架构的话，Shared Memory 和 L1 Cache 是在不同的物理位置，所以需要显式使用 Shared Memory 才能达到比较好的效果。
+<ul>
+<li>（Hopper 架构 H100+）： NVIDIA 引入了 Thread Block Cluster 和 Distributed Shared Memory (DSMEM)，允许同一个 Cluster 内的不同 Block 互相访问对方的 SMEM，打破了传统的隔阂，这是为了适应更大规模的协同计算（如大模型训练/推理）。</li>
+</ul>
+</li>
+<li>L2 Cache 所有 SM 共享用于缓存全局内存数据，但是对于程序员是透明的。</li>
+<li>Global Memory 是 GPU 的主要显存，延迟相对 SRAM 要高，但是容量大。在编程时主要的想法就是内存的复用包括内存层级之间的博弈。相对于 CPU 复杂的硬件和存储架构设计(掩盖延迟（深层 Cache Hierarchy, 复杂的 Prefetcher)，GPU 的存储架构设计比较简单，所以要求编程时充分考虑程序以及硬件架构的特性来综合实现。当然有一些 DSL 比如 Triton、cuTile、Tilelang、DaCe 等都对编程人员封装了 GPU 硬件细节以实现更简单的实现，但是在深入提高性能时可能就需要对 IR 或者使用 CUDA C++ 以及 CUTLASS/CUBLA 更方便。</li>
+<li>其他的还有 Constant Memory 和 Texture 等只读内存，物理上在 Global Memory 但是缓存在片上的 SRAM，通过 BroadCast 等方式在逻辑上实现加速。</li>
+</ul>
+<hr>
+<ol start="8">
+<li>什么是 FlashAttention？</li>
+</ol>
+<div class="markdown-alert markdown-alert-important"><p class="markdown-alert-title"><svg class="octicon octicon-report mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v9.5A1.75 1.75 0 0 1 14.25 13H8.06l-2.573 2.573A1.458 1.458 0 0 1 3 14.543V13H1.75A1.75 1.75 0 0 1 0 11.25Zm1.75-.25a.25.25 0 0 0-.25.25v9.5c0 .138.112.25.25.25h2a.75.75 0 0 1 .75.75v2.19l2.72-2.72a.749.749 0 0 1 .53-.22h6.5a.25.25 0 0 0 .25-.25v-9.5a.25.25 0 0 0-.25-.25Zm7 2.25v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Important</p><p><a href="https://jibinghu.github.io/post/Flash%20Attention%20-zai-xue-xi.html" rel="nofollow">https://jibinghu.github.io/post/Flash%20Attention%20-zai-xue-xi.html</a></p>
+</div>
+<p>FlashAttention 是一种高效实现 Attention 的 CUDA 算法，核心目标是：减少显存访问。</p>
+<p>主要是将中间计算结果不写回显存，在片上完成计算。在 Online-Softmax 的基础上，将 3-Pass 通过引入调整因子实现成为 1-Pass。减少了 $QK^T$ 和 $Softmax$ 两个中间结果的传输。避免了 $S = QK^T$ ($N \times N$) 和 $P = \text{Softmax}(S)$ ($N \times N$) 这两个巨大的 $O(N^2)$ 中间矩阵写入显存。</p>
+<p>标准 Attention 通常需要三个主要的 Kernel（或者说显存读写阶段）：$Q \times K^T \rightarrow S$ (Write HBM)$\text{Softmax}(S) \rightarrow P$ (Read $S$, Write $P$)$P \times V \rightarrow O$ (Read $P, V$ , Write $O$)FlashAttention 将这三步融合进一个 Kernel。数据一旦从 HBM 读进 SRAM，就在 SRAM 里“吃干抹净”，直到算出最终的 $O$ 的一部分才写回 HBM。</p>
+<p>具体来说，Tiling（分块）+ Recomputation（重计算）+ Kernel Fusion（算子融合）。</p>
+<p>深度解析 Online Softmax 的魔法在分块计算中，问题在于：Softmax 需要全局的分母 $\sum e^{x_i}$ 。如果你把 $K$ 和 $V$ 切成了两块（Block 1 和 Block 2）：算 Block 1 时，你只知道 Block 1 的最大值 $m_1$ 和指数和 $\ell_1$ 。算 Block 2 时，你发现了更大的最大值 $m_2$ 。FlashAttention 的核心 Trick：它维护了两个运行时的统计量： $m$ (Running Max): 当前遇到的最大 logit。$\ell$ (Running Sum): 当前的分母（指数和）。当你算完 Block 1 得到一个“临时结果” $O_{old}$ ，然后处理 Block 2 时，你需要用调整因子来“修正”之前的 $O_{old}$ ，让它看起来像是用全局最大值算出来的一样。公式逻辑（Rescaling）：</p>
+<p>$$O_{new} = \text{diag}(\ell_{new})^{-1} (\text{diag}(\ell_{old}) e^{m_{old} - m_{new}} O_{old} + e^{S_{new} - m_{new}} V_{new})$$</p>
+<p>这里的 $e^{m_{old} - m_{new}}$ 就是你说的调整因子。它的作用： 允许我们在不知道全局 Max 的情况下，先算局部结果，回头再补全（Rescale）。并非“消除依赖实现并行”： 实际上，对于同一个 Query Block，它必须串行地遍历所有的 KV Blocks（Outer Loop / Inner Loop 结构）。FlashAttention v1: 在 Sequence Length 维度上其实没有完全并行化（Split-K），主要并行在 Batch 和 Head 维度。FlashAttention v2: 才真正引入了 Q 维度的并行，进一步优化了这一点。</p>
+<hr>
+<ol start="9">
+<li>模型怎么捕捉位置信息的？</li>
+</ol>
+<p>Attention 本身是对序列顺序不敏感的，Self-attention 只看 token 之间的相似度，必须显式注入位置信息。</p>
+<ul>
+<li>绝对位置编码</li>
+</ul>
+<p>核心思想：给每个位置（index 0, 1, 2...）分配一个固定的向量 $P$，直接加到词向量 $X$ 上。通常采用 <code class="notranslate">正弦位置编码</code> 和 <code class="notranslate">可学习位置编码</code> 两种。</p>
+<pre class="notranslate"><code class="notranslate"> - 正弦位置编码 (Sinusoidal): (Original Transformer)不训练，直接用 $\sin$ 和 $\cos$ 函数生成一组固定的波形。不同频率的波叠加，使得每个位置都有唯一的“指纹”。
+ - 可学习位置编码 (Learned): (BERT, GPT-2)：创建一个大小为 [Max_Seq_Len, Hidden_Dim] 的 Lookup Table（也就是 nn.Embedding）。让模型自己去学第 1 个词应该加什么向量，第 2 个词加什么向量。
+</code></pre>
+<blockquote>
+<p>外推性差 (Extrapolation): 如果训练时最大长度是 512，模型就不知道第 513 个位置对应的向量长什么样，推理时直接崩掉。<br>
+割裂感： $X+P$ 这种相加的方式，在数学上混合了“语义”和“位置”，理论上不够优雅。</p>
+</blockquote>
+<ul>
+<li>相对位置编码 (Relative Positional Encoding) - "改 Score"核心思想：我们不关心 $i$ 和 $j$ 的绝对坐标，只关心它们离得有多远 ( $i-j$ )。这一类方法通常不改变输入的 $X$，而是在计算 Attention Score ( $QK^T$ ) 的时候直接动手脚。</li>
+</ul>
+<p>$$Attention(Q, K) = \text{Softmax}\left(\frac{QK^T + B_{(i-j)}}{\sqrt{d}}\right)$$</p>
+<blockquote>
+<p>T5 / RPE: 训练一个 Bias 表，根据相对距离查表得到一个标量，加到 Attention Logits 上。<br>
+ALiBi (Attention with Linear Biases): (Bloom 等模型)非常硬核，不训练任何参数。直接根据距离给 Attention Score 加上一个负的惩罚项：距离越远，分数扣得越多（ $m \cdot |i-j|$ ）。优点： 外推性极强，训练短序列，推理长序列效果也很好。</p>
+</blockquote>
+<ul>
+<li>旋转位置编码 (RoPE, Rotary Positional Embedding) - "做旋转"<br>
+这是目前 Llama, Qwen, Mistral, PaLM 等几乎所有主流大模型都在用的方案。它完美结合了绝对位置编码的“实现简单”和相对位置编码的“数学优美”。</li>
+</ul>
+<p>核心思想：将位置信息编码为向量的旋转角度。</p>
+<p>直观理解想象 Hidden Dim 是二维平面上的一个向量。</p>
+<pre class="notranslate"><code class="notranslate"> - 位置 0: 向量不转。
+ - 位置 1: 向量逆时针转 $\theta$ 度。
+ - 位置 $m$: 向量逆时针转 $m\theta$ 度。
+</code></pre>
+<p>为什么这么做有效？</p>
+<p>Attention 的核心是点积（Dot Product）：$q \cdot k = |q||k|\cos(\alpha)$ 。点积只关心两个向量的夹角，不关心它们的绝对方向。如果我们把 $q$ 旋转了 $m\theta$（代表位置 $m$ ），把 $k$ 旋转了 $n\theta$（代表位置 $n$）。那么它们做点积时，包含的角度信息就是：</p>
+<p>$$(m\theta + \phi_q) - (n\theta + \phi_k) = (m-n)\theta + (\phi_q - \phi_k)$$</p>
+<p>结果里自然出现了一个 $(m-n)$ 项！<br>
+这意味着：通过对每个 Token 进行绝对位置的旋转，Attention 计算结果自动包含了相对位置信息。</p>
+<p>算子层面的实现 (RoPE Kernel)</p>
+<p>在 FlashAttention 或者 vLLM 源码中，RoPE 是这样实现的：</p>
+<pre class="notranslate"><code class="notranslate"> - Pairing: 把 Hidden Dim 切分成两两一组 $(x_1, x_2)$。
+ - Rotation: 对每一组应用旋转矩阵：
+</code></pre>
+<p>$$
+\begin{pmatrix} x'_1 \ x'_2 \end{pmatrix} = \begin{pmatrix} \cos m\theta &amp; -\sin m\theta \ \sin m\theta &amp; \cos m\theta \end{pmatrix} \begin{pmatrix} x_1 \ x_2 \end{pmatrix}
+$$</p>
+<pre class="notranslate"><code class="notranslate"> - In-place: 通常为了省显存，这个操作是直接在 $Q$ 和 $K$ 显存上原地修改的，或者在计算 Attention 前融合在 Kernel 里做。
+</code></pre>
+<hr>
+<ol start="10">
+<li>长度外推是什么，怎么实现？</li>
+</ol>
+<p>长度外推是指模型在较短的上下文长度（如 4k）上训练，但在推理（Inference）时能够处理更长序列（如 16k, 32k 甚至无限长）的能力。</p>
+<p>实现暂时不考虑。</p>
+<hr>
+<ol start="11">
+<li>DPO (Direct Preference Optimization) 和 PPO (Proximal Policy Optimization) 的异同？</li>
+</ol>
+<ul>
+<li>PPO 是标准的强化学习过程（显式建模 Reward Model，采样-打分-更新）。</li>
+<li>DPO 是将强化学习问题转化为二分类（Binary Cross Entropy） 的监督学习问题（隐式建模 Reward）。</li>
+</ul>
+<blockquote>
+<p>PPO：把语言模型当成一个“做动作的智能体”，通过奖励函数 + 强化学习来慢慢改进。</p>
+</blockquote>
+<blockquote>
+<p>DPO：不把问题当强化学习，直接用“人类更喜欢哪个回答”来训练模型，跳过奖励模型和复杂的 RL 过程。</p>
+</blockquote>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>特性</th>
+<th>PPO (RLHF 传统流派)</th>
+<th>DPO (新贵流派)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>训练流程</td>
+<td>复杂 (4阶段)：SFT $\to$ RM $\to$ PPO (Actor, Critic, Ref, Reward)</td>
+<td>简单 (1阶段)：直接在 SFT 基础上用偏好数据对 $(x, y_w, y_l)$ 训练</td>
+</tr>
+<tr>
+<td>显存占用</td>
+<td>极高。训练时需要同时加载/维护 4 个模型（Actor, Ref, Critic, Reward）。</td>
+<td>低。只需要加载 2 个模型（Policy, Ref）。显存约为 PPO 的一半。</td>
+</tr>
+<tr>
+<td>稳定性</td>
+<td>极差。超参数敏感，容易训练崩（Reward Hacking, KL 爆炸）。</td>
+<td>极好。类似 SFT 的监督训练，Loss 曲线平滑。</td>
+</tr>
+<tr>
+<td>数学本质</td>
+<td>最大化期望奖励 $E[R(x, y)] - \beta KL$
+</td>
+<td>最小化 $y_{win}$ 和 $y_{lose}$ 之间隐式奖励差值的 Log-Sigmoid Loss</td>
+</tr>
+<tr>
+<td>Infra 视角</td>
+<td>需要复杂的 Orchestration（在生成节点和训练节点间搬运数据），通信开销大。</td>
+<td>只是特殊的 DataLoader + Loss Function，标准的 DDP/FSDP 即可支持。</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<hr>
+<ol start="12">
+<li>SFT+DPO模型后，怎么评估的，评估哪些指标？</li>
+</ol>
+<p>在大模型领域，评估（Evaluation）通常分为 客观题（Benchmarks） 和 主观题（基于 LLM 的打分）。</p>
+<p>A. 通用能力评估 (General Capabilities)，防止“对齐税” (Alignment Tax)，即防止模型为了变乖而变笨。</p>
+<ul>
+<li>MMLU / CMMLU: 综合学科知识（考试题）。</li>
+<li>GSM8K: 数学推理能力。</li>
+<li>HumanEval / MBPP: 代码生成能力。</li>
+</ul>
+<p>B. 对齐与对话能力 (Alignment &amp; Chat)，这是 DPO 重点提升的领域。</p>
+<ul>
+<li>MT-Bench: 使用 GPT-4 作为裁判（LLM-as-a-Judge），对多轮对话进行打分（1-10分）。</li>
+<li>AlpacaEval: 计算模型回复与 GPT-4 回复相比的胜率 (Win Rate)。</li>
+<li>指令遵循 (Instruction Following): 评估是否能严格按照 Prompt 的格式要求输出（如 JSON 格式）。</li>
+</ul>
+<p>C. 安全性 (Safety)</p>
+<ul>
+<li>SafetyBench / Do-Not-Answer: 测试模型是否会回答有害问题（如制造炸弹、种族歧视）。</li>
+</ul>
+<hr>
+<ol start="13">
+<li>无幻觉率怎么评估？</li>
+</ol>
+<p>幻觉（Hallucination）指模型一本正经地胡说八道。这是目前工业界最难评估的指标，因为很难有“标准答案”。</p>
+<p>常用评估方法：</p>
+<ul>
+<li>基于 NLI (自然语言推理) 的自动评估：方法： 给定参考文档（Context）和模型回答。使用一个小模型（如 BERT-NLI）判断回答是否蕴含（Entailment）于参考文档，还是矛盾（Contradiction）。指标： FactScore。</li>
+<li>基于外部知识库的校验 (RAG-based Eval)：方法： 提取回答中的实体（Entity）和关系（Relation），去查询 Google Search 或知识图谱，验证事实准确性。</li>
+<li>采样一致性 (Self-Consistency / SelfCheckGPT)：原理： 所谓“真理是唯一的”。如果让模型对同一个问题回答 10 次（Temperature &gt; 0）。如果 10 次回答高度一致 $\to$ 可能是事实。如果 10 次回答五花八门 $\to$ 极大概率是幻觉。优点： 不需要标注数据（Zero-resource）。</li>
+<li>专用 Benchmark:TruthfulQA: 专门设计了一些容易诱导模型产生误解或模仿人类错误观念的问题。HallusionBench: 针对视觉/文本幻觉的评测集。</li>
+</ul>
+<hr>
+<ol start="14">
+<li>什么是模型的困惑度？</li>
+</ol>
+<p>数学定义：PPL 是交叉熵（Cross Entropy）的指数形式。它衡量的是概率分布的不确定性。</p>
+<p>$$PPL(X) = \exp \left( - \frac{1}{N} \sum_{i=1}^{N} \log P(x_i | x_{&lt;i}) \right)$$</p>
+<p>直观理解</p>
+<ul>
+<li>预测的“分支系数”： 假如 PPL = 10，意味着模型在预测下一个词时，平均在 10 个候选词之间犹豫不决（且概率分布均匀）。</li>
+<li>越低越好： PPL 越低，说明模型对下一个词越有把握，生成的句子越通顺。关键陷阱</li>
+</ul>
+<div class="markdown-alert markdown-alert-caution"><p class="markdown-alert-title"><svg class="octicon octicon-stop mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Caution</p><p>（面试必考点）PPL 仅适用于预训练（Pre-training）阶段： 在 SFT 或 RLHF 阶段，PPL 变高 往往是正常的，甚至是有益的。PPL 与生成质量不完全正相关： 一个只会重复 "the the the the" 的模型 PPL 可能极低，但生成质量为零。对于 Chatbot，我们需要的是多样性，而不是极致的确定性。</p>
+</div>
+<hr>
+<ol start="15">
+<li>bitsandbytes和accelerator(hugging face)？</li>
+</ol>
+<p>这是两个在 LLM 训练和微调中必须要用的库，一个是底层优化，一个是上层抽象。</p>
+<ul>
+<li>bitsandbytes (bnb)<br>
+定位： CUDA 算子库 / 量化基石。<br>
+核心功能： 它是 Facebook (Tim Dettmers) 开发的，专门为 PyTorch 提供8-bit 和 4-bit 的优化器和矩阵乘法算子。<br>
+杀手级应用： QLoRA，它实现了 Linear8bitLt 和 Linear4bit 层。没有它，你是无法在单卡 24G 显存上微调 Llama-3-70B 的。<br>
+它深入 CUDA 底层，处理了量化后的精度损失（Outlier 处理）和显存压缩。</li>
+</ul>
+<p>Accelerator (Hugging Face)<br>
+定位： 分布式训练的“傻瓜相机” / 胶水层。<br>
+核心功能： 它把繁琐的 PyTorch 分布式代码（DDP, FSDP, DeepSpeed）和设备管理代码封装起来了。<br>
+解决痛点：<br>
+- 写代码时： 你不需要写 x.to(device)，只需要写 accelerator.prepare(model, data)。<br>
+- 切换环境时： 同样一套代码，你想从单卡切换到多卡 DDP，或者切换到 TP/FP16 混合精度，不需要改代码，只需要在命令行运行 accelerate config 配置一下即可。<br>
+- Infra 价值： 它抹平了不同硬件（CPU, GPU, TPU）和不同并行策略（DDP, FSDP, DeepSpeed）之间的 API 差异。</p>
+<hr>
+<ol start="16">
+<li>什么是量化?常见的量化类型？</li>
+</ol>
+<p>量化，就是用“更少的数字精度”来近似表示原本的高精度数值。在误差可接受的前提下，最大化性能收益。</p>
+<blockquote>
+<p>量化是将模型参数（Weights）和激活值（Activations）从高精度（通常是 FP32 或 BF16）映射到低精度（如 INT8, INT4, FP8）的过程。</p>
+</blockquote>
+<p>在深度学习里，最常见的是：</p>
+<blockquote>
+<p>用 INT8 / INT4 等低比特整数，去近似原本的 FP32 / FP16 浮点数。</p>
+</blockquote>
+<p>大模型中，主要量化权重、激活和梯度。量化难度递增，且梯度主要在训练阶段涉及，在 QAT 中才会涉及到。</p>
+<p>常见的量化类型：</p>
+<p>按映射方式分：</p>
+<ul>
+<li>线性量化 (Uniform): 最常用。将浮点数均匀映射到整数。</li>
+</ul>
+<p>$$Q(x) = \text{Clamp}(\text{Round}(x / S + Z), Q_{min}, Q_{max})$$</p>
+<p>其中 $S$ 是 Scale（步长），$Z$ 是 Zero-point（零点）。</p>
+<ul>
+<li>非线性量化 (Non-uniform): 如 NF4 (Normal Float 4) 用于 QLoRA。根据权重分布（通常正态分布）设计非均匀的切分点。</li>
+</ul>
+<p>按量化阶段分：</p>
+<ul>
+<li>Post-Training Quantization（PTQ）：模型先训练好，再量化。</li>
+<li>Quantization-Aware Training（QAT）：训练时就“假装自己是低精度”。</li>
+</ul>
+<p>按照量化单位区分：</p>
+<ul>
+<li>Per-Tensor: 整个矩阵共用一个 Scale。</li>
+<li>Per-Channel: 每一行或每一列共用一个 Scale（最常用）。</li>
+<li>Per-Group: 将权重切成小块（如每 128 个参数一组），每组一个 Scale（LLM 量化如 GPTQ/AWQ 的主流）。</li>
+</ul>
+<blockquote>
+<p>权重通常用 per-channel，激活多为 per-tensor。</p>
+</blockquote>
+<p>按照对称性区分：</p>
+<ul>
+<li>对称量化（Symmetric）：零点固定为 0，映射范围是对称的（如 $[-127, 127]$）。计算更快（少一次减法），Infra 首选。<br>
+<code class="notranslate">[-127, ..., 0, ..., +127]</code>
+</li>
+<li>非对称量化（Asymmetric）：零点可移动，映射范围不对称（如 $[0, 255]$）。对 ReLU 后的激活值（全是正数）很有效。<br>
+<code class="notranslate">[min, ..., zero_point, ..., max]</code>
+</li>
+</ul>
+<blockquote>
+<p>LLM 中 更常用对称量化。</p>
+</blockquote>
+<p>Per-Tensor (Layer-wise) 量化做法：</p>
+<p>一层里的所有参数（比如 $4096 \times 4096$ 的矩阵），共用这一个 Scale 和 Zero-point。<br>
+问题： 离群点 (Outliers) 毁灭打击。假设矩阵里大部分数是 0.1, 0.2，但有一个数是 100。为了包住 100，Scale 会变得很大。结果：0.1 和 0.2 量化后都变成了 0，精度完全丢失。</p>
+<p>Per-Channel (Channel-wise) 量化做法：</p>
+<p>对权重矩阵的每一行（或每一列），单独计算一个 Scale。如果是 $[C_{out}, C_{in}]$ 的 Linear 层，通常对 $C_{out}$ 维度做量化。<br>
+为什么这么做？隔离离群点： 如果第 1 行有个 100，那只有第 1 行的 Scale 很大；第 2 行最大值是 0.5，第 2 行就可以用很细腻的 Scale。<br>
+硬件支持： 在做矩阵乘法时，结果是一行一行累加的，Per-Channel 的 Scale 可以在累加完之后再乘回去，计算上完全可行。</p>
+<p>Per-Token (Activation 量化)做法：</p>
+<p>对激活值 $X$ ( $[Batch, Seq, Hidden]$ )，针对每一个 Token 的 Hidden 向量单独计算 Scale。<br>
+原因： LLM 中存在 Activation Outliers 现象（某些特定的 Channel 在所有 Token 上数值都很大）。</p>
+<p>Per-Head 量化 (KV Cache 场景)在 Transformer 的 KV Cache 量化中，有时会按 Attention Head 为粒度进行量化。<br>
+原因： 不同的 Head 关注的语义模式不同，数值分布差异很大。混合在一起量化会拉低精度。</p>
+<p>Per-Group (Block-wise) 量化 (LLM 必知)做法： Per-Channel 可能还不够细。比如把权重每 128 个数分为一组（Group），每组一个 Scale。代表算法： GPTQ, AWQ。代价： 需要存储更多的 Scale（显存占用微增），但能让 INT4 精度接近 FP16。</p>
+<hr>
+<ol start="17">
+<li>什么是蒸馏 (Distillation)？</li>
+</ol>
+<p>定义： 知识蒸馏（Knowledge Distillation, KD）是指训练一个**小模型（Student）去模仿一个大模型（Teacher）**的行为。</p>
+<p>核心逻辑： Teacher 模型不仅输出最终的预测结果（Hard Label，比如 "Cat"），还输出 Softmax 层的概率分布（Soft Label，比如 "Cat: 0.9, Dog: 0.09, Car: 0.01"）。 这个 "Dog: 0.09" 虽然是错的，但它包含了暗知识 (Dark Knowledge)：说明这张图里的东西虽然像猫，但有点像狗，绝不像车。Student 学习这种分布能比单纯学习 Hard Label 泛化得更好。</p>
+<p>HPC/Infra 视角： 蒸馏通常与量化或剪枝结合。比如，用一个 FP16 的 Llama-70B 作为一个 INT4 的 Llama-70B 的 Teacher，通过蒸馏让量化后的模型恢复精度。</p>
+<ol start="18">
+<li>QAT 和 PTQ 什么区别？QAT 具体过程？</li>
+</ol>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>特性</th>
+<th>PTQ (Post-Training Quantization)</th>
+<th>QAT (Quantization-Aware Training)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>训练需求</td>
+<td>不需要重训练。只需少量校准数据（Calibration Data）。</td>
+<td>需要重训练（Fine-tuning）。</td>
+</tr>
+<tr>
+<td>计算成本</td>
+<td>极低（几分钟）。</td>
+<td>高（几小时到几天）。</td>
+</tr>
+<tr>
+<td>精度</td>
+<td>INT8 尚可，INT4 精度下降严重。</td>
+<td>精度最高，几乎无损，适合极低比特（INT4/INT2）。</td>
+</tr>
+<tr>
+<td>应用场景</td>
+<td>大模型（LLM）首选（因为重训成本太高）。</td>
+<td>端侧小模型（ResNet, MobileNet）或追求极致精度的场景。</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<p>QAT 的具体过程</p>
+<p>QAT 的核心思想是：在训练过程中模拟量化带来的误差，让神经网络学会适应这种误差。<br>
+插入伪量化节点 (Fake Quantization Nodes):在模型的 Weight 和 Activation 处插入一个“模拟量化”的操作。<br>
+前向传播 (Forward): 实际上还是用 FP32 算，但是会强制做一个 Dequantize(Quantize(x)) 的操作，<br>
+模拟精度丢失（Rounding Error）和截断（Clipping）。<br>
+$$\text{Output} = \text{FakeQuant}(x) \approx x + \text{noise}$$</p>
+<p>直通估计器 (STE, Straight Through Estimator):这是 QAT 的灵魂。<br>
+问题： Round 函数导数处处为 0，梯度无法反向传播。<br>
+解决： 在反向传播时，直接把 Round 函数当作 $y=x$（导数为 1），忽略量化操作，让梯度直接穿透过去更新原始的 FP32 权重。<br>
+微调 (Fine-tuning):带着这些伪量化节点进行常规的 SGD/Adam 训练。模型参数会调整，试图去弥补量化噪声带来的 Loss。<br>
+图冻结 (Fusion &amp; Freezing):训练结束后，丢掉伪量化节点，将 FP32 权重真正转换为 INT8 权重 + Scale，部署到推理引擎（TensorRT/TFLite）。</p>
+<hr>
+<ol start="19">
+<li>模型训练和推理时用到的数据类型解析？</li>
+</ol>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>数据类型</th>
+<th>总位宽</th>
+<th>符号位 (S)</th>
+<th>指数位 (E)(决定范围)</th>
+<th>尾数位 (M)(决定精度)</th>
+<th>动态范围 (近似)</th>
+<th>最小精度 (分辨率)</th>
+<th>核心特性 &amp; Infra 视角</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FP32(IEEE 754)</td>
+<td>32</td>
+<td>1</td>
+<td>8</td>
+<td>23</td>
+<td>$10^{-38} \sim 10^{38}$</td>
+<td>$\sim 10^{-7}$</td>
+<td>基准。所有类型都以此为参照。训练的主权重通常保存在此格式以累积微小梯度。</td>
+</tr>
+<tr>
+<td>FP16(Half)</td>
+<td>16</td>
+<td>1</td>
+<td>5</td>
+<td>10</td>
+<td>$6 \times 10^{-5} \sim 65504$</td>
+<td>$\sim 10^{-3}$</td>
+<td>范围极窄。指数位仅5位，非常容易上溢 (Overflow)，因此训练时必须用 Loss Scaler。</td>
+</tr>
+<tr>
+<td>BF16(Brain Float)</td>
+<td>16</td>
+<td>1</td>
+<td>8</td>
+<td>7</td>
+<td>$10^{-38} \sim 10^{38}$</td>
+<td>$\sim 10^{-2}$</td>
+<td>为深度学习而生。指数位与 FP32 相同(8位)，不需要 Loss Scaler。牺牲了精度换取了训练的稳定性。</td>
+</tr>
+<tr>
+<td>TF32(Tensor Float)</td>
+<td>19*(存为32)</td>
+<td>1</td>
+<td>8</td>
+<td>10</td>
+<td>$10^{-38} \sim 10^{38}$</td>
+<td>$\sim 10^{-3}$</td>
+<td>Ampere 架构特供。截取 FP32 的8位指数 + FP16 的10位尾数。计算时约等于 FP16 精度，但有 FP32 的范围。</td>
+</tr>
+<tr>
+<td>FP8(E4M3)</td>
+<td>8</td>
+<td>1</td>
+<td>4</td>
+<td>3</td>
+<td>
+$\sim 448$ (无 Inf)</td>
+<td>低</td>
+<td>H100 推理/权重。精度稍高，范围窄。通常用于存储权重 (Weight) 和激活值 (Activation)。</td>
+</tr>
+<tr>
+<td>FP8(E5M2)</td>
+<td>8</td>
+<td>1</td>
+<td>5</td>
+<td>2</td>
+<td>$\sim 57344$</td>
+<td>极低</td>
+<td>H100 梯度。指数位由4变5，为了匹配 FP16 的范围，防止梯度计算时溢出。通常用于梯度 (Gradient)。</td>
+</tr>
+<tr>
+<td>INT8</td>
+<td>8</td>
+<td>1</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>$-128 \sim 127$</td>
+<td>整数分辨率</td>
+<td>推理主力。没有指数/尾数，纯整数。依赖 Scale 因子还原数值。</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<hr>
+<ol start="20">
+<li>YOLO 架构以及输入和输出</li>
+</ol>
+<p>核心架构 (Backbone - Neck - Head)<br>
+YOLO 的架构通常分为三个部分：</p>
+<ul>
+<li>
+<p>Backbone (骨干网络): 负责提取特征。</p>
+<ul>
+<li>常用：CSPDarknet (v5/v8)。</li>
+<li>特点：通过 CSP (Cross Stage Partial) 结构减少计算量，增强梯度流动。</li>
+</ul>
+</li>
+<li>
+<p>Neck (颈部): 负责特征融合（不同尺度）。</p>
+<ul>
+<li>常用：PANet (Path Aggregation Network) 或 FPN。</li>
+<li>作用：把深层的语义特征传上来，把浅层的定位特征传下去。</li>
+</ul>
+</li>
+<li>
+<p>Head (头部): 负责预测。</p>
+<ul>
+<li>Decoupled Head (解耦头): (v6/v8/v10) 将“分类”和“回归（边框定位）”分开在不同的分支计算。</li>
+<li>Anchor-Free: (v8/v10) 不再需要预设 Anchor Box，直接预测中心点和宽高。</li>
+</ul>
+</li>
+</ul>
+<p>输入和输出：</p>
+<ul>
+<li>输入: Image Tensor $[B, C, H, W]$。
+<ul>
+<li>典型尺寸：$640 \times 640$ (v5/v8)。</li>
+</ul>
+</li>
+<li>输出: List of Tensors (对应不同尺度的 Grid)。
+<ul>
+<li>经过后处理后，通常是一个 $[N_{det}, 6]$ 的 Tensor，包含 $(x_1, y_1, x_2, y_2, \text{confidence}, \text{class_id})$ 。</li>
+</ul>
+</li>
+</ul>
+<p>主要算子 (Infra 视角)<br>
+Conv2d / Depthwise Conv: 计算密集型，占 90% 以上 FLOPs。<br>
+SiLU (Swish): 激活函数，超越了 ReLU 的主流选择。<br>
+Upsample / Resize: 在 Neck 部分用于上采样，通常是 Nearest 或 Bilinear。<br>
+Concat / Split: 显存密集型。CSP 结构中有大量的 Split 和 Concat，容易造成显存碎片或带宽瓶颈。<br>
+SPPF (Spatial Pyramid Pooling - Fast): 多个 MaxPool 的级联。<br>
+Post-Process (NMS): 非极大值抑制。这是 YOLO 推理的阿喀琉斯之踵。<br>
+它通常包含排序（Sort）和 IoU 计算，逻辑复杂，难以并行。<br>
+Infra 优化点： 在 TensorRT 中通常使用 EfficientNMS Plugin 将其融合到 GPU 上，否则 CPU 后处理会成为瓶颈。</p>
+<hr>
+<ol start="21">
+<li>主流的图像生成模型？</li>
+</ol>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>类别</th>
+<th>模型代表</th>
+<th>核心架构特点</th>
+<th>Infra 关注点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GAN (生成)</td>
+<td>StyleGAN, CycleGAN</td>
+<td>Generator (反卷积/上采样) vs Discriminator (卷积)</td>
+<td>训练不稳定。生成器通常包含大量的 Upsample 操作。</td>
+</tr>
+<tr>
+<td>VAE (生成)</td>
+<td>VAE, VQ-VAE</td>
+<td>Encoder $\to$ Latent $\to$ Decoder</td>
+<td>瓶颈在于 Latent Space 的采样操作。</td>
+</tr>
+<tr>
+<td>Diffusion (生成)</td>
+<td>Stable Diffusion (LDM), DALL-E 2/3</td>
+<td>UNet (Conv+Attention) 或 DiT (Transformer)</td>
+<td>迭代式推理 (Loop 20-50次)。访存极其密集 (Weights reload)。</td>
+</tr>
+<tr>
+<td>Video (生成)</td>
+<td>Sora, Kling</td>
+<td>DiT (Diffusion Transformer) + 3D-Patching</td>
+<td>显存也是主要瓶颈，涉及 3D Attention (时空注意力)。</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<hr>
+<ol start="22">
+<li>Diffusion 模型基本原理</li>
+</ol>
+<p>Diffusion Model (扩散模型) 是目前生成式 AI 的核心。它的本质是学习如何把高斯噪声还原成一张图。</p>
+<p>两个过程</p>
+<p>前向过程 (Forward Process / Diffusion): $x_0 \to x_T$ 。不断往图片上加高斯噪声，直到图片变成纯噪声。这个过程是固定的，不需要学习。</p>
+<p>反向过程 (Reverse Process / Denoising):$x_T \to x_0$。模型学习预测每一步加入的噪声 $\epsilon_\theta(x_t, t)$ 。公式直觉： $x_{t-1} = \frac{1}{\sqrt{\alpha_t}} (x_t - \frac{1-\alpha_t}{\sqrt{1-\bar{\alpha}<em>t}} \epsilon</em>\theta(x_t, t)) + \sigma_t z$ 模型不直接生成图，而是预测噪声，然后从当前图中减去这个噪声。</p>
+<p>架构：UNet vs DiTUNet (Stable Diffusion 1.5/SDXL): 带有 Skip Connection 的 ResNet 结构，中间穿插 Cross-Attention (接收 Text Embedding)。<br>
+DiT (Sora / SD3): 抛弃 UNet，完全使用 Transformer Block 处理加噪后的 Patch。</p>
+<p>Infra 痛点Step 循环： 并不是一次 Forward 就能出图，而是要跑 20~50 次 Forward。KV Cache? DiT 如果作为 Video 生成，可能有类似 KV Cache 的需求，但对于 Image Diffusion，通常每次 Step 输入都不同，无法 Cache。</p>
+<hr>
+<ol start="23">
+<li>VAE (Variational Autoencoder) 基本原理</li>
+</ol>
+<p>VAE 是一种概率生成模型，它在 Stable Diffusion (Latent Diffusion Model) 中扮演了**“压缩机”**的角色。</p>
+<p>基本流程</p>
+<p>Encoder: 输入图片 $x$，输出潜在变量的分布参数（均值 $\mu$ 和方差的对数 $\log \sigma^2$）。<br>
+注意：它不直接输出向量 $z$，而是输出分布。<br>
+Reparameterization Trick (重参数化技巧):<br>
+直接从 $N(\mu, \sigma^2)$ 采样是不可导的（阻断了反向传播）。<br>
+Trick: $z = \mu + \sigma \cdot \epsilon$，其中 $\epsilon \sim N(0, 1)$。这样 $\epsilon$ 是常数，$\mu$ 和 $\sigma$ 可以求导。</p>
+<p>Decoder: 输入 $z$，还原图片 $x'$。<br>
+Loss 函数</p>
+<p>$$Loss = \text{Reconstruction Loss} + \text{KL Divergence}$$</p>
+<p>重建损失 (MSE): 保证还原的图和原图像。<br>
+KL 散度: 强迫潜在分布 $N(\mu, \sigma^2)$ 接近标准正态分布 $N(0, 1)$，保证 Latent Space 的连续性和紧凑性。</p>
+<p>为什么 Stable Diffusion 要用 VAE？直接在 Pixel Space ($512 \times 512 \times 3$) 做 Diffusion 计算量太大。SD 先用 VAE 的 Encoder 把图片压缩到 Latent Space ($64 \times 64 \times 4$)。Diffusion 过程其实是在 Latent Space 进行的。最后用 VAE Decoder 把 Latent 解码回图片。Infra 视角： VAE 的 Decoder 部分通常是 SD 出图最后一步的显存峰值来源（因为要展开成高分辨率的大图），容易 OOM。</p>
+<hr>
+<ol start="24">
+<li>输入网址到看到网页，网络中发生了什么？</li>
+</ol>
+<p>这是一个全链路的过程，可以概括为以下几个关键步骤：</p>
+<p>URL 解析 (URL Parsing): 浏览器检查输入的 URL 是否合法，提取协议（HTTP/HTTPS）、域名（<a href="https://www.google.com/search?q=google.com%EF%BC%89%E3%80%81%E8%B7%AF%E5%BE%84%E7%AD%89%E4%BF%A1%E6%81%AF%E3%80%82" rel="nofollow">https://www.google.com/search?q=google.com）、路径等信息。</a></p>
+<p>DNS 解析 (DNS Resolution): 浏览器需要把域名翻译成机器能读懂的 IP 地址。查找顺序：浏览器缓存 $\to$ 操作系统缓存 (Hosts 文件) $\to$ 路由器缓存 $\to$ ISP 的 DNS 服务器 $\to$ 根域名/顶级域名递归查询。最终得到服务器的 IP 地址。</p>
+<p>建立 TCP 连接 (TCP 3-Way Handshake): 浏览器向服务器 IP 发起 TCP 连接（三次握手）。SYN (我想连你) $\to$ SYN+ACK (好的，来吧) $\to$ ACK (我来了)。</p>
+<p>TLS/SSL 握手 (如果是 HTTPS): 在 TCP 之上建立加密通道（详见下文）。</p>
+<p>发送 HTTP 请求 (Send Request): 浏览器构建 HTTP 报文（GET / HTTP/1.1），包含 Header（Cookie, User-Agent 等）发送给服务器。</p>
+<p>服务器处理与响应 (Server Processing):负载均衡器 (Nginx/LVS) 分发请求。Web 服务器/应用服务器 (Tomcat/Gunicorn) 处理逻辑，查询数据库。服务器返回 HTTP 响应报文（状态码 200 OK，Body 中包含 HTML/JSON）。</p>
+<p>浏览器渲染 (Rendering):解析 HTML 构建 DOM 树。解析 CSS 构建 CSSOM 树。执行 JavaScript（可能会修改 DOM）。生成渲染树 (Render Tree) $\to$ 布局 (Layout) $\to$ 绘制 (Paint)。</p>
+<p>断开连接 (4-Way Wave): 如果没有 Keep-Alive，传输结束后断开 TCP 连接（四次挥手）。</p>
+<hr>
+<ol start="25">
+<li>HTTP 协议是什么？</li>
+</ol>
+<p>HTTP (HyperText Transfer Protocol，超文本传输协议) 是互联网上应用最为广泛的一种网络协议。</p>
+<p>层级： 位于 OSI 模型的应用层。<br>
+作用： 规定了客户端（Browser）和服务器（Server）之间如何交换文本、图片、视频等数据。<br>
+特点：无状态 (Stateless): 协议本身不记录之前的请求信息（所以需要 Cookie/Session 来维持状态）。基于请求-响应模型： 一问一答。明文传输： 数据未加密，容易被窃听。<br>
+版本：HTTP/1.1: 引入 Keep-Alive 长连接，目前最通用。HTTP/2.0: 引入多路复用（Multiplexing）、头部压缩，解决队头阻塞问题。HTTP/3.0: 基于 UDP (QUIC)，解决 TCP 层面的队头阻塞和握手延迟。</p>
+<hr>
+<ol start="26">
+<li>HTTPS 协议是什么？</li>
+</ol>
+<p>HTTPS (HyperText Transfer Protocol Secure) 可以理解为 HTTP + SSL/TLS。定义： 在 HTTP 之下、TCP 之上加入了一个安全层（SSL/TLS）。<br>
+作用： 为原本明文传输的 HTTP 提供加密通道。端口： 默认使用 443 端口（HTTP 是 80）。<br>
+本质： 披着 SSL/TLS 外衣的 HTTP。</p>
+<hr>
+<ol start="27">
+<li>HTTPS 如何保证安全？</li>
+</ol>
+<p>HTTPS 时序图HTTPS 通过 SSL/TLS 协议 保证了信息安全的三个核心属性（CIA）：<br>
+机密性 (Confidentiality): 数据被加密，中间人截获也看不懂（防窃听）。<br>
+完整性 (Integrity): 数据在传输过程中没有被篡改（防篡改，通过 Hash/MAC 校验）。<br>
+身份认证 (Authentication): 确认服务器就是它声称的那个（防伪装，通过数字证书）。HTTPS 握手时序图 (TLS 1.2 为例)这个过程叫“TLS 握手”，目的是安全地商量出一个对称密钥。(注：TLS 1.3 简化了握手流程，只需 1 个 RTT 甚至 0-RTT，但核心逻辑依然是交换密钥)</p>
+<ol start="28">
+<li>HTTPS 为什么要使用对称密钥加密通信，为什么不一直使用非对称加密？</li>
+</ol>
+<p>这是一个关于性能与功能权衡的问题。HTTPS 采用的是混合加密机制：握手阶段： 使用非对称加密（如 RSA, ECC）来交换密钥。<br>
+传输阶段： 使用对称加密（如 AES, ChaCha20）来传输实际数据。为什么不一直使用非对称加密？计算效率（核心原因）：非对称加密 (RSA/ECC): 涉及极其复杂的大数乘法和模幂运算，计算量巨大，速度极慢（比对称加密慢 100~1000 倍）。如果每个数据包都用 RSA 加密，服务器 CPU 会瞬间爆满，网页加载会慢得无法忍受。对称加密 (AES): 基于位运算（异或、代换、移位），非常快，且现代 CPU (如 Intel AES-NI 指令集) 都有硬件加速。数据膨胀：非对称加密后的密文通常比明文要长，会导致传输带宽的浪费。长度限制：非对称加密（如 RSA）只能加密比密钥长度更短的数据（例如 2048 位密钥只能加密很少的数据）。如果要加密一张图片，必须把图片切成无数小块分别加密，这在工程上非常低效且难以管理。安全模型：非对称加密的主要优势是解决“如何在不安全的网络上交换密钥”的问题。一旦密钥交换完成，就没有必要继续忍受它的低效了。总结：非对称加密用来**“安全地传送钥匙”，对称加密用来“用钥匙锁箱子传输数据”**。这是结合了非对称加密的安全性（无需预先共享密钥）和对称加密的高效性的最佳方案。</p>
+<hr>
+<ol start="29">
+<li>Docker 的原理是什么？Docker 是怎么管理和隔离资源的？</li>
+</ol>
+<p>Docker 本质上是：利用 Linux 内核提供的“隔离 + 限制”能力，在同一个内核上运行多个彼此看起来“像独立系统”的进程。</p>
+<p>Docker 本身几乎不“管理”资源，它只是一个“Linux 内核能力的高级封装器”：用 Namespace 隔离视图，用 cgroups 限制配额，用 UnionFS 管理文件。</p>
+<hr>
+<ol start="30">
+<li>Bank Conflict 在 Shared Memory 中的具体表现？</li>
+</ol>
+<p>物理模型：32 个窗口的银行想象 Shared Memory 是一个有 32 个柜台窗口（Banks） 的银行。<br>
+Warp 的执行： GPU 的一个 Warp 有 32 个线程，它们像是一个旅行团，同时走到这 32 个窗口前办事。<br>
+理想情况 (Parallel Access)： 32 个线程，正好每人去一个不同的窗口。此时，银行能在一个时钟周期（Cycle）内同时处理完所有人的请求。<br>
+冲突情况 (Serialized Access)： 如果其中有 2 个（或更多）线程，非要挤到同一个窗口去办不同的业务（访问不同的地址），这个窗口就忙不过来了。它必须先给第一个人办完，再给第二个人办。这就是“串行化”，也就是 Bank Conflict。</p>
+<p>内存地址是如何映射到 Bank 的？<br>
+Shared Memory 是按 4-Byte (32-bit) 为单位切分的。映射规则非常简单：按序轮询。地址 0 -&gt; Bank 0地址 1 -&gt; Bank 1...地址 31 -&gt; Bank 31地址 32 -&gt; Bank 0 (回到开头)地址 33 -&gt; Bank 1公式： Bank ID = (Address_Word_Index) % 32</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/0f6e5042-f74a-4dc4-9d78-1c765cfe5026"><img width="723" height="692" alt="Image" src="https://github.com/user-attachments/assets/0f6e5042-f74a-4dc4-9d78-1c765cfe5026" style="max-width: 100%; height: auto; max-height: 692px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/db5126c6-2647-4099-98e5-6216da0fefe3"><img width="799" height="636" alt="Image" src="https://github.com/user-attachments/assets/db5126c6-2647-4099-98e5-6216da0fefe3" style="max-width: 100%; height: auto; max-height: 636px;"></a></p>
+<p>只有“读”才可以。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/8417887c-a654-49f8-b43a-d0f0d73e50bb"><img width="790" height="717" alt="Image" src="https://github.com/user-attachments/assets/8417887c-a654-49f8-b43a-d0f0d73e50bb" style="max-width: 100%; height: auto; max-height: 717px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/7dc81584-3a44-45bf-ab86-40eeaad054a7"><img width="769" height="585" alt="Image" src="https://github.com/user-attachments/assets/7dc81584-3a44-45bf-ab86-40eeaad054a7" style="max-width: 100%; height: auto; max-height: 585px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/59b29012-254a-48ac-bc04-3d2049c1466d"><img width="487" height="724" alt="Image" src="https://github.com/user-attachments/assets/59b29012-254a-48ac-bc04-3d2049c1466d" style="max-width: 100%; height: auto; max-height: 724px;"></a></p>
+<p>bank conflict 可以通过 +1 和 xor swizzie 等方式避免：</p>
+<div class="highlight highlight-source-cuda-c++"><pre class="notranslate"><span class="pl-k">int</span> swz = lane ^ (lane &gt;&gt; <span class="pl-c1">1</span>);
+<span class="pl-k">float</span> x = smem[swz * <span class="pl-c1">32</span>];</pre></div>
+<hr>
+<ol start="31">
+<li>TMA (Tensor Memory Accelerator) 是如何彻底改变数据加载方式的？</li>
+</ol>
+<p>TMA 是什么？<br>
+TMA 是 SM 里的一个独立硬件单元。你可以给它下达一个指令：“把这块全局内存的数据搬到 Shared Memory，具体的地址计算逻辑（比如 2D 裁剪）是你这样这样...”</p>
+<p>然后，所有的 CUDA Threads 就可以去睡觉了（或者去算别的东西）。TMA 会在后台利用全带宽把数据搬好，而且不经过寄存器。</p>
+<p>TMA 的核心特性：<br>
+异步拷贝 (Asynchronous Copy): cuda::memcpy_async 的终极形态。</p>
+<p>不占用寄存器: 数据流向是 Global Mem -&gt; L2 -&gt; Shared Mem，完全绕过 Register File。</p>
+<p>硬件计算地址 (Address Generation): 这是最骚的操作。</p>
+<p>在做卷积或矩阵乘时，我们需要把内存中不连续的数据块（比如图片的一个 Tile，或者矩阵的一列）搬进来。</p>
+<p>以前需要 CPU/Thread 算好偏移量。</p>
+<p>现在，你可以配置 TMA Descriptor，告诉它 Tensor 的维度、步长（Stride）和 Box 大小。TMA 硬件自动处理越界（Out-of-bound）和地址跳转。</p>
+<p>与 mbarrier 结合: TMA 搬运是异步的，线程怎么知道搬完了？通过 mbarrier (Transaction Barrier)。线程等待一个信号，灯亮了就说明数据到了 Shared Memory，可以直接开算。</p>
+<p>一段伪代码直觉 (C++ / CUDA):</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> 1. 在 Host 端或者 Global Init 阶段创建 TMA 描述符</span>
+<span class="pl-c"><span class="pl-c">//</span> 告诉 TMA：我要搬运一个 [1024, 1024] 的矩阵，每次搬 [64, 64] 的块</span>
+<span class="pl-c"><span class="pl-c">//</span> 这种复杂的索引计算，以前是 Thread 做的，现在 TMA 硬件全包了</span>
+CUtensorMap tensor_map = create_tensor_map(...); 
+
+<span class="pl-c"><span class="pl-c">//</span> 2. Kernel 内部</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">my_kernel</span>(...) {
+    <span class="pl-c"><span class="pl-c">//</span> 发送指令：TMA，干活！把对应坐标的数据搬到 smem_ptr</span>
+    <span class="pl-c"><span class="pl-c">//</span> 这条指令瞬间完成，不阻塞，不占用寄存器存数据</span>
+    <span class="pl-k">if</span> (threadIdx.<span class="pl-smi">x</span> == <span class="pl-c1">0</span>) { <span class="pl-c"><span class="pl-c">//</span> 只需要一个线程发号施令</span>
+        <span class="pl-c1">cde::cp_async_bulk_tensor_2d_global_to_shared</span>(&amp;smem_ptr, &amp;tensor_map, x, y, ...);
+    }
+    
+    <span class="pl-c"><span class="pl-c">//</span> 3. 所有的 Warps 可以先算点别的，或者用 mbarrier 等待数据到位</span>
+    mbarrier.<span class="pl-c1">wait</span>();
+
+    <span class="pl-c"><span class="pl-c">//</span> 4. 数据已经神奇地出现在 Shared Memory 里了，直接用 WGMMA 指令计算</span>
+    wgmma.<span class="pl-c1">mma_async</span>(..., smem_ptr, ...);
+}</pre></div>
+<hr>
+<ol start="32">
+<li>DeepSeek 用了 MoE，什么是 MoE，结构是什么样的？</li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/7035b88a-8a6d-4bd5-bded-b59b117496ca"><img width="794" height="687" alt="Image" src="https://github.com/user-attachments/assets/7035b88a-8a6d-4bd5-bded-b59b117496ca" style="max-width: 100%; height: auto; max-height: 687px;"></a></p>
+<hr>
+<ol start="33">
+<li>用线性层实现简单的 MoE？<br>
+这是一个简化版的 PyTorch 实现，演示核心逻辑：Routing -&gt; Dispatch -&gt; Expert Computation -&gt; Combine。</li>
+</ol>
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">torch</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span> <span class="pl-k">as</span> <span class="pl-s1">nn</span>
+<span class="pl-k">import</span> <span class="pl-s1">torch</span>.<span class="pl-s1">nn</span>.<span class="pl-s1">functional</span> <span class="pl-k">as</span> <span class="pl-c1">F</span>
+
+<span class="pl-k">class</span> <span class="pl-v">SimpleMoE</span>(<span class="pl-s1">nn</span>.<span class="pl-c1">Module</span>):
+    <span class="pl-k">def</span> <span class="pl-en">__init__</span>(<span class="pl-s1">self</span>, <span class="pl-s1">input_dim</span>, <span class="pl-s1">hidden_dim</span>, <span class="pl-s1">output_dim</span>, <span class="pl-s1">num_experts</span>, <span class="pl-s1">top_k</span><span class="pl-c1">=</span><span class="pl-c1">2</span>):
+        <span class="pl-en">super</span>().<span class="pl-c1">__init__</span>()
+        <span class="pl-s1">self</span>.<span class="pl-c1">num_experts</span> <span class="pl-c1">=</span> <span class="pl-s1">num_experts</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">top_k</span> <span class="pl-c1">=</span> <span class="pl-s1">top_k</span>
+
+        <span class="pl-c"># 1. 门控网络 (Router)</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">router</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">input_dim</span>, <span class="pl-s1">num_experts</span>)
+
+        <span class="pl-c"># 2. 专家网络 (这里用 ModuleList 存储多个简单的 FFN)</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">experts</span> <span class="pl-c1">=</span> <span class="pl-s1">nn</span>.<span class="pl-c1">ModuleList</span>([
+            <span class="pl-s1">nn</span>.<span class="pl-c1">Sequential</span>(
+                <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">input_dim</span>, <span class="pl-s1">hidden_dim</span>),
+                <span class="pl-s1">nn</span>.<span class="pl-c1">ReLU</span>(),
+                <span class="pl-s1">nn</span>.<span class="pl-c1">Linear</span>(<span class="pl-s1">hidden_dim</span>, <span class="pl-s1">output_dim</span>)
+            ) <span class="pl-k">for</span> <span class="pl-s1">_</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-s1">num_experts</span>)
+        ])
+
+    <span class="pl-k">def</span> <span class="pl-en">forward</span>(<span class="pl-s1">self</span>, <span class="pl-s1">x</span>):
+        <span class="pl-c"># x shape: (batch_size, seq_len, input_dim) -&gt; flatten to (B*S, D)</span>
+        <span class="pl-s1">original_shape</span> <span class="pl-c1">=</span> <span class="pl-s1">x</span>.<span class="pl-c1">shape</span>
+        <span class="pl-s1">x</span> <span class="pl-c1">=</span> <span class="pl-s1">x</span>.<span class="pl-c1">view</span>(<span class="pl-c1">-</span><span class="pl-c1">1</span>, <span class="pl-s1">original_shape</span>[<span class="pl-c1">-</span><span class="pl-c1">1</span>]) 
+        
+        <span class="pl-c"># Step 1: Routing</span>
+        <span class="pl-c"># logits: (batch_size * seq_len, num_experts)</span>
+        <span class="pl-s1">router_logits</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">router</span>(<span class="pl-s1">x</span>)
+        
+        <span class="pl-c"># 获取 top-k 的概率和索引</span>
+        <span class="pl-s1">routing_weights</span> <span class="pl-c1">=</span> <span class="pl-c1">F</span>.<span class="pl-c1">softmax</span>(<span class="pl-s1">router_logits</span>, <span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">-</span><span class="pl-c1">1</span>)
+        <span class="pl-s1">top_k_weights</span>, <span class="pl-s1">top_k_indices</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">topk</span>(<span class="pl-s1">routing_weights</span>, <span class="pl-s1">self</span>.<span class="pl-c1">top_k</span>, <span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">-</span><span class="pl-c1">1</span>)
+        
+        <span class="pl-c"># 归一化权重 (让被选中的专家权重和为 1)</span>
+        <span class="pl-s1">top_k_weights</span> <span class="pl-c1">=</span> <span class="pl-s1">top_k_weights</span> <span class="pl-c1">/</span> <span class="pl-s1">top_k_weights</span>.<span class="pl-c1">sum</span>(<span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">-</span><span class="pl-c1">1</span>, <span class="pl-s1">keepdim</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
+
+        <span class="pl-c"># Step 2 &amp; 3: Expert Computation &amp; Combination</span>
+        <span class="pl-c"># 这是一个 naive 实现，实际生产中会使用 scatter/gather 或 masked matmul 优化</span>
+        <span class="pl-s1">final_output</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">zeros_like</span>(<span class="pl-s1">x</span>)
+        
+        <span class="pl-c"># 遍历每个 Expert (实际并行训练中不会这样写，而是会把 token 分发出去)</span>
+        <span class="pl-k">for</span> <span class="pl-s1">i</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-s1">self</span>.<span class="pl-c1">num_experts</span>):
+            <span class="pl-c"># 创建掩码：找出哪些 token 选中了当前专家 i</span>
+            <span class="pl-c"># top_k_indices shape: (tokens, k)</span>
+            <span class="pl-s1">mask</span> <span class="pl-c1">=</span> (<span class="pl-s1">top_k_indices</span> <span class="pl-c1">==</span> <span class="pl-s1">i</span>).<span class="pl-c1">any</span>(<span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">-</span><span class="pl-c1">1</span>)
+            
+            <span class="pl-k">if</span> <span class="pl-s1">mask</span>.<span class="pl-c1">any</span>():
+                <span class="pl-c"># 选出对应的 token</span>
+                <span class="pl-s1">selected_input</span> <span class="pl-c1">=</span> <span class="pl-s1">x</span>[<span class="pl-s1">mask</span>]
+                
+                <span class="pl-c"># 专家计算</span>
+                <span class="pl-s1">expert_output</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">experts</span>[<span class="pl-s1">i</span>](<span class="pl-s1">selected_input</span>)
+                
+                <span class="pl-c"># 找出对应的权重</span>
+                <span class="pl-c"># 我们需要找到当前专家 i 在 top_k 中的位置，从而取对应的 weight</span>
+                <span class="pl-c"># (这里简化处理，假设我们能直接对齐，实际代码涉及较复杂的索引操作)</span>
+                <span class="pl-c"># 为了演示逻辑，这里直接用加权累加示意：</span>
+                
+                <span class="pl-c"># 真正的 MoE 实现通常涉及 einsum 或特定的 CUDA kernel</span>
+                <span class="pl-c"># 这里仅做伪代码级的逻辑说明：</span>
+                <span class="pl-c"># final_output[mask] += expert_output * weight_of_expert_i</span>
+                <span class="pl-k">pass</span> 
+
+        <span class="pl-c"># 在实际面试手写中，建议写出 mask 逻辑或者直接用以下更简单的加权形式：</span>
+        <span class="pl-c"># (这种写法计算量大，不是稀疏的，但逻辑正确)</span>
+        <span class="pl-s1">outputs</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">stack</span>([<span class="pl-en">e</span>(<span class="pl-s1">x</span>) <span class="pl-k">for</span> <span class="pl-s1">e</span> <span class="pl-c1">in</span> <span class="pl-s1">self</span>.<span class="pl-c1">experts</span>], <span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">1</span>) <span class="pl-c"># (N, num_experts, D)</span>
+        
+        <span class="pl-c"># 构造稀疏权重矩阵</span>
+        <span class="pl-s1">expert_mask</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">zeros</span>(<span class="pl-s1">x</span>.<span class="pl-c1">size</span>(<span class="pl-c1">0</span>), <span class="pl-s1">self</span>.<span class="pl-c1">num_experts</span>, <span class="pl-s1">device</span><span class="pl-c1">=</span><span class="pl-s1">x</span>.<span class="pl-c1">device</span>)
+        <span class="pl-s1">expert_mask</span>.<span class="pl-c1">scatter_</span>(<span class="pl-c1">1</span>, <span class="pl-s1">top_k_indices</span>, <span class="pl-s1">top_k_weights</span>)
+        
+        <span class="pl-c"># 加权求和: (N, E, D) * (N, E, 1) -&gt; sum dim 1</span>
+        <span class="pl-s1">final_output</span> <span class="pl-c1">=</span> <span class="pl-s1">torch</span>.<span class="pl-c1">sum</span>(<span class="pl-s1">outputs</span> <span class="pl-c1">*</span> <span class="pl-s1">expert_mask</span>.<span class="pl-c1">unsqueeze</span>(<span class="pl-c1">-</span><span class="pl-c1">1</span>), <span class="pl-s1">dim</span><span class="pl-c1">=</span><span class="pl-c1">1</span>)
+
+        <span class="pl-k">return</span> <span class="pl-s1">final_output</span>.<span class="pl-c1">view</span>(<span class="pl-s1">original_shape</span>)</pre></div>
+<hr>
+<ol start="34">
+<li>如何实现 Expert 并行 (Expert Parallelism/EP)？</li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/2d97f954-f547-4a61-afc6-00236292a1fe"><img width="781" height="715" alt="Image" src="https://github.com/user-attachments/assets/2d97f954-f547-4a61-afc6-00236292a1fe" style="max-width: 100%; height: auto; max-height: 715px;"></a></p>
+<hr>
+<ol start="35">
+<li>为什么要做 Residual 连接，Residual 连接解决了什么问题？</li>
+</ol>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/5fc55534-2127-431f-88ed-01f4bab1b7ed"><img width="765" height="497" alt="Image" src="https://github.com/user-attachments/assets/5fc55534-2127-431f-88ed-01f4bab1b7ed" style="max-width: 100%; height: auto; max-height: 497px;"></a></p>
+<hr></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+<script>MathJax = {tex: {inlineMath: [["$", "$"]]}};</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</html>
