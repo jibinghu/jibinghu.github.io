@@ -1,5 +1,14 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 23 Dec 2025 04:31:03 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>fv3 基础积累</title><link>https://jibinghu.github.io/post/fv3%20-ji-chu-ji-lei.html</link><description>## 一、 `test_case`：
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>ZOMBIE_</title><link>https://jibinghu.github.io</link><description>我可能当不了绝世高手</description><copyright>ZOMBIE_</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg</url><title>avatar</title><link>https://jibinghu.github.io</link></image><lastBuildDate>Tue, 23 Dec 2025 04:36:44 +0000</lastBuildDate><managingEditor>ZOMBIE_</managingEditor><ttl>60</ttl><webMaster>ZOMBIE_</webMaster><item><title>RGB 三通道在内存中的存储方式</title><link>https://jibinghu.github.io/post/RGB%20-san-tong-dao-zai-nei-cun-zhong-de-cun-chu-fang-shi.html</link><description>### 1. RGB 三通道在内存中的存储方式
+
+计算机中存储 RGB 图像主要有两种主流的内存布局（Layout）：
+
+&gt; [!NOTE]
+&gt; 重要！
+
+#### A. Interleaved（交错存储 / Packed） 
+
+这是最常见的存储方式，也是 OpenCV (`cv2`) 和大部分图像解码库（如 PIL, libjpeg）默认读取图片后的内存形态。</description><guid isPermaLink="true">https://jibinghu.github.io/post/RGB%20-san-tong-dao-zai-nei-cun-zhong-de-cun-chu-fang-shi.html</guid><pubDate>Tue, 23 Dec 2025 04:36:11 +0000</pubDate></item><item><title>fv3 基础积累</title><link>https://jibinghu.github.io/post/fv3%20-ji-chu-ji-lei.html</link><description>## 一、 `test_case`：
 
 `test_case` 是要运行的理想化测试用例编号，需要 `warm_srart = .false` 即需要冷启动理想化初始化。</description><guid isPermaLink="true">https://jibinghu.github.io/post/fv3%20-ji-chu-ji-lei.html</guid><pubDate>Mon, 22 Dec 2025 13:27:17 +0000</pubDate></item><item><title>[学习笔记] - 【万字长文】GPU架构全攻略-架构设计与高性能计算启发</title><link>https://jibinghu.github.io/post/%5B-xue-xi-bi-ji-%5D%20-%20%E3%80%90-wan-zi-chang-wen-%E3%80%91GPU-jia-gou-quan-gong-lve---jia-gou-she-ji-yu-gao-xing-neng-ji-suan-qi-fa.html</link><description>&lt;img width='1398' height='1870' alt='Image' src='https://github.com/user-attachments/assets/0ecad7b4-9570-4c32-b09d-6317afd382f5' /&gt;
 
