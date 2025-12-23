@@ -10,18 +10,18 @@
         let theme = localStorage.getItem("meek_theme") || "light";
         document.documentElement.setAttribute("data-color-mode", theme);
     </script>
-<meta name="description" content="`test_case`：
+<meta name="description" content="## 一、 `test_case`：
 
 `test_case` 是要运行的理想化测试用例编号，需要 `warm_srart = .false` 即需要冷启动理想化初始化。">
 <meta property="og:title" content="fv3 基础积累">
-<meta property="og:description" content="`test_case`：
+<meta property="og:description" content="## 一、 `test_case`：
 
 `test_case` 是要运行的理想化测试用例编号，需要 `warm_srart = .false` 即需要冷启动理想化初始化。">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://jibinghu.github.io/post/fv3%20-ji-chu-ji-lei.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>fv3 基础积累</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -45,7 +45,17 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     body {padding: 8px;}
     .postTitle{font-size:24px;}
 }
-
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
 </style>
 
 
@@ -77,8 +87,370 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
 </div>
     <div id="content">
-<div class="markdown-body" id="postBody"><p><code class="notranslate">test_case</code>：</p>
-<p><code class="notranslate">test_case</code> 是要运行的理想化测试用例编号，需要 <code class="notranslate">warm_srart = .false</code> 即需要冷启动理想化初始化。</p></div>
+<div class="markdown-body" id="postBody"><h2>一、 <code class="notranslate">test_case</code>：</h2>
+<p><code class="notranslate">test_case</code> 是要运行的理想化测试用例编号，需要 <code class="notranslate">warm_srart = .false</code> 即需要冷启动理想化初始化。</p>
+<ol>
+<li>浅水方程（Shallow-Water, 2D 动力核基准测试）</li>
+</ol>
+<blockquote>
+<p>主要用于：水平动量离散、科氏项、地形项、守恒性、波动色散，对应 test_case = -1 … 9</p>
+</blockquote>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>序号</th>
+<th>中文名称</th>
+<th>主要测试目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-1</td>
+<td>散度守恒测试</td>
+<td>验证离散算子对散度/质量守恒的保持性</td>
+</tr>
+<tr>
+<td>0</td>
+<td>理想化非线性形变流</td>
+<td>测试形变流下的数值扩散与输运稳定性</td>
+</tr>
+<tr>
+<td>1</td>
+<td>余弦钟形平流</td>
+<td>经典标量平流精度与形状保持测试</td>
+</tr>
+<tr>
+<td>2</td>
+<td>纬向地转平衡流</td>
+<td>检验地转平衡保持（well-balanced）能力</td>
+</tr>
+<tr>
+<td>3</td>
+<td>非旋转势流</td>
+<td>隔离科氏项后的纯势流一致性</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Rankine 涡合并（热带气旋）</td>
+<td>强涡度场、涡旋合并与数值耗散</td>
+</tr>
+<tr>
+<td>5</td>
+<td>孤立山地上的地转平衡流</td>
+<td>地形–压力梯度–动量耦合一致性</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Rossby 波（波数 4）</td>
+<td>行星尺度 Rossby 波传播与色散</td>
+</tr>
+<tr>
+<td>7</td>
+<td>正压不稳定</td>
+<td>不稳定增长与涡旋生成</td>
+</tr>
+<tr>
+<td>8</td>
+<td>赤道双涡“孤子”传播</td>
+<td>相干结构传播与耗散</td>
+</tr>
+<tr>
+<td>9</td>
+<td>极涡测试</td>
+<td>极区强涡度与球面几何处理</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<ol start="2">
+<li>三维静力/准静力理想化大气测试（3D Hydrostatic / Large-Scale）</li>
+</ol>
+<blockquote>
+<p>主要用于：大尺度动力核、平衡初始化、斜压不稳定、地形波，对应 test_case = 10–19, 12/13/-13, 14</p>
+</blockquote>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>序号</th>
+<th>中文名称</th>
+<th>主要测试目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>含理想化山地的三维静力平衡</td>
+<td>检验 3D 静力平衡与地形处理</td>
+</tr>
+<tr>
+<td>11</td>
+<td>含 USGS 地形的气候冷启动</td>
+<td>气候模式冷启动流程</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Jablonowski–Williamson 斜压稳态</td>
+<td>斜压平衡保持</td>
+</tr>
+<tr>
+<td>13</td>
+<td>J–W 斜压扰动实验</td>
+<td>斜压不稳定发展（黄金基准）</td>
+</tr>
+<tr>
+<td>-13</td>
+<td>DCMIP2016 斜压波</td>
+<td>社区对标用 J–W 测试</td>
+</tr>
+<tr>
+<td>14</td>
+<td>水行星（Aqua-planet）冷启动</td>
+<td>无地形理想化气候实验</td>
+</tr>
+<tr>
+<td>15</td>
+<td>小地球密度流</td>
+<td>密度流/冷池动力学</td>
+</tr>
+<tr>
+<td>16</td>
+<td>非旋转三维重力波</td>
+<td>垂直传播与静力波动</td>
+</tr>
+<tr>
+<td>17</td>
+<td>旋转惯性–重力波</td>
+<td>科氏力与重力波耦合</td>
+</tr>
+<tr>
+<td>18</td>
+<td>地形激发 Rossby 波</td>
+<td>地形–大尺度行星波响应</td>
+</tr>
+<tr>
+<td>19</td>
+<td>无旋转密度流</td>
+<td>密度流的对照实验</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<ol start="3">
+<li>三维非静力与地形/对流专项测试（Cloud-Resolving / Non-Hydrostatic）</li>
+</ol>
+<blockquote>
+<p>主要用于：非静力解算、深对流、山波、风暴尺度</p>
+</blockquote>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>序号</th>
+<th>中文名称</th>
+<th>主要测试目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>20</td>
+<td>非静力背风涡（无旋转）</td>
+<td>山地下游涡旋生成</td>
+</tr>
+<tr>
+<td>21</td>
+<td>非静力背风涡（有旋转）</td>
+<td>旋转–地形–非静力耦合</td>
+</tr>
+<tr>
+<td>30</td>
+<td>超级单体风暴（曲线风廓线，无旋转）</td>
+<td>深对流动力学</td>
+</tr>
+<tr>
+<td>31</td>
+<td>超级单体风暴（曲线风廓线，有旋转）</td>
+<td>旋转风暴结构</td>
+</tr>
+<tr>
+<td>32</td>
+<td>超级单体风暴（直线风廓线）</td>
+<td>对流对称性</td>
+</tr>
+<tr>
+<td>33</td>
+<td>HIWPP Schär 山波（脊状山）</td>
+<td>经典山波基准</td>
+</tr>
+<tr>
+<td>34</td>
+<td>HIWPP Schär 山波（圆形山）</td>
+<td>地形几何效应</td>
+</tr>
+<tr>
+<td>35</td>
+<td>HIWPP Schär 山波（剪切风）</td>
+<td>剪切–山波耦合</td>
+</tr>
+<tr>
+<td>36</td>
+<td>HIWPP 超级单体（无热扰动）</td>
+<td>对流自发性</td>
+</tr>
+<tr>
+<td>37</td>
+<td>HIWPP 超级单体（给定热扰动）</td>
+<td>对流触发机制</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<ol start="4">
+<li>输运 / 守恒 / 理想化专项测试</li>
+</ol>
+<blockquote>
+<p>不直接代表“真实天气”，但对数值正确性极其关键</p>
+</blockquote>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>序号</th>
+<th>中文名称</th>
+<th>主要测试目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>44</td>
+<td>球面锁交换</td>
+<td>密度前沿、守恒性</td>
+</tr>
+<tr>
+<td>45</td>
+<td>新测试（占位）</td>
+<td>依版本而异</td>
+</tr>
+<tr>
+<td>51</td>
+<td>三维 tracer 形变平流</td>
+<td>输运核与 halo 处理</td>
+</tr>
+<tr>
+<td>52</td>
+<td>静止大气 + 地形</td>
+<td>地形诱导数值噪声</td>
+</tr>
+<tr>
+<td>55</td>
+<td>热带气旋（TC）</td>
+<td>TC 初始化与演化</td>
+</tr>
+<tr>
+<td>-55</td>
+<td>DCMIP2016 TC</td>
+<td>社区对标 TC</td>
+</tr>
+<tr>
+<td>101</td>
+<td>三维非静力 LES（hybrid_z）</td>
+<td>大涡模拟（可选）</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<ol start="5">
+<li>周期边界理想化盒模型测试（Doubly-Periodic / Box Model）</li>
+</ol>
+<blockquote>
+<p>一类不应与前面的 test_case 混为一谈，它们使用的是 周期边界、盒模型物理假设</p>
+</blockquote>
+<markdown-accessiblity-table><table role="table">
+<thead>
+<tr>
+<th>序号</th>
+<th>中文名称</th>
+<th>主要用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>1.5 km 山地下的静止流</td>
+<td>周期地形响应</td>
+</tr>
+<tr>
+<td>14</td>
+<td>周期水行星 + 暖泡</td>
+<td>对流触发</td>
+</tr>
+<tr>
+<td>15</td>
+<td>等温暖泡</td>
+<td>对流上升</td>
+</tr>
+<tr>
+<td>16</td>
+<td>等温冷泡</td>
+<td>冷池传播</td>
+</tr>
+<tr>
+<td>17</td>
+<td>对称超级单体</td>
+<td>理想化风暴</td>
+</tr>
+<tr>
+<td>18</td>
+<td>非对称超级单体</td>
+<td>复杂风廓线</td>
+</tr>
+<tr>
+<td>19</td>
+<td>改进型超级单体</td>
+<td>多 sounding/bubble</td>
+</tr>
+<tr>
+<td>102</td>
+<td>稳定边界层 LES</td>
+<td>SBL 基准</td>
+</tr>
+<tr>
+<td>103</td>
+<td>DYCOMS-II 层积云</td>
+<td>云层 LES</td>
+</tr>
+</tbody>
+</table></markdown-accessiblity-table>
+<h2>二、<code class="notranslate">input.nml</code> 输入设置</h2>
+<div class="highlight highlight-source-shell"><pre class="notranslate"> <span class="pl-k">&amp;</span>main_nml
+     days   = 1,
+     dt_atmos = 1800 /
+
+ <span class="pl-k">&amp;</span>fms_io_nml
+     threading_write = <span class="pl-s"><span class="pl-pds">'</span>multi<span class="pl-pds">'</span></span>
+     fileset_write = <span class="pl-s"><span class="pl-pds">'</span>multi<span class="pl-pds">'</span></span> /
+
+ <span class="pl-k">&amp;</span>fms_nml
+     clock_grain = <span class="pl-s"><span class="pl-pds">"</span>LOOP<span class="pl-pds">"</span></span>,
+     domains_stack_size = 900000 <span class="pl-k">!</span> 内部栈设置大小
+     print_memory_usage = .true.  / <span class="pl-k">!</span> 打印内存使用信息
+
+ <span class="pl-k">&amp;</span>fv_core_nml
+     layout   = 2,2
+     npx      = 97,
+     npy      = 97,
+     npz      = 26,
+     uniform_vert_spacing = .false., <span class="pl-k">!</span> 均匀垂直间距
+     ntiles   = 6,
+     do_Held_Suarez = .true. <span class="pl-k">!</span> 启用 Held–Suarez 理想化物理强迫
+     adiabatic = .false. <span class="pl-k">!</span> 允许加入 Held–Suarez 的加热/摩擦等“非绝热倾向”
+     print_freq = 0,
+     grid_type = 0
+     warm_start = .false. <span class="pl-k">!</span> 冷启动，从 test_case 生成，而不是从 restart 文件续
+     io_layout = 1,1 /
+
+ <span class="pl-k">&amp;</span>fv_grid_nml
+     grid_name = <span class="pl-s"><span class="pl-pds">'</span>Conformal<span class="pl-pds">'</span></span> / <span class="pl-k">!</span> 选择 conformal cubed-sphere（保角映射）网格几何。它相对传统 gnomonic 网格，在某些指标（角度/面积畸变分布、拼接处行为等）上更有优势或更平滑，常用于改善网格几何误差在拼接区域的表现。
+
+ <span class="pl-k">&amp;</span>test_case_nml
+     test_case = 14 <span class="pl-k">!</span> Aqua-planet 冷启动
+     alpha = 0.00 /
+</pre></div>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/3e4b2fa5-2f58-4fa7-b22b-642c1cdf2494"><img width="694" height="419" alt="Image" src="https://github.com/user-attachments/assets/3e4b2fa5-2f58-4fa7-b22b-642c1cdf2494" style="max-width: 100%; height: auto; max-height: 419px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/89315d97-7633-4b25-84ac-ab99caef5edc"><img width="570" height="485" alt="Image" src="https://github.com/user-attachments/assets/89315d97-7633-4b25-84ac-ab99caef5edc" style="max-width: 100%; height: auto; max-height: 485px;"></a></p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
@@ -103,7 +475,7 @@ if("05/28/2024"!=""){
 </script></div>
 </body>
 <script>
-var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
 var utterancesLoad=0;
 
 let themeSettings={
@@ -176,7 +548,70 @@ function iFrameLoading(){
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
 
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
 
 </script>
 
