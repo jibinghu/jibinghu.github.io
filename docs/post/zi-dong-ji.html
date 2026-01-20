@@ -17,7 +17,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/zi-dong-ji.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>自动机</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -85,61 +85,60 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     <div id="content">
 <div class="markdown-body" id="postBody"><p>以下是一个简单的自动机（Finite Automaton）的代码示例，它实现了一个确定性有限自动机（DFA）。这个 DFA 接受字符串“ab”的正则语言，表示包含“ab”子串的字符串。我们将创建一个 DFA 类，它能够接受一个输入字符串，并检查该字符串是否符合 DFA 的规则。</p>
 <h3>Python 代码实现：</h3>
-<pre lang="python" class="notranslate"><code class="notranslate">class DFA:
-    def __init__(self, states, alphabet, transition_function, start_state, accept_states):
-        """
-        初始化 DFA
-        :param states: 状态集合
-        :param alphabet: 字母表（输入符号集合）
-        :param transition_function: 转移函数，字典形式 {state: {symbol: next_state}}
-        :param start_state: 初始状态
-        :param accept_states: 接受状态集合
-        """
-        self.states = states
-        self.alphabet = alphabet
-        self.transition_function = transition_function
-        self.start_state = start_state
-        self.accept_states = accept_states
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-c1">DFA</span>:
+    <span class="pl-k">def</span> <span class="pl-en">__init__</span>(<span class="pl-s1">self</span>, <span class="pl-s1">states</span>, <span class="pl-s1">alphabet</span>, <span class="pl-s1">transition_function</span>, <span class="pl-s1">start_state</span>, <span class="pl-s1">accept_states</span>):
+        <span class="pl-s">"""</span>
+<span class="pl-s">        初始化 DFA</span>
+<span class="pl-s">        :param states: 状态集合</span>
+<span class="pl-s">        :param alphabet: 字母表（输入符号集合）</span>
+<span class="pl-s">        :param transition_function: 转移函数，字典形式 {state: {symbol: next_state}}</span>
+<span class="pl-s">        :param start_state: 初始状态</span>
+<span class="pl-s">        :param accept_states: 接受状态集合</span>
+<span class="pl-s">        """</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">states</span> <span class="pl-c1">=</span> <span class="pl-s1">states</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">alphabet</span> <span class="pl-c1">=</span> <span class="pl-s1">alphabet</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">transition_function</span> <span class="pl-c1">=</span> <span class="pl-s1">transition_function</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">start_state</span> <span class="pl-c1">=</span> <span class="pl-s1">start_state</span>
+        <span class="pl-s1">self</span>.<span class="pl-c1">accept_states</span> <span class="pl-c1">=</span> <span class="pl-s1">accept_states</span>
 
-    def process(self, input_string):
-        """
-        处理输入字符串，并判断是否接受
-        :param input_string: 输入字符串
-        :return: 如果接受该字符串则返回 True，否则返回 False
-        """
-        current_state = self.start_state
-        for symbol in input_string:
-            if symbol not in self.alphabet:
-                raise ValueError(f"输入符号 {symbol} 不在字母表中")
-            current_state = self.transition_function[current_state].get(symbol)
-            if current_state is None:
-                return False
-        return current_state in self.accept_states
+    <span class="pl-k">def</span> <span class="pl-en">process</span>(<span class="pl-s1">self</span>, <span class="pl-s1">input_string</span>):
+        <span class="pl-s">"""</span>
+<span class="pl-s">        处理输入字符串，并判断是否接受</span>
+<span class="pl-s">        :param input_string: 输入字符串</span>
+<span class="pl-s">        :return: 如果接受该字符串则返回 True，否则返回 False</span>
+<span class="pl-s">        """</span>
+        <span class="pl-s1">current_state</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">start_state</span>
+        <span class="pl-k">for</span> <span class="pl-s1">symbol</span> <span class="pl-c1">in</span> <span class="pl-s1">input_string</span>:
+            <span class="pl-k">if</span> <span class="pl-s1">symbol</span> <span class="pl-c1"><span class="pl-c1">not</span> <span class="pl-c1">in</span></span> <span class="pl-s1">self</span>.<span class="pl-c1">alphabet</span>:
+                <span class="pl-k">raise</span> <span class="pl-en">ValueError</span>(<span class="pl-s">f"输入符号 <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">symbol</span><span class="pl-kos">}</span></span> 不在字母表中"</span>)
+            <span class="pl-s1">current_state</span> <span class="pl-c1">=</span> <span class="pl-s1">self</span>.<span class="pl-c1">transition_function</span>[<span class="pl-s1">current_state</span>].<span class="pl-c1">get</span>(<span class="pl-s1">symbol</span>)
+            <span class="pl-k">if</span> <span class="pl-s1">current_state</span> <span class="pl-c1">is</span> <span class="pl-c1">None</span>:
+                <span class="pl-k">return</span> <span class="pl-c1">False</span>
+        <span class="pl-k">return</span> <span class="pl-s1">current_state</span> <span class="pl-c1">in</span> <span class="pl-s1">self</span>.<span class="pl-c1">accept_states</span>
 
 
-# 定义 DFA 的状态、字母表、转移函数等
-states = {'q0', 'q1', 'q2'}  # 三个状态
-alphabet = {'a', 'b'}  # 字母表
-start_state = 'q0'  # 初始状态
-accept_states = {'q2'}  # 接受状态
+<span class="pl-c"># 定义 DFA 的状态、字母表、转移函数等</span>
+<span class="pl-s1">states</span> <span class="pl-c1">=</span> {<span class="pl-s">'q0'</span>, <span class="pl-s">'q1'</span>, <span class="pl-s">'q2'</span>}  <span class="pl-c"># 三个状态</span>
+<span class="pl-s1">alphabet</span> <span class="pl-c1">=</span> {<span class="pl-s">'a'</span>, <span class="pl-s">'b'</span>}  <span class="pl-c"># 字母表</span>
+<span class="pl-s1">start_state</span> <span class="pl-c1">=</span> <span class="pl-s">'q0'</span>  <span class="pl-c"># 初始状态</span>
+<span class="pl-s1">accept_states</span> <span class="pl-c1">=</span> {<span class="pl-s">'q2'</span>}  <span class="pl-c"># 接受状态</span>
 
-# 定义转移函数
-transition_function = {
-    'q0': {'a': 'q1', 'b': 'q0'},
-    'q1': {'a': 'q1', 'b': 'q2'},
-    'q2': {'a': 'q2', 'b': 'q2'}
+<span class="pl-c"># 定义转移函数</span>
+<span class="pl-s1">transition_function</span> <span class="pl-c1">=</span> {
+    <span class="pl-s">'q0'</span>: {<span class="pl-s">'a'</span>: <span class="pl-s">'q1'</span>, <span class="pl-s">'b'</span>: <span class="pl-s">'q0'</span>},
+    <span class="pl-s">'q1'</span>: {<span class="pl-s">'a'</span>: <span class="pl-s">'q1'</span>, <span class="pl-s">'b'</span>: <span class="pl-s">'q2'</span>},
+    <span class="pl-s">'q2'</span>: {<span class="pl-s">'a'</span>: <span class="pl-s">'q2'</span>, <span class="pl-s">'b'</span>: <span class="pl-s">'q2'</span>}
 }
 
-# 创建 DFA 实例
-dfa = DFA(states, alphabet, transition_function, start_state, accept_states)
+<span class="pl-c"># 创建 DFA 实例</span>
+<span class="pl-s1">dfa</span> <span class="pl-c1">=</span> <span class="pl-en">DFA</span>(<span class="pl-s1">states</span>, <span class="pl-s1">alphabet</span>, <span class="pl-s1">transition_function</span>, <span class="pl-s1">start_state</span>, <span class="pl-s1">accept_states</span>)
 
-# 测试输入
-input_string = "aab"
-print(f"输入字符串 '{input_string}' 是否被接受: {dfa.process(input_string)}")
+<span class="pl-c"># 测试输入</span>
+<span class="pl-s1">input_string</span> <span class="pl-c1">=</span> <span class="pl-s">"aab"</span>
+<span class="pl-en">print</span>(<span class="pl-s">f"输入字符串 '<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">input_string</span><span class="pl-kos">}</span></span>' 是否被接受: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">dfa</span>.<span class="pl-c1">process</span>(<span class="pl-s1">input_string</span>)<span class="pl-kos">}</span></span>"</span>)
 
-input_string = "baba"
-print(f"输入字符串 '{input_string}' 是否被接受: {dfa.process(input_string)}")
-</code></pre>
+<span class="pl-s1">input_string</span> <span class="pl-c1">=</span> <span class="pl-s">"baba"</span>
+<span class="pl-en">print</span>(<span class="pl-s">f"输入字符串 '<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">input_string</span><span class="pl-kos">}</span></span>' 是否被接受: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">dfa</span>.<span class="pl-c1">process</span>(<span class="pl-s1">input_string</span>)<span class="pl-kos">}</span></span>"</span>)</pre></div>
 <h3>代码说明：</h3>
 <ol>
 <li>

@@ -112,7 +112,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 
 <span class="pl-k">int</span> <span class="pl-en">main</span>() {
     <span class="pl-k">int</span> x = <span class="pl-c1">5</span>;
-    <span class="pl-c1">assert</span>(x &lt; <span class="pl-c1">10</span>);  <span class="pl-c"><span class="pl-c">//</span> 当条件为 false 时，终止程序。</span>
+    <span class="pl-k">assert</span>(x &lt; <span class="pl-c1">10</span>);  <span class="pl-c"><span class="pl-c">//</span> 当条件为 false 时，终止程序。</span>
 }</pre></div>
 <p>标准的 <code class="notranslate">assert</code> 只能进行简单的布尔条件检查，不能像 <code class="notranslate">CHECK_LT</code> 这样自动生成比较的错误信息，但它是跨平台且标准化的。</p>
 <h3>4. <strong>EXPECT 系列（GoogleTest 框架）</strong></h3>
