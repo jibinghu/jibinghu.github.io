@@ -21,7 +21,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/C%20Plus%20Plus%20-xu-han-shu-xiang-guan.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>C Plus Plus 虚函数相关</title>
-<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
 
 
 </head>
@@ -100,28 +100,30 @@ final：阻止类的进一步派生和虚函数的进一步重写，同时也是
 <li>在 C++11 引入了 <code class="notranslate">final</code> 关键字，它有两个主要作用：
 <ul>
 <li><strong>防止继承</strong>：当 <code class="notranslate">final</code> 修饰一个类时，表示这个类不能被继承。例如：
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-en">Base</span> {
-    <span class="pl-c"><span class="pl-c">//</span> 基类</span>
+<pre lang="cpp" class="notranslate"><code class="notranslate">class Base {
+    // 基类
 };
 
-<span class="pl-k">class</span> <span class="pl-en">Derived</span> <span class="pl-k">final</span> : public Base { <span class="pl-c"><span class="pl-c">//</span> 错误，不能从 `Derived` 类继承</span>
-};</pre></div>
+class Derived final : public Base { // 错误，不能从 `Derived` 类继承
+};
+</code></pre>
 </li>
 <li><strong>防止重写</strong>：当 <code class="notranslate">final</code> 修饰一个虚函数时，表示该函数不能在派生类中被重写。例如：
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">final</span> { <span class="pl-c"><span class="pl-c">//</span> 不能被重写</span>
-        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+<pre lang="cpp" class="notranslate"><code class="notranslate">class Base {
+public:
+    virtual void func() final { // 不能被重写
+        std::cout &lt;&lt; "Base func" &lt;&lt; std::endl;
     }
 };
 
-<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-c"><span class="pl-c">//</span> 错误：无法重写 `func` 因为它被标记为 `final`</span>
-    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> {
-        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+class Derived : public Base {
+public:
+    // 错误：无法重写 `func` 因为它被标记为 `final`
+    void func() override {
+        std::cout &lt;&lt; "Derived func" &lt;&lt; std::endl;
     }
-};</pre></div>
+};
+</code></pre>
 </li>
 </ul>
 </li>
@@ -132,17 +134,18 @@ final：阻止类的进一步派生和虚函数的进一步重写，同时也是
 <ul>
 <li><code class="notranslate">override</code> 是用于显式标明某个函数是重写基类的虚函数。这样做可以让编译器检查这个函数是否确实重写了一个虚函数。</li>
 <li>如果函数没有正确重写基类中的虚函数（比如拼写错误、签名不匹配等），编译器会报错。
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() { std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base func<span class="pl-pds">"</span></span> &lt;&lt; std::endl; }
+<pre lang="cpp" class="notranslate"><code class="notranslate">class Base {
+public:
+    virtual void func() { std::cout &lt;&lt; "Base func" &lt;&lt; std::endl; }
 };
 
-<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> { <span class="pl-c"><span class="pl-c">//</span> 明确表示重写了 `Base` 类的 `func` 方法</span>
-        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+class Derived : public Base {
+public:
+    void func() override { // 明确表示重写了 `Base` 类的 `func` 方法
+        std::cout &lt;&lt; "Derived func" &lt;&lt; std::endl;
     }
-};</pre></div>
+};
+</code></pre>
 </li>
 </ul>
 </li>
@@ -165,30 +168,31 @@ final：阻止类的进一步派生和虚函数的进一步重写，同时也是
 </li>
 </ol>
 <h3>示例代码：</h3>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+<pre lang="cpp" class="notranslate"><code class="notranslate">#include &lt;iostream&gt;
 
-<span class="pl-k">class</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">final</span> { <span class="pl-c"><span class="pl-c">//</span> `final` 防止重写</span>
-        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+class Base {
+public:
+    virtual void func() final { // `final` 防止重写
+        std::cout &lt;&lt; "Base func" &lt;&lt; std::endl;
     }
 };
 
-<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-c"><span class="pl-c">//</span> 错误：不能重写 `func` 因为它是 `final`</span>
-    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> {
-        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+class Derived : public Base {
+public:
+    // 错误：不能重写 `func` 因为它是 `final`
+    void func() override {
+        std::cout &lt;&lt; "Derived func" &lt;&lt; std::endl;
     }
 };
 
-<span class="pl-k">int</span> <span class="pl-en">main</span>() {
-    Base* obj = <span class="pl-k">new</span> <span class="pl-c1">Base</span>();
-    obj-&gt;<span class="pl-c1">func</span>(); <span class="pl-c"><span class="pl-c">//</span> 调用 Base 类的 func，虚函数调用会被优化为静态调用</span>
+int main() {
+    Base* obj = new Base();
+    obj-&gt;func(); // 调用 Base 类的 func，虚函数调用会被优化为静态调用
 
-    <span class="pl-k">delete</span> obj;
-    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
-}</pre></div>
+    delete obj;
+    return 0;
+}
+</code></pre>
 <p>总结：<code class="notranslate">final</code> 可以减少继承和重写的开销，使得编译器可以进行更多优化，从而提高代码执行效率。</p>
 <hr>
 <p>在 C++ 中，虚函数的实现依赖于 <strong>虚函数表（VTable）</strong> 和 <strong>虚函数指针（VPtr）</strong> 机制。这个机制是 C++ 支持多态性和动态绑定的关键。</p>
@@ -213,28 +217,29 @@ final：阻止类的进一步派生和虚函数的进一步重写，同时也是
 <li>假设我们有一个类 <code class="notranslate">Base</code>，它含有一个虚函数 <code class="notranslate">func</code>。每个 <code class="notranslate">Base</code> 对象都含有一个虚函数指针（VPtr），指向该类的虚函数表（VTable）。如果类 <code class="notranslate">Derived</code> 继承自 <code class="notranslate">Base</code> 并重写了 <code class="notranslate">func</code>，则 <code class="notranslate">Derived</code> 对象也会包含自己的 VPtr，但该 VPtr 会指向 <code class="notranslate">Derived</code> 类的虚函数表。</li>
 </ul>
 <h3>示例：</h3>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+<pre lang="cpp" class="notranslate"><code class="notranslate">#include &lt;iostream&gt;
 
-<span class="pl-k">class</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() {
-        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+class Base {
+public:
+    virtual void func() {
+        std::cout &lt;&lt; "Base func" &lt;&lt; std::endl;
     }
 };
 
-<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> {
-        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+class Derived : public Base {
+public:
+    void func() override {
+        std::cout &lt;&lt; "Derived func" &lt;&lt; std::endl;
     }
 };
 
-<span class="pl-k">int</span> <span class="pl-en">main</span>() {
-    Base* base = <span class="pl-k">new</span> <span class="pl-c1">Derived</span>();
-    base-&gt;<span class="pl-c1">func</span>();  <span class="pl-c"><span class="pl-c">//</span> 调用 Derived::func，使用虚函数机制</span>
-    <span class="pl-k">delete</span> base;
-    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
-}</pre></div>
+int main() {
+    Base* base = new Derived();
+    base-&gt;func();  // 调用 Derived::func，使用虚函数机制
+    delete base;
+    return 0;
+}
+</code></pre>
 <h3>内存分析：</h3>
 <ol>
 <li>
@@ -254,19 +259,20 @@ final：阻止类的进一步派生和虚函数的进一步重写，同时也是
 </ol>
 <h3>内存结构示意：</h3>
 <p>假设我们有如下类结构：</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">class</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() {
-        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+<pre lang="cpp" class="notranslate"><code class="notranslate">class Base {
+public:
+    virtual void func() {
+        std::cout &lt;&lt; "Base func" &lt;&lt; std::endl;
     }
 };
 
-<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> {
-        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived func<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+class Derived : public Base {
+public:
+    void func() override {
+        std::cout &lt;&lt; "Derived func" &lt;&lt; std::endl;
     }
-};</pre></div>
+};
+</code></pre>
 <ul>
 <li><code class="notranslate">Base</code> 类的虚函数表（VTable）：
 <ul>
@@ -313,33 +319,34 @@ final：阻止类的进一步派生和虚函数的进一步重写，同时也是
 <h3>为什么需要虚函数？</h3>
 <p>C++ 中的多态性是通过虚函数实现的。通过虚函数，程序可以根据对象的实际类型（而非指针或引用的类型）来调用合适的函数。这使得我们可以用相同的接口（基类指针或引用）操作不同类型的对象。</p>
 <h3>语法示例：</h3>
-<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+<pre lang="cpp" class="notranslate"><code class="notranslate">#include &lt;iostream&gt;
 
-<span class="pl-k">class</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-c"><span class="pl-c">//</span> 声明虚函数</span>
-    <span class="pl-k">virtual</span> <span class="pl-k">void</span> <span class="pl-en">func</span>() {
-        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Base class function<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+class Base {
+public:
+    // 声明虚函数
+    virtual void func() {
+        std::cout &lt;&lt; "Base class function" &lt;&lt; std::endl;
     }
 
-    <span class="pl-k">virtual</span> <span class="pl-en">~Base</span>() {}  <span class="pl-c"><span class="pl-c">//</span> 虚析构函数</span>
+    virtual ~Base() {}  // 虚析构函数
 };
 
-<span class="pl-k">class</span> <span class="pl-en">Derived</span> : <span class="pl-k">public</span> <span class="pl-en">Base</span> {
-<span class="pl-k">public:</span>
-    <span class="pl-c"><span class="pl-c">//</span> 重写基类的虚函数</span>
-    <span class="pl-k">void</span> <span class="pl-en">func</span>() <span class="pl-k">override</span> {
-        std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Derived class function<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+class Derived : public Base {
+public:
+    // 重写基类的虚函数
+    void func() override {
+        std::cout &lt;&lt; "Derived class function" &lt;&lt; std::endl;
     }
 };
 
-<span class="pl-k">int</span> <span class="pl-en">main</span>() {
-    Base* basePtr = <span class="pl-k">new</span> <span class="pl-c1">Derived</span>();  <span class="pl-c"><span class="pl-c">//</span> 基类指针指向派生类对象</span>
-    basePtr-&gt;<span class="pl-c1">func</span>();  <span class="pl-c"><span class="pl-c">//</span> 调用的是 Derived 类的 func</span>
+int main() {
+    Base* basePtr = new Derived();  // 基类指针指向派生类对象
+    basePtr-&gt;func();  // 调用的是 Derived 类的 func
 
-    <span class="pl-k">delete</span> basePtr;  <span class="pl-c"><span class="pl-c">//</span> 动态分配内存需要手动释放</span>
-    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
-}</pre></div>
+    delete basePtr;  // 动态分配内存需要手动释放
+    return 0;
+}
+</code></pre>
 <h3>输出：</h3>
 <pre class="notranslate"><code class="notranslate">Derived class function
 </code></pre>
