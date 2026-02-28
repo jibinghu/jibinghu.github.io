@@ -17,7 +17,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/c%2B%2B%20-sui-shou-ji-lu-%20isdigit%28%29.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>c++ 随手记录 isdigit()</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -84,8 +84,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
     <div id="content">
 <div class="markdown-body" id="postBody"><p>在 C++ 中，<code class="notranslate">isdigit()</code> 是一个用于判断字符是否为十进制数字（即 <code class="notranslate">'0'</code> 到 <code class="notranslate">'9'</code>）的标准函数。它定义在头文件 <code class="notranslate">&lt;cctype&gt;</code> 中，其原型如下：([<a href="https://blog.csdn.net/Guo___Liang/article/details/121981604?utm_source=chatgpt.com" rel="nofollow">blog.csdn.net</a>][1], [<a href="https://www.geeksforgeeks.org/isdigit-in-cpp/?utm_source=chatgpt.com" rel="nofollow">geeksforgeeks.org</a>][2])</p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">int isdigit(int ch);
-</code></pre>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">int</span> <span class="pl-en">isdigit</span>(<span class="pl-k">int</span> ch);</pre></div>
 <hr>
 <h3>🧠 函数说明</h3>
 <ul>
@@ -96,41 +95,39 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <hr>
 <h3>✅ 示例代码</h3>
 <p>以下是一个使用 <code class="notranslate">isdigit()</code> 函数的示例，判断输入的字符是否为数字：([<a href="https://blog.csdn.net/Guo___Liang/article/details/121981604?utm_source=chatgpt.com" rel="nofollow">blog.csdn.net</a>][1])</p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">#include &lt;iostream&gt;
-#include &lt;cctype&gt;
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cctype<span class="pl-pds">&gt;</span></span>
 
-int main() {
-    char ch = '5';
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    <span class="pl-k">char</span> ch = <span class="pl-s"><span class="pl-pds">'</span>5<span class="pl-pds">'</span></span>;
 
-    if (std::isdigit(static_cast&lt;unsigned char&gt;(ch))) {
-        std::cout &lt;&lt; ch &lt;&lt; " 是数字字符。" &lt;&lt; std::endl;
-    } else {
-        std::cout &lt;&lt; ch &lt;&lt; " 不是数字字符。" &lt;&lt; std::endl;
+    <span class="pl-k">if</span> (<span class="pl-c1">std::isdigit</span>(<span class="pl-k">static_cast</span>&lt;<span class="pl-k">unsigned</span> <span class="pl-k">char</span>&gt;(ch))) {
+        std::cout &lt;&lt; ch &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span> 是数字字符。<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    } <span class="pl-k">else</span> {
+        std::cout &lt;&lt; ch &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span> 不是数字字符。<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
     }
 
-    return 0;
-}
-</code></pre>
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
 <p>输出：</p>
 <pre class="notranslate"><code class="notranslate">5 是数字字符。
 </code></pre>
 <hr>
 <h3>🔄 应用示例：统计字符串中的数字字符个数</h3>
-<pre lang="cpp" class="notranslate"><code class="notranslate">#include &lt;iostream&gt;
-#include &lt;string&gt;
-#include &lt;algorithm&gt;
-#include &lt;cctype&gt;
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>string<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>algorithm<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cctype<span class="pl-pds">&gt;</span></span>
 
-int main() {
-    std::string str = "C++20 于 2020 年发布。";
-    int count = std::count_if(str.begin(), str.end(), [](unsigned char c) {
-        return std::isdigit(c);
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    std::string str = <span class="pl-s"><span class="pl-pds">"</span>C++20 于 2020 年发布。<span class="pl-pds">"</span></span>;
+    <span class="pl-k">int</span> count = <span class="pl-c1">std::count_if</span>(str.<span class="pl-c1">begin</span>(), str.<span class="pl-c1">end</span>(), [](<span class="pl-k">unsigned</span> <span class="pl-k">char</span> c) {
+        <span class="pl-k">return</span> <span class="pl-c1">std::isdigit</span>(c);
     });
 
-    std::cout &lt;&lt; "字符串中包含 " &lt;&lt; count &lt;&lt; " 个数字字符。" &lt;&lt; std::endl;
-    return 0;
-}
-</code></pre>
+    std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>字符串中包含 <span class="pl-pds">"</span></span> &lt;&lt; count &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span> 个数字字符。<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
 <p>输出：</p>
 <pre class="notranslate"><code class="notranslate">字符串中包含 4 个数字字符。
 </code></pre>
