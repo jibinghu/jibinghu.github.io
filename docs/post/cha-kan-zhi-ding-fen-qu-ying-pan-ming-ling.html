@@ -41,7 +41,7 @@ du 和 df 是两种常用的 Linux 命令，虽然都用于查看存储空间的
 <meta property="og:url" content="https://jibinghu.github.io/post/cha-kan-zhi-ding-fen-qu-ying-pan-ming-ling.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>查看指定分区硬盘命令</title>
-<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
 
 
 </head>
@@ -108,8 +108,9 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
     <div id="content">
 <div class="markdown-body" id="postBody"><p><code class="notranslate">df -h /home</code></p>
-<div class="highlight highlight-source-shell"><pre class="notranslate">Filesystem                         Size  Used Avail Use% Mounted on
-/dev/mapper/ubuntu--vg-ubuntu--lv  914G  629G  247G  72% /</pre></div>
+<pre lang="bash" class="notranslate"><code class="notranslate">Filesystem                         Size  Used Avail Use% Mounted on
+/dev/mapper/ubuntu--vg-ubuntu--lv  914G  629G  247G  72% /
+</code></pre>
 <hr>
 <p>du 和 df 是两种常用的 Linux 命令，虽然都用于查看存储空间的使用情况，但它们的作用和工作方式有很大的区别：</p>
 <ol>
