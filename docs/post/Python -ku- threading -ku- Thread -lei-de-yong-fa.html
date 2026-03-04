@@ -17,7 +17,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/Python%20-ku-%20threading%20-ku-%20Thread%20-lei-de-yong-fa.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>Python 库 threading 库 Thread 类的用法</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -89,96 +89,91 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <li>
 <p><strong>创建线程</strong>：<br>
 通过继承 <code class="notranslate">Thread</code> 类并重写 <code class="notranslate">run()</code> 方法来定义线程的执行逻辑。</p>
-<pre lang="python" class="notranslate"><code class="notranslate">from threading import Thread
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">threading</span> <span class="pl-k">import</span> <span class="pl-v">Thread</span>
 
-class MyThread(Thread):
-    def run(self):
-        print("线程正在运行")
+<span class="pl-k">class</span> <span class="pl-v">MyThread</span>(<span class="pl-v">Thread</span>):
+    <span class="pl-k">def</span> <span class="pl-en">run</span>(<span class="pl-s1">self</span>):
+        <span class="pl-en">print</span>(<span class="pl-s">"线程正在运行"</span>)
 
-# 创建线程实例
-t = MyThread()
-# 启动线程
-t.start()
-# 等待线程结束
-t.join()
-</code></pre>
+<span class="pl-c"># 创建线程实例</span>
+<span class="pl-s1">t</span> <span class="pl-c1">=</span> <span class="pl-en">MyThread</span>()
+<span class="pl-c"># 启动线程</span>
+<span class="pl-s1">t</span>.<span class="pl-c1">start</span>()
+<span class="pl-c"># 等待线程结束</span>
+<span class="pl-s1">t</span>.<span class="pl-c1">join</span>()</pre></div>
 </li>
 <li>
 <p><strong>直接使用 <code class="notranslate">Thread</code> 类</strong>：<br>
 可以通过传递一个可调用对象（如函数）给 <code class="notranslate">Thread</code> 的构造函数来创建线程。</p>
-<pre lang="python" class="notranslate"><code class="notranslate">from threading import Thread
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">threading</span> <span class="pl-k">import</span> <span class="pl-v">Thread</span>
 
-def worker():
-    print("线程正在运行")
+<span class="pl-k">def</span> <span class="pl-en">worker</span>():
+    <span class="pl-en">print</span>(<span class="pl-s">"线程正在运行"</span>)
 
-# 创建线程实例
-t = Thread(target=worker)
-# 启动线程
-t.start()
-# 等待线程结束
-t.join()
-</code></pre>
+<span class="pl-c"># 创建线程实例</span>
+<span class="pl-s1">t</span> <span class="pl-c1">=</span> <span class="pl-en">Thread</span>(<span class="pl-s1">target</span><span class="pl-c1">=</span><span class="pl-s1">worker</span>)
+<span class="pl-c"># 启动线程</span>
+<span class="pl-s1">t</span>.<span class="pl-c1">start</span>()
+<span class="pl-c"># 等待线程结束</span>
+<span class="pl-s1">t</span>.<span class="pl-c1">join</span>()</pre></div>
 </li>
 <li>
 <p><strong>传递参数给线程</strong>：<br>
 可以使用 <code class="notranslate">args</code> 或 <code class="notranslate">kwargs</code> 参数将参数传递给线程函数。</p>
-<pre lang="python" class="notranslate"><code class="notranslate">from threading import Thread
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">threading</span> <span class="pl-k">import</span> <span class="pl-v">Thread</span>
 
-def worker(name, count):
-    for i in range(count):
-        print(f"{name}: {i}")
+<span class="pl-k">def</span> <span class="pl-en">worker</span>(<span class="pl-s1">name</span>, <span class="pl-s1">count</span>):
+    <span class="pl-k">for</span> <span class="pl-s1">i</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-s1">count</span>):
+        <span class="pl-en">print</span>(<span class="pl-s">f"<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">name</span><span class="pl-kos">}</span></span>: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">i</span><span class="pl-kos">}</span></span>"</span>)
 
-# 创建线程实例并传递参数
-t = Thread(target=worker, args=("线程1", 5))
-# 启动线程
-t.start()
-# 等待线程结束
-t.join()
-</code></pre>
+<span class="pl-c"># 创建线程实例并传递参数</span>
+<span class="pl-s1">t</span> <span class="pl-c1">=</span> <span class="pl-en">Thread</span>(<span class="pl-s1">target</span><span class="pl-c1">=</span><span class="pl-s1">worker</span>, <span class="pl-s1">args</span><span class="pl-c1">=</span>(<span class="pl-s">"线程1"</span>, <span class="pl-c1">5</span>))
+<span class="pl-c"># 启动线程</span>
+<span class="pl-s1">t</span>.<span class="pl-c1">start</span>()
+<span class="pl-c"># 等待线程结束</span>
+<span class="pl-s1">t</span>.<span class="pl-c1">join</span>()</pre></div>
 </li>
 <li>
 <p><strong>守护线程</strong>：<br>
 通过设置 <code class="notranslate">daemon</code> 属性为 <code class="notranslate">True</code>，可以将线程设置为守护线程。守护线程会在主线程结束时自动退出。</p>
-<pre lang="python" class="notranslate"><code class="notranslate">from threading import Thread
-import time
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">threading</span> <span class="pl-k">import</span> <span class="pl-v">Thread</span>
+<span class="pl-k">import</span> <span class="pl-s1">time</span>
 
-def worker():
-    while True:
-        print("守护线程正在运行")
-        time.sleep(1)
+<span class="pl-k">def</span> <span class="pl-en">worker</span>():
+    <span class="pl-k">while</span> <span class="pl-c1">True</span>:
+        <span class="pl-en">print</span>(<span class="pl-s">"守护线程正在运行"</span>)
+        <span class="pl-s1">time</span>.<span class="pl-c1">sleep</span>(<span class="pl-c1">1</span>)
 
-# 创建线程实例并设置为守护线程
-t = Thread(target=worker, daemon=True)
-# 启动线程
-t.start()
-# 主线程等待一段时间
-time.sleep(5)
-print("主线程结束")
-</code></pre>
+<span class="pl-c"># 创建线程实例并设置为守护线程</span>
+<span class="pl-s1">t</span> <span class="pl-c1">=</span> <span class="pl-en">Thread</span>(<span class="pl-s1">target</span><span class="pl-c1">=</span><span class="pl-s1">worker</span>, <span class="pl-s1">daemon</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
+<span class="pl-c"># 启动线程</span>
+<span class="pl-s1">t</span>.<span class="pl-c1">start</span>()
+<span class="pl-c"># 主线程等待一段时间</span>
+<span class="pl-s1">time</span>.<span class="pl-c1">sleep</span>(<span class="pl-c1">5</span>)
+<span class="pl-en">print</span>(<span class="pl-s">"主线程结束"</span>)</pre></div>
 </li>
 <li>
 <p><strong>线程同步</strong>：<br>
 使用 <code class="notranslate">Lock</code>、<code class="notranslate">Event</code>、<code class="notranslate">Condition</code> 等同步原语来协调多个线程的执行。</p>
-<pre lang="python" class="notranslate"><code class="notranslate">from threading import Thread, Lock
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">threading</span> <span class="pl-k">import</span> <span class="pl-v">Thread</span>, <span class="pl-v">Lock</span>
 
-lock = Lock()
-shared_data = 0
+<span class="pl-s1">lock</span> <span class="pl-c1">=</span> <span class="pl-en">Lock</span>()
+<span class="pl-s1">shared_data</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
 
-def worker():
-    global shared_data
-    with lock:
-        shared_data += 1
-        print(f"共享数据: {shared_data}")
+<span class="pl-k">def</span> <span class="pl-en">worker</span>():
+    <span class="pl-k">global</span> <span class="pl-s1">shared_data</span>
+    <span class="pl-k">with</span> <span class="pl-s1">lock</span>:
+        <span class="pl-s1">shared_data</span> <span class="pl-c1">+=</span> <span class="pl-c1">1</span>
+        <span class="pl-en">print</span>(<span class="pl-s">f"共享数据: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">shared_data</span><span class="pl-kos">}</span></span>"</span>)
 
-threads = []
-for i in range(5):
-    t = Thread(target=worker)
-    threads.append(t)
-    t.start()
+<span class="pl-s1">threads</span> <span class="pl-c1">=</span> []
+<span class="pl-k">for</span> <span class="pl-s1">i</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">5</span>):
+    <span class="pl-s1">t</span> <span class="pl-c1">=</span> <span class="pl-en">Thread</span>(<span class="pl-s1">target</span><span class="pl-c1">=</span><span class="pl-s1">worker</span>)
+    <span class="pl-s1">threads</span>.<span class="pl-c1">append</span>(<span class="pl-s1">t</span>)
+    <span class="pl-s1">t</span>.<span class="pl-c1">start</span>()
 
-for t in threads:
-    t.join()
-</code></pre>
+<span class="pl-k">for</span> <span class="pl-s1">t</span> <span class="pl-c1">in</span> <span class="pl-s1">threads</span>:
+    <span class="pl-s1">t</span>.<span class="pl-c1">join</span>()</pre></div>
 </li>
 </ol>
 <h3>总结</h3>
@@ -189,28 +184,27 @@ for t in threads:
 <p>以下是一个使用 <code class="notranslate">Thread</code> 类模拟异步执行的例子：</p>
 <hr>
 <h3>示例：使用 <code class="notranslate">Thread</code> 实现并发任务</h3>
-<pre lang="python" class="notranslate"><code class="notranslate">from threading import Thread
-import time
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">from</span> <span class="pl-s1">threading</span> <span class="pl-k">import</span> <span class="pl-v">Thread</span>
+<span class="pl-k">import</span> <span class="pl-s1">time</span>
 
-# 定义一个耗时任务
-def task(name, delay):
-    print(f"任务 {name} 开始执行")
-    time.sleep(delay)  # 模拟耗时操作
-    print(f"任务 {name} 完成")
+<span class="pl-c"># 定义一个耗时任务</span>
+<span class="pl-k">def</span> <span class="pl-en">task</span>(<span class="pl-s1">name</span>, <span class="pl-s1">delay</span>):
+    <span class="pl-en">print</span>(<span class="pl-s">f"任务 <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">name</span><span class="pl-kos">}</span></span> 开始执行"</span>)
+    <span class="pl-s1">time</span>.<span class="pl-c1">sleep</span>(<span class="pl-s1">delay</span>)  <span class="pl-c"># 模拟耗时操作</span>
+    <span class="pl-en">print</span>(<span class="pl-s">f"任务 <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">name</span><span class="pl-kos">}</span></span> 完成"</span>)
 
-# 创建多个线程来并发执行任务
-threads = []
-for i in range(3):
-    t = Thread(target=task, args=(f"任务-{i+1}", 2))  # 每个任务耗时 2 秒
-    threads.append(t)
-    t.start()  # 启动线程
+<span class="pl-c"># 创建多个线程来并发执行任务</span>
+<span class="pl-s1">threads</span> <span class="pl-c1">=</span> []
+<span class="pl-k">for</span> <span class="pl-s1">i</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">3</span>):
+    <span class="pl-s1">t</span> <span class="pl-c1">=</span> <span class="pl-en">Thread</span>(<span class="pl-s1">target</span><span class="pl-c1">=</span><span class="pl-s1">task</span>, <span class="pl-s1">args</span><span class="pl-c1">=</span>(<span class="pl-s">f"任务-<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">i</span><span class="pl-c1">+</span><span class="pl-c1">1</span><span class="pl-kos">}</span></span>"</span>, <span class="pl-c1">2</span>))  <span class="pl-c"># 每个任务耗时 2 秒</span>
+    <span class="pl-s1">threads</span>.<span class="pl-c1">append</span>(<span class="pl-s1">t</span>)
+    <span class="pl-s1">t</span>.<span class="pl-c1">start</span>()  <span class="pl-c"># 启动线程</span>
 
-# 等待所有线程完成
-for t in threads:
-    t.join()
+<span class="pl-c"># 等待所有线程完成</span>
+<span class="pl-k">for</span> <span class="pl-s1">t</span> <span class="pl-c1">in</span> <span class="pl-s1">threads</span>:
+    <span class="pl-s1">t</span>.<span class="pl-c1">join</span>()
 
-print("所有任务完成")
-</code></pre>
+<span class="pl-en">print</span>(<span class="pl-s">"所有任务完成"</span>)</pre></div>
 <hr>
 <h3>输出结果</h3>
 <pre class="notranslate"><code class="notranslate">任务 任务-1 开始执行
@@ -248,25 +242,24 @@ print("所有任务完成")
 <hr>
 <h3>对比真正的异步编程（<code class="notranslate">asyncio</code>）</h3>
 <p>如果你需要真正的异步编程（单线程非阻塞），可以使用 <code class="notranslate">asyncio</code> 模块。以下是一个简单的 <code class="notranslate">asyncio</code> 示例：</p>
-<pre lang="python" class="notranslate"><code class="notranslate">import asyncio
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">asyncio</span>
 
-async def task(name, delay):
-    print(f"任务 {name} 开始执行")
-    await asyncio.sleep(delay)  # 非阻塞的 sleep
-    print(f"任务 {name} 完成")
+<span class="pl-k">async</span> <span class="pl-k">def</span> <span class="pl-en">task</span>(<span class="pl-s1">name</span>, <span class="pl-s1">delay</span>):
+    <span class="pl-en">print</span>(<span class="pl-s">f"任务 <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">name</span><span class="pl-kos">}</span></span> 开始执行"</span>)
+    <span class="pl-k">await</span> <span class="pl-s1">asyncio</span>.<span class="pl-c1">sleep</span>(<span class="pl-s1">delay</span>)  <span class="pl-c"># 非阻塞的 sleep</span>
+    <span class="pl-en">print</span>(<span class="pl-s">f"任务 <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">name</span><span class="pl-kos">}</span></span> 完成"</span>)
 
-async def main():
-    # 创建多个异步任务
-    tasks = [
-        asyncio.create_task(task("任务-1", 2)),
-        asyncio.create_task(task("任务-2", 2)),
-        asyncio.create_task(task("任务-3", 2)),
+<span class="pl-k">async</span> <span class="pl-k">def</span> <span class="pl-en">main</span>():
+    <span class="pl-c"># 创建多个异步任务</span>
+    <span class="pl-s1">tasks</span> <span class="pl-c1">=</span> [
+        <span class="pl-s1">asyncio</span>.<span class="pl-c1">create_task</span>(<span class="pl-en">task</span>(<span class="pl-s">"任务-1"</span>, <span class="pl-c1">2</span>)),
+        <span class="pl-s1">asyncio</span>.<span class="pl-c1">create_task</span>(<span class="pl-en">task</span>(<span class="pl-s">"任务-2"</span>, <span class="pl-c1">2</span>)),
+        <span class="pl-s1">asyncio</span>.<span class="pl-c1">create_task</span>(<span class="pl-en">task</span>(<span class="pl-s">"任务-3"</span>, <span class="pl-c1">2</span>)),
     ]
-    await asyncio.gather(*tasks)  # 等待所有任务完成
+    <span class="pl-k">await</span> <span class="pl-s1">asyncio</span>.<span class="pl-c1">gather</span>(<span class="pl-c1">*</span><span class="pl-s1">tasks</span>)  <span class="pl-c"># 等待所有任务完成</span>
 
-# 运行异步任务
-asyncio.run(main())
-</code></pre>
+<span class="pl-c"># 运行异步任务</span>
+<span class="pl-s1">asyncio</span>.<span class="pl-c1">run</span>(<span class="pl-en">main</span>())</pre></div>
 <hr>
 <h3>总结</h3>
 <ul>
@@ -282,24 +275,23 @@ asyncio.run(main())
 <li>在 I/O 操作期间，线程会进入阻塞状态，释放 CPU 资源，此时其他线程可以继续执行。</li>
 <li>Python 的 <code class="notranslate">threading</code> 库通过多线程可以实现并发执行，即使一个线程在等待 I/O，其他线程仍然可以运行，从而提高程序的效率。</li>
 <li>例如：
-<pre lang="python" class="notranslate"><code class="notranslate">import threading
-import requests
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">threading</span>
+<span class="pl-k">import</span> <span class="pl-s1">requests</span>
 
-def fetch_url(url):
-    response = requests.get(url)
-    print(f"Fetched {url}, status code: {response.status_code}")
+<span class="pl-k">def</span> <span class="pl-en">fetch_url</span>(<span class="pl-s1">url</span>):
+    <span class="pl-s1">response</span> <span class="pl-c1">=</span> <span class="pl-s1">requests</span>.<span class="pl-c1">get</span>(<span class="pl-s1">url</span>)
+    <span class="pl-en">print</span>(<span class="pl-s">f"Fetched <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">url</span><span class="pl-kos">}</span></span>, status code: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">response</span>.<span class="pl-c1">status_code</span><span class="pl-kos">}</span></span>"</span>)
 
-urls = ["https://example.com", "https://example.org", "https://example.net"]
-threads = []
+<span class="pl-s1">urls</span> <span class="pl-c1">=</span> [<span class="pl-s">"https://example.com"</span>, <span class="pl-s">"https://example.org"</span>, <span class="pl-s">"https://example.net"</span>]
+<span class="pl-s1">threads</span> <span class="pl-c1">=</span> []
 
-for url in urls:
-    thread = threading.Thread(target=fetch_url, args=(url,))
-    threads.append(thread)
-    thread.start()
+<span class="pl-k">for</span> <span class="pl-s1">url</span> <span class="pl-c1">in</span> <span class="pl-s1">urls</span>:
+    <span class="pl-s1">thread</span> <span class="pl-c1">=</span> <span class="pl-s1">threading</span>.<span class="pl-c1">Thread</span>(<span class="pl-s1">target</span><span class="pl-c1">=</span><span class="pl-s1">fetch_url</span>, <span class="pl-s1">args</span><span class="pl-c1">=</span>(<span class="pl-s1">url</span>,))
+    <span class="pl-s1">threads</span>.<span class="pl-c1">append</span>(<span class="pl-s1">thread</span>)
+    <span class="pl-s1">thread</span>.<span class="pl-c1">start</span>()
 
-for thread in threads:
-    thread.join()
-</code></pre>
+<span class="pl-k">for</span> <span class="pl-s1">thread</span> <span class="pl-c1">in</span> <span class="pl-s1">threads</span>:
+    <span class="pl-s1">thread</span>.<span class="pl-c1">join</span>()</pre></div>
 在这个例子中，多个线程可以同时发起网络请求，等待响应的过程中不会阻塞其他线程的执行。</li>
 </ul>
 <h4>2. <strong>不适合 CPU 密集型任务</strong></h4>
@@ -315,22 +307,21 @@ for thread in threads:
 </li>
 <li>
 <p>例如：</p>
-<pre lang="python" class="notranslate"><code class="notranslate">import threading
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">threading</span>
 
-def compute():
-    result = 0
-    for _ in range(10**7):
-        result += 1
+<span class="pl-k">def</span> <span class="pl-en">compute</span>():
+    <span class="pl-s1">result</span> <span class="pl-c1">=</span> <span class="pl-c1">0</span>
+    <span class="pl-k">for</span> <span class="pl-s1">_</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">10</span><span class="pl-c1">**</span><span class="pl-c1">7</span>):
+        <span class="pl-s1">result</span> <span class="pl-c1">+=</span> <span class="pl-c1">1</span>
 
-threads = []
-for _ in range(4):
-    thread = threading.Thread(target=compute)
-    threads.append(thread)
-    thread.start()
+<span class="pl-s1">threads</span> <span class="pl-c1">=</span> []
+<span class="pl-k">for</span> <span class="pl-s1">_</span> <span class="pl-c1">in</span> <span class="pl-en">range</span>(<span class="pl-c1">4</span>):
+    <span class="pl-s1">thread</span> <span class="pl-c1">=</span> <span class="pl-s1">threading</span>.<span class="pl-c1">Thread</span>(<span class="pl-s1">target</span><span class="pl-c1">=</span><span class="pl-s1">compute</span>)
+    <span class="pl-s1">threads</span>.<span class="pl-c1">append</span>(<span class="pl-s1">thread</span>)
+    <span class="pl-s1">thread</span>.<span class="pl-c1">start</span>()
 
-for thread in threads:
-    thread.join()
-</code></pre>
+<span class="pl-k">for</span> <span class="pl-s1">thread</span> <span class="pl-c1">in</span> <span class="pl-s1">threads</span>:
+    <span class="pl-s1">thread</span>.<span class="pl-c1">join</span>()</pre></div>
 <p>在这个例子中，即使有多个线程，由于 GIL 的存在，它们无法真正并行执行计算任务，性能可能还不如单线程。</p>
 </li>
 <li>
