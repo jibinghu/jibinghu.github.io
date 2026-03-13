@@ -21,7 +21,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/lei-mo-ban-de-te-hua-%20%23-ju-li.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>类模板的特化 #举例</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -91,112 +91,109 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <p>创建一个通用的 <code class="notranslate">Array</code> 类模板，它可以存储任意类型的数据。为了优化存储，对 <code class="notranslate">bool</code> 类型进行特化，因为 <code class="notranslate">bool</code> 类型可以用单个位来存储，比默认的字节存储节省内存空间。</p>
 <h3>1. 通用 <code class="notranslate">Array</code> 类模板</h3>
 <p>首先，我们定义一个通用的 <code class="notranslate">Array</code> 类，它可以存储任意类型的数据。</p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">#include &lt;iostream&gt;
-#include &lt;vector&gt;
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>vector<span class="pl-pds">&gt;</span></span>
 
-// 通用的 Array 类模板
-template &lt;typename T&gt;
-class Array {
-private:
-    std::vector&lt;T&gt; data;  // 用向量来存储数据
+<span class="pl-c"><span class="pl-c">//</span> 通用的 Array 类模板</span>
+<span class="pl-k">template </span>&lt;<span class="pl-k">typename</span> T&gt;
+<span class="pl-k">class</span> <span class="pl-en">Array</span> {
+<span class="pl-k">private:</span>
+    std::vector&lt;T&gt; data;  <span class="pl-c"><span class="pl-c">//</span> 用向量来存储数据</span>
 
-public:
-    // 构造函数，初始化给定大小的数组
-    Array(size_t size) : data(size) {}
+<span class="pl-k">public:</span>
+    <span class="pl-c"><span class="pl-c">//</span> 构造函数，初始化给定大小的数组</span>
+    <span class="pl-en">Array</span>(<span class="pl-c1">size_t</span> size) : data(size) {}
 
-    // 设置数组中的值
-    void set(size_t index, T value) {
-        if (index &lt; data.size()) {
+    <span class="pl-c"><span class="pl-c">//</span> 设置数组中的值</span>
+    <span class="pl-k">void</span> <span class="pl-en">set</span>(<span class="pl-c1">size_t</span> index, T value) {
+        <span class="pl-k">if</span> (index &lt; data.<span class="pl-c1">size</span>()) {
             data[index] = value;
         }
     }
 
-    // 获取数组中的值
-    T get(size_t index) const {
-        if (index &lt; data.size()) {
-            return data[index];
+    <span class="pl-c"><span class="pl-c">//</span> 获取数组中的值</span>
+    T <span class="pl-en">get</span>(<span class="pl-c1">size_t</span> index) <span class="pl-k">const</span> {
+        <span class="pl-k">if</span> (index &lt; data.<span class="pl-c1">size</span>()) {
+            <span class="pl-k">return</span> data[index];
         }
-        return T();  // 默认返回类型 T 的默认值
+        <span class="pl-k">return</span> <span class="pl-c1">T</span>();  <span class="pl-c"><span class="pl-c">//</span> 默认返回类型 T 的默认值</span>
     }
 
-    // 打印数组内容
-    void print() const {
-        for (const auto&amp; elem : data) {
-            std::cout &lt;&lt; elem &lt;&lt; " ";
+    <span class="pl-c"><span class="pl-c">//</span> 打印数组内容</span>
+    <span class="pl-k">void</span> <span class="pl-en">print</span>() <span class="pl-k">const</span> {
+        <span class="pl-k">for</span> (<span class="pl-k">const</span> <span class="pl-k">auto</span>&amp; elem : data) {
+            std::cout &lt;&lt; elem &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span> <span class="pl-pds">"</span></span>;
         }
         std::cout &lt;&lt; std::endl;
     }
-};
-</code></pre>
+};</pre></div>
 <h3>2. <code class="notranslate">bool</code> 类型的特化</h3>
 <p>接下来，我们对 <code class="notranslate">bool</code> 类型进行特化，因为 <code class="notranslate">bool</code> 类型只需要1位的存储空间，而不是整个字节。我们将使用一个 <code class="notranslate">std::vector&lt;uint8_t&gt;</code> 来存储多个布尔值，并通过位操作来管理这些值。</p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">// 对 bool 类型进行特化
-template &lt;&gt;
-class Array&lt;bool&gt; {
-private:
-    std::vector&lt;uint8_t&gt; data;  // 使用字节数组存储 bool 值，每个字节存储8个布尔值
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> 对 bool 类型进行特化</span>
+<span class="pl-k">template </span>&lt;&gt;
+<span class="pl-k">class</span> <span class="pl-en">Array</span>&lt;<span class="pl-k">bool</span>&gt; {
+<span class="pl-k">private:</span>
+    std::vector&lt;<span class="pl-c1">uint8_t</span>&gt; data;  <span class="pl-c"><span class="pl-c">//</span> 使用字节数组存储 bool 值，每个字节存储8个布尔值</span>
 
-public:
-    // 构造函数，初始化给定大小的数组
-    Array(size_t size) : data((size + 7) / 8) {}  // 确保每8个 bool 用1个字节存储
+<span class="pl-k">public:</span>
+    <span class="pl-c"><span class="pl-c">//</span> 构造函数，初始化给定大小的数组</span>
+    <span class="pl-en">Array</span>(<span class="pl-c1">size_t</span> size) : data((size + <span class="pl-c1">7</span>) / <span class="pl-c1">8</span>) {}  <span class="pl-c"><span class="pl-c">//</span> 确保每8个 bool 用1个字节存储</span>
 
-    // 设置 bool 值
-    void set(size_t index, bool value) {
-        size_t byteIndex = index / 8;
-        size_t bitIndex = index % 8;
+    <span class="pl-c"><span class="pl-c">//</span> 设置 bool 值</span>
+    <span class="pl-k">void</span> <span class="pl-en">set</span>(<span class="pl-c1">size_t</span> index, <span class="pl-k">bool</span> value) {
+        <span class="pl-c1">size_t</span> byteIndex = index / <span class="pl-c1">8</span>;
+        <span class="pl-c1">size_t</span> bitIndex = index % <span class="pl-c1">8</span>;
 
-        if (value) {
-            data[byteIndex] |= (1 &lt;&lt; bitIndex);  // 通过位操作将对应的位设置为 1
-        } else {
-            data[byteIndex] &amp;= ~(1 &lt;&lt; bitIndex);  // 将对应的位设置为 0
+        <span class="pl-k">if</span> (value) {
+            data[byteIndex] |= (<span class="pl-c1">1</span> &lt;&lt; bitIndex);  <span class="pl-c"><span class="pl-c">//</span> 通过位操作将对应的位设置为 1</span>
+        } <span class="pl-k">else</span> {
+            data[byteIndex] &amp;= ~(<span class="pl-c1">1</span> &lt;&lt; bitIndex);  <span class="pl-c"><span class="pl-c">//</span> 将对应的位设置为 0</span>
         }
     }
 
-    // 获取 bool 值
-    bool get(size_t index) const {
-        size_t byteIndex = index / 8;
-        size_t bitIndex = index % 8;
+    <span class="pl-c"><span class="pl-c">//</span> 获取 bool 值</span>
+    <span class="pl-k">bool</span> <span class="pl-en">get</span>(<span class="pl-c1">size_t</span> index) <span class="pl-k">const</span> {
+        <span class="pl-c1">size_t</span> byteIndex = index / <span class="pl-c1">8</span>;
+        <span class="pl-c1">size_t</span> bitIndex = index % <span class="pl-c1">8</span>;
 
-        return (data[byteIndex] &gt;&gt; bitIndex) &amp; 1;  // 通过位操作获取 bool 值
+        <span class="pl-k">return</span> (data[byteIndex] &gt;&gt; bitIndex) &amp; <span class="pl-c1">1</span>;  <span class="pl-c"><span class="pl-c">//</span> 通过位操作获取 bool 值</span>
     }
 
-    // 打印数组内容
-    void print() const {
-        for (size_t i = 0; i &lt; data.size() * 8; ++i) {
-            std::cout &lt;&lt; get(i) &lt;&lt; " ";
+    <span class="pl-c"><span class="pl-c">//</span> 打印数组内容</span>
+    <span class="pl-k">void</span> <span class="pl-en">print</span>() <span class="pl-k">const</span> {
+        <span class="pl-k">for</span> (<span class="pl-c1">size_t</span> i = <span class="pl-c1">0</span>; i &lt; data.<span class="pl-c1">size</span>() * <span class="pl-c1">8</span>; ++i) {
+            std::cout &lt;&lt; <span class="pl-c1">get</span>(i) &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span> <span class="pl-pds">"</span></span>;
         }
         std::cout &lt;&lt; std::endl;
     }
-};
-</code></pre>
+};</pre></div>
 <h3>3. 使用示例</h3>
 <p>现在我们可以创建 <code class="notranslate">Array&lt;int&gt;</code> 和 <code class="notranslate">Array&lt;bool&gt;</code> 对象，看看它们的行为。</p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">int main() {
-    // 通用的 Array&lt;int&gt;
-    Array&lt;int&gt; intArray(5);
-    intArray.set(0, 10);
-    intArray.set(1, 20);
-    intArray.set(2, 30);
-    intArray.set(3, 40);
-    intArray.set(4, 50);
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    <span class="pl-c"><span class="pl-c">//</span> 通用的 Array&lt;int&gt;</span>
+    Array&lt;<span class="pl-k">int</span>&gt; <span class="pl-c1">intArray</span>(<span class="pl-c1">5</span>);
+    intArray.<span class="pl-c1">set</span>(<span class="pl-c1">0</span>, <span class="pl-c1">10</span>);
+    intArray.<span class="pl-c1">set</span>(<span class="pl-c1">1</span>, <span class="pl-c1">20</span>);
+    intArray.<span class="pl-c1">set</span>(<span class="pl-c1">2</span>, <span class="pl-c1">30</span>);
+    intArray.<span class="pl-c1">set</span>(<span class="pl-c1">3</span>, <span class="pl-c1">40</span>);
+    intArray.<span class="pl-c1">set</span>(<span class="pl-c1">4</span>, <span class="pl-c1">50</span>);
 
-    std::cout &lt;&lt; "Array&lt;int&gt; contents: ";
-    intArray.print();  // 输出：10 20 30 40 50
+    std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Array&lt;int&gt; contents: <span class="pl-pds">"</span></span>;
+    intArray.<span class="pl-c1">print</span>();  <span class="pl-c"><span class="pl-c">//</span> 输出：10 20 30 40 50</span>
 
-    // 特化的 Array&lt;bool&gt;
-    Array&lt;bool&gt; boolArray(10);
-    boolArray.set(0, true);
-    boolArray.set(1, false);
-    boolArray.set(2, true);
-    boolArray.set(3, true);
-    boolArray.set(4, false);
+    <span class="pl-c"><span class="pl-c">//</span> 特化的 Array&lt;bool&gt;</span>
+    Array&lt;<span class="pl-k">bool</span>&gt; <span class="pl-c1">boolArray</span>(<span class="pl-c1">10</span>);
+    boolArray.<span class="pl-c1">set</span>(<span class="pl-c1">0</span>, <span class="pl-c1">true</span>);
+    boolArray.<span class="pl-c1">set</span>(<span class="pl-c1">1</span>, <span class="pl-c1">false</span>);
+    boolArray.<span class="pl-c1">set</span>(<span class="pl-c1">2</span>, <span class="pl-c1">true</span>);
+    boolArray.<span class="pl-c1">set</span>(<span class="pl-c1">3</span>, <span class="pl-c1">true</span>);
+    boolArray.<span class="pl-c1">set</span>(<span class="pl-c1">4</span>, <span class="pl-c1">false</span>);
 
-    std::cout &lt;&lt; "Array&lt;bool&gt; contents: ";
-    boolArray.print();  // 输出：1 0 1 1 0 0 0 0 0 0
+    std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Array&lt;bool&gt; contents: <span class="pl-pds">"</span></span>;
+    boolArray.<span class="pl-c1">print</span>();  <span class="pl-c"><span class="pl-c">//</span> 输出：1 0 1 1 0 0 0 0 0 0</span>
 
-    return 0;
-}
-</code></pre>
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
 <h3>4. 输出结果</h3>
 <p>运行以上代码后，输出如下：</p>
 <pre class="notranslate"><code class="notranslate">Array&lt;int&gt; contents: 10 20 30 40 50 
