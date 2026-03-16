@@ -43,7 +43,7 @@ PROMPT = '你是一个对话助手，你需要根据用户的问题，给出相�
 <meta property="og:url" content="https://jibinghu.github.io/post/quan-can-shu-xun-lian-qwen3-0.5b.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>全参数训练qwen3-0.5b</title>
-<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
 
 
 </head>
@@ -109,173 +109,175 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
 </div>
     <div id="content">
-<div class="markdown-body" id="postBody"><div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">json</span>
-<span class="pl-k">import</span> <span class="pl-s1">pandas</span> <span class="pl-k">as</span> <span class="pl-s1">pd</span>
-<span class="pl-k">import</span> <span class="pl-s1">torch</span>
-<span class="pl-k">from</span> <span class="pl-s1">datasets</span> <span class="pl-k">import</span> <span class="pl-v">Dataset</span>
-<span class="pl-k">from</span> <span class="pl-s1">transformers</span> <span class="pl-k">import</span> <span class="pl-v">AutoTokenizer</span>, <span class="pl-v">AutoModelForCausalLM</span>, <span class="pl-v">TrainingArguments</span>, <span class="pl-v">Trainer</span>, <span class="pl-v">DataCollatorForSeq2Seq</span>
-<span class="pl-k">import</span> <span class="pl-s1">os</span>
-<span class="pl-k">import</span> <span class="pl-s1">swanlab</span>
+<div class="markdown-body" id="postBody"><pre lang="python" class="notranslate"><code class="notranslate">import json
+import pandas as pd
+import torch
+from datasets import Dataset
+from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer, DataCollatorForSeq2Seq
+import os
+import swanlab
 
-<span class="pl-c"># 设置 SwanLab 项目名称</span>
-<span class="pl-s1">os</span>.<span class="pl-c1">environ</span>[<span class="pl-s">"SWANLAB_PROJECT"</span>] <span class="pl-c1">=</span> <span class="pl-s">"qwen3-sft-dialog"</span>
+# 设置 SwanLab 项目名称
+os.environ["SWANLAB_PROJECT"] = "qwen3-sft-dialog"
 
-<span class="pl-c"># 定义提示（PROMPT）和最大序列长度</span>
-<span class="pl-c1">PROMPT</span> <span class="pl-c1">=</span> <span class="pl-s">"你是一个对话助手，你需要根据用户的问题，给出相应的回答。"</span>
-<span class="pl-c1">MAX_LENGTH</span> <span class="pl-c1">=</span> <span class="pl-c1">2048</span>
+# 定义提示（PROMPT）和最大序列长度
+PROMPT = "你是一个对话助手，你需要根据用户的问题，给出相应的回答。"
+MAX_LENGTH = 2048
 
-<span class="pl-c"># 更新 SwanLab 配置</span>
-<span class="pl-s1">swanlab</span>.<span class="pl-c1">config</span>.<span class="pl-c1">update</span>({
-    <span class="pl-s">"model"</span>: <span class="pl-s">"Qwen/Qwen3-0.5B"</span>,
-    <span class="pl-s">"prompt"</span>: <span class="pl-c1">PROMPT</span>,
-    <span class="pl-s">"data_max_length"</span>: <span class="pl-c1">MAX_LENGTH</span>,
+# 更新 SwanLab 配置
+swanlab.config.update({
+    "model": "Qwen/Qwen3-0.5B",
+    "prompt": PROMPT,
+    "data_max_length": MAX_LENGTH,
 })
 
-<span class="pl-c"># 数据集格式转换函数</span>
-<span class="pl-k">def</span> <span class="pl-en">dataset_jsonl_transfer</span>(<span class="pl-s1">origin_path</span>, <span class="pl-s1">new_path</span>):
-    <span class="pl-s1">messages</span> <span class="pl-c1">=</span> []
-    <span class="pl-k">with</span> <span class="pl-en">open</span>(<span class="pl-s1">origin_path</span>, <span class="pl-s">"r"</span>) <span class="pl-k">as</span> <span class="pl-s1">file</span>:
-        <span class="pl-k">for</span> <span class="pl-s1">line</span> <span class="pl-c1">in</span> <span class="pl-s1">file</span>:
-            <span class="pl-s1">data</span> <span class="pl-c1">=</span> <span class="pl-s1">json</span>.<span class="pl-c1">loads</span>(<span class="pl-s1">line</span>)
-            <span class="pl-s1">message</span> <span class="pl-c1">=</span> {
-                <span class="pl-s">"instruction"</span>: <span class="pl-c1">PROMPT</span>,
-                <span class="pl-s">"input"</span>: <span class="pl-s1">data</span>[<span class="pl-s">"question"</span>],
-                <span class="pl-s">"output"</span>: <span class="pl-s1">data</span>[<span class="pl-s">"answer"</span>],
+# 数据集格式转换函数
+def dataset_jsonl_transfer(origin_path, new_path):
+    messages = []
+    with open(origin_path, "r") as file:
+        for line in file:
+            data = json.loads(line)
+            message = {
+                "instruction": PROMPT,
+                "input": data["question"],
+                "output": data["answer"],
             }
-            <span class="pl-s1">messages</span>.<span class="pl-c1">append</span>(<span class="pl-s1">message</span>)
-    <span class="pl-k">with</span> <span class="pl-en">open</span>(<span class="pl-s1">new_path</span>, <span class="pl-s">"w"</span>, <span class="pl-s1">encoding</span><span class="pl-c1">=</span><span class="pl-s">"utf-8"</span>) <span class="pl-k">as</span> <span class="pl-s1">file</span>:
-        <span class="pl-k">for</span> <span class="pl-s1">message</span> <span class="pl-c1">in</span> <span class="pl-s1">messages</span>:
-            <span class="pl-s1">file</span>.<span class="pl-c1">write</span>(<span class="pl-s1">json</span>.<span class="pl-c1">dumps</span>(<span class="pl-s1">message</span>, <span class="pl-s1">ensure_ascii</span><span class="pl-c1">=</span><span class="pl-c1">False</span>) <span class="pl-c1">+</span> <span class="pl-s">"<span class="pl-cce">\n</span>"</span>)
+            messages.append(message)
+    with open(new_path, "w", encoding="utf-8") as file:
+        for message in messages:
+            file.write(json.dumps(message, ensure_ascii=False) + "\n")
 
-<span class="pl-c"># 数据预处理函数</span>
-<span class="pl-k">def</span> <span class="pl-en">process_func</span>(<span class="pl-s1">example</span>):
-    <span class="pl-s1">input_ids</span>, <span class="pl-s1">attention_mask</span>, <span class="pl-s1">labels</span> <span class="pl-c1">=</span> [], [], []
-    <span class="pl-s1">instruction</span> <span class="pl-c1">=</span> <span class="pl-en">tokenizer</span>(
-        <span class="pl-s">f"&lt;|im_start|&gt;system<span class="pl-cce">\n</span><span class="pl-s1"><span class="pl-kos">{</span><span class="pl-c1">PROMPT</span><span class="pl-kos">}</span></span>&lt;|im_end|&gt;<span class="pl-cce">\n</span>&lt;|im_start|&gt;user<span class="pl-cce">\n</span><span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">example</span>[<span class="pl-s">'input'</span>]<span class="pl-kos">}</span></span>&lt;|im_end|&gt;<span class="pl-cce">\n</span>&lt;|im_start|&gt;assistant<span class="pl-cce">\n</span>"</span>,
-        <span class="pl-s1">add_special_tokens</span><span class="pl-c1">=</span><span class="pl-c1">False</span>,
+# 数据预处理函数
+def process_func(example):
+    input_ids, attention_mask, labels = [], [], []
+    instruction = tokenizer(
+        f"&lt;|im_start|&gt;system\n{PROMPT}&lt;|im_end|&gt;\n&lt;|im_start|&gt;user\n{example['input']}&lt;|im_end|&gt;\n&lt;|im_start|&gt;assistant\n",
+        add_special_tokens=False,
     )
-    <span class="pl-s1">response</span> <span class="pl-c1">=</span> <span class="pl-en">tokenizer</span>(<span class="pl-s">f"<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">example</span>[<span class="pl-s">'output'</span>]<span class="pl-kos">}</span></span>"</span>, <span class="pl-s1">add_special_tokens</span><span class="pl-c1">=</span><span class="pl-c1">False</span>)
-    <span class="pl-s1">input_ids</span> <span class="pl-c1">=</span> <span class="pl-s1">instruction</span>[<span class="pl-s">"input_ids"</span>] <span class="pl-c1">+</span> <span class="pl-s1">response</span>[<span class="pl-s">"input_ids"</span>] <span class="pl-c1">+</span> [<span class="pl-s1">tokenizer</span>.<span class="pl-c1">pad_token_id</span>]
-    <span class="pl-s1">attention_mask</span> <span class="pl-c1">=</span> <span class="pl-s1">instruction</span>[<span class="pl-s">"attention_mask"</span>] <span class="pl-c1">+</span> <span class="pl-s1">response</span>[<span class="pl-s">"attention_mask"</span>] <span class="pl-c1">+</span> [<span class="pl-c1">1</span>]
-    <span class="pl-s1">labels</span> <span class="pl-c1">=</span> [<span class="pl-c1">-</span><span class="pl-c1">100</span>] <span class="pl-c1">*</span> <span class="pl-en">len</span>(<span class="pl-s1">instruction</span>[<span class="pl-s">"input_ids"</span>]) <span class="pl-c1">+</span> <span class="pl-s1">response</span>[<span class="pl-s">"input_ids"</span>] <span class="pl-c1">+</span> [<span class="pl-s1">tokenizer</span>.<span class="pl-c1">pad_token_id</span>]
-    <span class="pl-k">if</span> <span class="pl-en">len</span>(<span class="pl-s1">input_ids</span>) <span class="pl-c1">&gt;</span> <span class="pl-c1">MAX_LENGTH</span>:
-        <span class="pl-s1">input_ids</span> <span class="pl-c1">=</span> <span class="pl-s1">input_ids</span>[:<span class="pl-c1">MAX_LENGTH</span>]
-        <span class="pl-s1">attention_mask</span> <span class="pl-c1">=</span> <span class="pl-s1">attention_mask</span>[:<span class="pl-c1">MAX_LENGTH</span>]
-        <span class="pl-s1">labels</span> <span class="pl-c1">=</span> <span class="pl-s1">labels</span>[:<span class="pl-c1">MAX_LENGTH</span>]
-    <span class="pl-k">return</span> {<span class="pl-s">"input_ids"</span>: <span class="pl-s1">input_ids</span>, <span class="pl-s">"attention_mask"</span>: <span class="pl-s1">attention_mask</span>, <span class="pl-s">"labels"</span>: <span class="pl-s1">labels</span>}
+    response = tokenizer(f"{example['output']}", add_special_tokens=False)
+    input_ids = instruction["input_ids"] + response["input_ids"] + [tokenizer.pad_token_id]
+    attention_mask = instruction["attention_mask"] + response["attention_mask"] + [1]
+    labels = [-100] * len(instruction["input_ids"]) + response["input_ids"] + [tokenizer.pad_token_id]
+    if len(input_ids) &gt; MAX_LENGTH:
+        input_ids = input_ids[:MAX_LENGTH]
+        attention_mask = attention_mask[:MAX_LENGTH]
+        labels = labels[:MAX_LENGTH]
+    return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
 
-<span class="pl-c"># 推理函数</span>
-<span class="pl-k">def</span> <span class="pl-en">predict</span>(<span class="pl-s1">messages</span>, <span class="pl-s1">model</span>, <span class="pl-s1">tokenizer</span>):
-    <span class="pl-s1">device</span> <span class="pl-c1">=</span> <span class="pl-s">"cuda"</span>
-    <span class="pl-s1">text</span> <span class="pl-c1">=</span> <span class="pl-s1">tokenizer</span>.<span class="pl-c1">apply_chat_template</span>(
-        <span class="pl-s1">messages</span>,
-        <span class="pl-s1">tokenize</span><span class="pl-c1">=</span><span class="pl-c1">False</span>,
-        <span class="pl-s1">add_generation_prompt</span><span class="pl-c1">=</span><span class="pl-c1">True</span>
+# 推理函数
+def predict(messages, model, tokenizer):
+    device = "cuda"
+    text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
     )
-    <span class="pl-s1">model_inputs</span> <span class="pl-c1">=</span> <span class="pl-en">tokenizer</span>([<span class="pl-s1">text</span>], <span class="pl-s1">return_tensors</span><span class="pl-c1">=</span><span class="pl-s">"pt"</span>).<span class="pl-c1">to</span>(<span class="pl-s1">device</span>)
-    <span class="pl-s1">generated_ids</span> <span class="pl-c1">=</span> <span class="pl-s1">model</span>.<span class="pl-c1">generate</span>(
-        <span class="pl-s1">model_inputs</span>.<span class="pl-c1">input_ids</span>,
-        <span class="pl-s1">max_new_tokens</span><span class="pl-c1">=</span><span class="pl-c1">MAX_LENGTH</span>,
+    model_inputs = tokenizer([text], return_tensors="pt").to(device)
+    generated_ids = model.generate(
+        model_inputs.input_ids,
+        max_new_tokens=MAX_LENGTH,
     )
-    <span class="pl-s1">generated_ids</span> <span class="pl-c1">=</span> [
-        <span class="pl-s1">output_ids</span>[<span class="pl-en">len</span>(<span class="pl-s1">input_ids</span>):] <span class="pl-k">for</span> <span class="pl-s1">input_ids</span>, <span class="pl-s1">output_ids</span> <span class="pl-c1">in</span> <span class="pl-en">zip</span>(<span class="pl-s1">model_inputs</span>.<span class="pl-c1">input_ids</span>, <span class="pl-s1">generated_ids</span>)
+    generated_ids = [
+        output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
     ]
-    <span class="pl-s1">response</span> <span class="pl-c1">=</span> <span class="pl-s1">tokenizer</span>.<span class="pl-c1">batch_decode</span>(<span class="pl-s1">generated_ids</span>, <span class="pl-s1">skip_special_tokens</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)[<span class="pl-c1">0</span>]
-    <span class="pl-k">return</span> <span class="pl-s1">response</span>
+    response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    return response
 
-<span class="pl-c"># 模型路径</span>
-<span class="pl-s1">model_dir</span> <span class="pl-c1">=</span> <span class="pl-s">"/tmp/workspace/model/.cache/huggingface/download/naive"</span>
+# 模型路径
+model_dir = "/tmp/workspace/model/.cache/huggingface/download/naive"
 
-<span class="pl-c"># 加载 tokenizer 和模型</span>
-<span class="pl-s1">tokenizer</span> <span class="pl-c1">=</span> <span class="pl-v">AutoTokenizer</span>.<span class="pl-c1">from_pretrained</span>(<span class="pl-s1">model_dir</span>, <span class="pl-s1">use_fast</span><span class="pl-c1">=</span><span class="pl-c1">False</span>, <span class="pl-s1">trust_remote_code</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
-<span class="pl-s1">model</span> <span class="pl-c1">=</span> <span class="pl-v">AutoModelForCausalLM</span>.<span class="pl-c1">from_pretrained</span>(<span class="pl-s1">model_dir</span>, <span class="pl-s1">device_map</span><span class="pl-c1">=</span><span class="pl-s">"auto"</span>, <span class="pl-s1">torch_dtype</span><span class="pl-c1">=</span><span class="pl-s1">torch</span>.<span class="pl-c1">bfloat16</span>)
-<span class="pl-s1">model</span>.<span class="pl-c1">enable_input_require_grads</span>()  <span class="pl-c"># 开启梯度检查点支持</span>
+# 加载 tokenizer 和模型
+tokenizer = AutoTokenizer.from_pretrained(model_dir, use_fast=False, trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained(model_dir, device_map="auto", torch_dtype=torch.bfloat16)
+model.enable_input_require_grads()  # 开启梯度检查点支持
 
-<span class="pl-c"># 数据集路径</span>
-<span class="pl-s1">train_dataset_path</span> <span class="pl-c1">=</span> <span class="pl-s">"/tmp/workspace/RussianEnglishDialogue/Dataset/format/train.jsonl"</span>
-<span class="pl-s1">test_dataset_path</span> <span class="pl-c1">=</span> <span class="pl-s">"/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.jsonl"</span>
-<span class="pl-s1">train_jsonl_new_path</span> <span class="pl-c1">=</span> <span class="pl-s">"/tmp/workspace/RussianEnglishDialogue/Dataset/format/train_format.jsonl"</span>
-<span class="pl-s1">test_jsonl_new_path</span> <span class="pl-c1">=</span> <span class="pl-s">"/tmp/workspace/RussianEnglishDialogue/Dataset/format/val_format.jsonl"</span>
+# 数据集路径
+train_dataset_path = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/train.jsonl"
+test_dataset_path = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.jsonl"
+train_jsonl_new_path = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/train_format.jsonl"
+test_jsonl_new_path = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val_format.jsonl"
 
-<span class="pl-c"># 转换数据集格式</span>
-<span class="pl-k">if</span> <span class="pl-c1">not</span> <span class="pl-s1">os</span>.<span class="pl-c1">path</span>.<span class="pl-c1">exists</span>(<span class="pl-s1">train_jsonl_new_path</span>):
-    <span class="pl-en">dataset_jsonl_transfer</span>(<span class="pl-s1">train_dataset_path</span>, <span class="pl-s1">train_jsonl_new_path</span>)
-<span class="pl-k">if</span> <span class="pl-c1">not</span> <span class="pl-s1">os</span>.<span class="pl-c1">path</span>.<span class="pl-c1">exists</span>(<span class="pl-s1">test_jsonl_new_path</span>):
-    <span class="pl-en">dataset_jsonl_transfer</span>(<span class="pl-s1">test_dataset_path</span>, <span class="pl-s1">test_jsonl_new_path</span>)
+# 转换数据集格式
+if not os.path.exists(train_jsonl_new_path):
+    dataset_jsonl_transfer(train_dataset_path, train_jsonl_new_path)
+if not os.path.exists(test_jsonl_new_path):
+    dataset_jsonl_transfer(test_dataset_path, test_jsonl_new_path)
 
-<span class="pl-c"># 加载并处理训练集</span>
-<span class="pl-s1">train_df</span> <span class="pl-c1">=</span> <span class="pl-s1">pd</span>.<span class="pl-c1">read_json</span>(<span class="pl-s1">train_jsonl_new_path</span>, <span class="pl-s1">lines</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
-<span class="pl-s1">train_ds</span> <span class="pl-c1">=</span> <span class="pl-v">Dataset</span>.<span class="pl-c1">from_pandas</span>(<span class="pl-s1">train_df</span>)
-<span class="pl-s1">train_dataset</span> <span class="pl-c1">=</span> <span class="pl-s1">train_ds</span>.<span class="pl-c1">map</span>(<span class="pl-s1">process_func</span>, <span class="pl-s1">remove_columns</span><span class="pl-c1">=</span><span class="pl-s1">train_ds</span>.<span class="pl-c1">column_names</span>)
+# 加载并处理训练集
+train_df = pd.read_json(train_jsonl_new_path, lines=True)
+train_ds = Dataset.from_pandas(train_df)
+train_dataset = train_ds.map(process_func, remove_columns=train_ds.column_names)
 
-<span class="pl-c"># 加载并处理验证集</span>
-<span class="pl-s1">eval_df</span> <span class="pl-c1">=</span> <span class="pl-s1">pd</span>.<span class="pl-c1">read_json</span>(<span class="pl-s1">test_jsonl_new_path</span>, <span class="pl-s1">lines</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
-<span class="pl-s1">eval_ds</span> <span class="pl-c1">=</span> <span class="pl-v">Dataset</span>.<span class="pl-c1">from_pandas</span>(<span class="pl-s1">eval_df</span>)
-<span class="pl-s1">eval_dataset</span> <span class="pl-c1">=</span> <span class="pl-s1">eval_ds</span>.<span class="pl-c1">map</span>(<span class="pl-s1">process_func</span>, <span class="pl-s1">remove_columns</span><span class="pl-c1">=</span><span class="pl-s1">eval_ds</span>.<span class="pl-c1">column_names</span>)
+# 加载并处理验证集
+eval_df = pd.read_json(test_jsonl_new_path, lines=True)
+eval_ds = Dataset.from_pandas(eval_df)
+eval_dataset = eval_ds.map(process_func, remove_columns=eval_ds.column_names)
 
-<span class="pl-c"># 设置训练参数</span>
-<span class="pl-s1">args</span> <span class="pl-c1">=</span> <span class="pl-en">TrainingArguments</span>(
-    <span class="pl-s1">output_dir</span><span class="pl-c1">=</span><span class="pl-s">"/root/autodl-tmp/output/Qwen3-0.5B"</span>,
-    <span class="pl-s1">per_device_train_batch_size</span><span class="pl-c1">=</span><span class="pl-c1">1</span>,
-    <span class="pl-s1">per_device_eval_batch_size</span><span class="pl-c1">=</span><span class="pl-c1">1</span>,
-    <span class="pl-s1">gradient_accumulation_steps</span><span class="pl-c1">=</span><span class="pl-c1">4</span>,
-    <span class="pl-s1">eval_strategy</span><span class="pl-c1">=</span><span class="pl-s">"steps"</span>,
-    <span class="pl-s1">eval_steps</span><span class="pl-c1">=</span><span class="pl-c1">100</span>,
-    <span class="pl-s1">logging_steps</span><span class="pl-c1">=</span><span class="pl-c1">10</span>,
-    <span class="pl-s1">num_train_epochs</span><span class="pl-c1">=</span><span class="pl-c1">2</span>,
-    <span class="pl-s1">save_steps</span><span class="pl-c1">=</span><span class="pl-c1">400</span>,
-    <span class="pl-s1">learning_rate</span><span class="pl-c1">=</span><span class="pl-c1">1e-4</span>,
-    <span class="pl-s1">save_on_each_node</span><span class="pl-c1">=</span><span class="pl-c1">True</span>,
-    <span class="pl-s1">gradient_checkpointing</span><span class="pl-c1">=</span><span class="pl-c1">True</span>,
-    <span class="pl-s1">report_to</span><span class="pl-c1">=</span><span class="pl-s">"swanlab"</span>,
-    <span class="pl-s1">run_name</span><span class="pl-c1">=</span><span class="pl-s">"qwen3-0.5B"</span>,
+# 设置训练参数
+args = TrainingArguments(
+    output_dir="/root/autodl-tmp/output/Qwen3-0.5B",
+    per_device_train_batch_size=1,
+    per_device_eval_batch_size=1,
+    gradient_accumulation_steps=4,
+    eval_strategy="steps",
+    eval_steps=100,
+    logging_steps=10,
+    num_train_epochs=2,
+    save_steps=400,
+    learning_rate=1e-4,
+    save_on_each_node=True,
+    gradient_checkpointing=True,
+    report_to="swanlab",
+    run_name="qwen3-0.5B",
 )
 
-<span class="pl-c"># 初始化 Trainer</span>
-<span class="pl-s1">trainer</span> <span class="pl-c1">=</span> <span class="pl-en">Trainer</span>(
-    <span class="pl-s1">model</span><span class="pl-c1">=</span><span class="pl-s1">model</span>,
-    <span class="pl-s1">args</span><span class="pl-c1">=</span><span class="pl-s1">args</span>,
-    <span class="pl-s1">train_dataset</span><span class="pl-c1">=</span><span class="pl-s1">train_dataset</span>,
-    <span class="pl-s1">eval_dataset</span><span class="pl-c1">=</span><span class="pl-s1">eval_dataset</span>,
-    <span class="pl-s1">data_collator</span><span class="pl-c1">=</span><span class="pl-en">DataCollatorForSeq2Seq</span>(<span class="pl-s1">tokenizer</span><span class="pl-c1">=</span><span class="pl-s1">tokenizer</span>, <span class="pl-s1">padding</span><span class="pl-c1">=</span><span class="pl-c1">True</span>),
+# 初始化 Trainer
+trainer = Trainer(
+    model=model,
+    args=args,
+    train_dataset=train_dataset,
+    eval_dataset=eval_dataset,
+    data_collator=DataCollatorForSeq2Seq(tokenizer=tokenizer, padding=True),
 )
 
-<span class="pl-c"># 开始训练</span>
-<span class="pl-s1">trainer</span>.<span class="pl-c1">train</span>()
+# 开始训练
+trainer.train()
 
-<span class="pl-c"># 测试模型输出</span>
-<span class="pl-s1">test_df</span> <span class="pl-c1">=</span> <span class="pl-s1">pd</span>.<span class="pl-c1">read_json</span>(<span class="pl-s1">test_jsonl_new_path</span>, <span class="pl-s1">lines</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)[:<span class="pl-c1">3</span>]
-<span class="pl-s1">test_text_list</span> <span class="pl-c1">=</span> []
-<span class="pl-k">for</span> <span class="pl-s1">index</span>, <span class="pl-s1">row</span> <span class="pl-c1">in</span> <span class="pl-s1">test_df</span>.<span class="pl-c1">iterrows</span>():
-    <span class="pl-s1">instruction</span> <span class="pl-c1">=</span> <span class="pl-s1">row</span>[<span class="pl-s">'instruction'</span>]
-    <span class="pl-s1">input_value</span> <span class="pl-c1">=</span> <span class="pl-s1">row</span>[<span class="pl-s">'input'</span>]
-    <span class="pl-s1">messages</span> <span class="pl-c1">=</span> [
-        {<span class="pl-s">"role"</span>: <span class="pl-s">"system"</span>, <span class="pl-s">"content"</span>: <span class="pl-s">f"<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">instruction</span><span class="pl-kos">}</span></span>"</span>},
-        {<span class="pl-s">"role"</span>: <span class="pl-s">"user"</span>, <span class="pl-s">"content"</span>: <span class="pl-s">f"<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">input_value</span><span class="pl-kos">}</span></span>"</span>}
+# 测试模型输出
+test_df = pd.read_json(test_jsonl_new_path, lines=True)[:3]
+test_text_list = []
+for index, row in test_df.iterrows():
+    instruction = row['instruction']
+    input_value = row['input']
+    messages = [
+        {"role": "system", "content": f"{instruction}"},
+        {"role": "user", "content": f"{input_value}"}
     ]
-    <span class="pl-s1">response</span> <span class="pl-c1">=</span> <span class="pl-en">predict</span>(<span class="pl-s1">messages</span>, <span class="pl-s1">model</span>, <span class="pl-s1">tokenizer</span>)
-    <span class="pl-s1">response_text</span> <span class="pl-c1">=</span> <span class="pl-s">f"""</span>
-<span class="pl-s">    Question: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">input_value</span><span class="pl-kos">}</span></span></span>
-<span class="pl-s"></span>
-<span class="pl-s">    LLM:<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">response</span><span class="pl-kos">}</span></span></span>
-<span class="pl-s">    """</span>
-    <span class="pl-s1">test_text_list</span>.<span class="pl-c1">append</span>(<span class="pl-s1">swanlab</span>.<span class="pl-c1">Text</span>(<span class="pl-s1">response_text</span>))
-    <span class="pl-en">print</span>(<span class="pl-s1">response_text</span>)
+    response = predict(messages, model, tokenizer)
+    response_text = f"""
+    Question: {input_value}
 
-<span class="pl-c"># 记录测试结果并结束实验</span>
-<span class="pl-s1">swanlab</span>.<span class="pl-c1">log</span>({<span class="pl-s">"Prediction"</span>: <span class="pl-s1">test_text_list</span>})
-<span class="pl-s1">swanlab</span>.<span class="pl-c1">finish</span>()</pre></div>
+    LLM:{response}
+    """
+    test_text_list.append(swanlab.Text(response_text))
+    print(response_text)
+
+# 记录测试结果并结束实验
+swanlab.log({"Prediction": test_text_list})
+swanlab.finish()
+</code></pre>
 <hr>
 <h1>解释：</h1>
 <hr>
 <h2>1. 基本环境与依赖导入</h2>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">json</span>
-<span class="pl-k">import</span> <span class="pl-s1">pandas</span> <span class="pl-k">as</span> <span class="pl-s1">pd</span>
-<span class="pl-k">import</span> <span class="pl-s1">torch</span>
-<span class="pl-k">from</span> <span class="pl-s1">datasets</span> <span class="pl-k">import</span> <span class="pl-v">Dataset</span>
-<span class="pl-k">from</span> <span class="pl-s1">transformers</span> <span class="pl-k">import</span> <span class="pl-v">AutoTokenizer</span>, <span class="pl-v">AutoModelForCausalLM</span>, <span class="pl-v">TrainingArguments</span>, <span class="pl-v">Trainer</span>, <span class="pl-v">DataCollatorForSeq2Seq</span>
-<span class="pl-k">import</span> <span class="pl-s1">os</span>
-<span class="pl-k">import</span> <span class="pl-s1">swanlab</span></pre></div>
+<pre lang="python" class="notranslate"><code class="notranslate">import json
+import pandas as pd
+import torch
+from datasets import Dataset
+from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer, DataCollatorForSeq2Seq
+import os
+import swanlab
+</code></pre>
 <ul>
 <li>
 <p><strong>json、pandas</strong>：用于读取和处理 JSONL 格式的数据集。</p>
@@ -304,21 +306,23 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </ul>
 <hr>
 <h2>2. 设置 SwanLab 项目与全局配置</h2>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-c"># 设置 SwanLab 项目名称</span>
-<span class="pl-s1">os</span>.<span class="pl-c1">environ</span>[<span class="pl-s">"SWANLAB_PROJECT"</span>] <span class="pl-c1">=</span> <span class="pl-s">"qwen3-sft-dialog"</span></pre></div>
+<pre lang="python" class="notranslate"><code class="notranslate"># 设置 SwanLab 项目名称
+os.environ["SWANLAB_PROJECT"] = "qwen3-sft-dialog"
+</code></pre>
 <ul>
 <li>这一行将环境变量 <code class="notranslate">SWANLAB_PROJECT</code> 设为 <code class="notranslate">"qwen3-sft-dialog"</code>，表示后续所有通过 <code class="notranslate">swanlab.log()</code>、<code class="notranslate">swanlab.finish()</code> 上传的日志都归属于这个项目。</li>
 </ul>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-c"># 定义提示（PROMPT）和最大序列长度</span>
-<span class="pl-c1">PROMPT</span> <span class="pl-c1">=</span> <span class="pl-s">"你是一个对话助手，你需要根据用户的问题，给出相应的回答。"</span>
-<span class="pl-c1">MAX_LENGTH</span> <span class="pl-c1">=</span> <span class="pl-c1">2048</span>
+<pre lang="python" class="notranslate"><code class="notranslate"># 定义提示（PROMPT）和最大序列长度
+PROMPT = "你是一个对话助手，你需要根据用户的问题，给出相应的回答。"
+MAX_LENGTH = 2048
 
-<span class="pl-c"># 更新 SwanLab 配置</span>
-<span class="pl-s1">swanlab</span>.<span class="pl-c1">config</span>.<span class="pl-c1">update</span>({
-    <span class="pl-s">"model"</span>: <span class="pl-s">"Qwen/Qwen3-0.5B"</span>,
-    <span class="pl-s">"prompt"</span>: <span class="pl-c1">PROMPT</span>,
-    <span class="pl-s">"data_max_length"</span>: <span class="pl-c1">MAX_LENGTH</span>,
-})</pre></div>
+# 更新 SwanLab 配置
+swanlab.config.update({
+    "model": "Qwen/Qwen3-0.5B",
+    "prompt": PROMPT,
+    "data_max_length": MAX_LENGTH,
+})
+</code></pre>
 <ul>
 <li><code class="notranslate">PROMPT</code> 里定义了一个“系统提示”（system prompt），即对话模型在训练和推理时的最初上下文。</li>
 <li><code class="notranslate">MAX_LENGTH=2048</code>：指定输入+输出的最大 token 数目。</li>
@@ -330,10 +334,11 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <ul>
 <li>
 <p>原始训练集和验证集都是 JSONL 格式，每行都包含如下字段（示例）：</p>
-<div class="highlight highlight-source-json"><pre class="notranslate">{
-  <span class="pl-ent">"question"</span>: <span class="pl-s"><span class="pl-pds">"</span>用户的问题文本<span class="pl-pds">"</span></span>,
-  <span class="pl-ent">"answer"</span>: <span class="pl-s"><span class="pl-pds">"</span>对应的回答文本<span class="pl-pds">"</span></span>
-}</pre></div>
+<pre lang="json" class="notranslate"><code class="notranslate">{
+  "question": "用户的问题文本",
+  "answer": "对应的回答文本"
+}
+</code></pre>
 </li>
 <li>
 <p>代码中给出了 <code class="notranslate">train_dataset_path</code> 和 <code class="notranslate">test_dataset_path</code>，例如：</p>
@@ -343,28 +348,30 @@ test_dataset_path  = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.j
 </li>
 </ul>
 <h3>3.2 转换成带 “instruction/input/output” 的格式</h3>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">def</span> <span class="pl-en">dataset_jsonl_transfer</span>(<span class="pl-s1">origin_path</span>, <span class="pl-s1">new_path</span>):
-    <span class="pl-s1">messages</span> <span class="pl-c1">=</span> []
-    <span class="pl-k">with</span> <span class="pl-en">open</span>(<span class="pl-s1">origin_path</span>, <span class="pl-s">"r"</span>) <span class="pl-k">as</span> <span class="pl-s1">file</span>:
-        <span class="pl-k">for</span> <span class="pl-s1">line</span> <span class="pl-c1">in</span> <span class="pl-s1">file</span>:
-            <span class="pl-s1">data</span> <span class="pl-c1">=</span> <span class="pl-s1">json</span>.<span class="pl-c1">loads</span>(<span class="pl-s1">line</span>)
-            <span class="pl-s1">message</span> <span class="pl-c1">=</span> {
-                <span class="pl-s">"instruction"</span>: <span class="pl-c1">PROMPT</span>,
-                <span class="pl-s">"input"</span>: <span class="pl-s1">data</span>[<span class="pl-s">"question"</span>],
-                <span class="pl-s">"output"</span>: <span class="pl-s1">data</span>[<span class="pl-s">"answer"</span>],
+<pre lang="python" class="notranslate"><code class="notranslate">def dataset_jsonl_transfer(origin_path, new_path):
+    messages = []
+    with open(origin_path, "r") as file:
+        for line in file:
+            data = json.loads(line)
+            message = {
+                "instruction": PROMPT,
+                "input": data["question"],
+                "output": data["answer"],
             }
-            <span class="pl-s1">messages</span>.<span class="pl-c1">append</span>(<span class="pl-s1">message</span>)
-    <span class="pl-k">with</span> <span class="pl-en">open</span>(<span class="pl-s1">new_path</span>, <span class="pl-s">"w"</span>, <span class="pl-s1">encoding</span><span class="pl-c1">=</span><span class="pl-s">"utf-8"</span>) <span class="pl-k">as</span> <span class="pl-s1">file</span>:
-        <span class="pl-k">for</span> <span class="pl-s1">message</span> <span class="pl-c1">in</span> <span class="pl-s1">messages</span>:
-            <span class="pl-s1">file</span>.<span class="pl-c1">write</span>(<span class="pl-s1">json</span>.<span class="pl-c1">dumps</span>(<span class="pl-s1">message</span>, <span class="pl-s1">ensure_ascii</span><span class="pl-c1">=</span><span class="pl-c1">False</span>) <span class="pl-c1">+</span> <span class="pl-s">"<span class="pl-cce">\n</span>"</span>)</pre></div>
+            messages.append(message)
+    with open(new_path, "w", encoding="utf-8") as file:
+        for message in messages:
+            file.write(json.dumps(message, ensure_ascii=False) + "\n")
+</code></pre>
 <ul>
 <li>
 <p>这段函数会把原始的 <code class="notranslate">question</code>、<code class="notranslate">answer</code> 字段提取出来，然后写成新的 JSONL，每行长这样：</p>
-<div class="highlight highlight-source-json"><pre class="notranslate">{
-  <span class="pl-ent">"instruction"</span>: <span class="pl-s"><span class="pl-pds">"</span>你是一个对话助手，你需要根据用户的问题，给出相应的回答。<span class="pl-pds">"</span></span>,
-  <span class="pl-ent">"input"</span>: <span class="pl-s"><span class="pl-pds">"</span>&lt;原来的 question 文本&gt;<span class="pl-pds">"</span></span>,
-  <span class="pl-ent">"output"</span>: <span class="pl-s"><span class="pl-pds">"</span>&lt;原来的 answer 文本&gt;<span class="pl-pds">"</span></span>
-}</pre></div>
+<pre lang="json" class="notranslate"><code class="notranslate">{
+  "instruction": "你是一个对话助手，你需要根据用户的问题，给出相应的回答。",
+  "input": "&lt;原来的 question 文本&gt;",
+  "output": "&lt;原来的 answer 文本&gt;"
+}
+</code></pre>
 </li>
 <li>
 <p>生成之后的文件路径是：</p>
@@ -375,42 +382,44 @@ test_dataset_path  = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.j
 </li>
 <li>
 <p>接下来的代码检查这两个新文件是否已经存在，如果不存在就调用上面的函数去生成：</p>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">train_jsonl_new_path</span> <span class="pl-c1">=</span> <span class="pl-s">"/tmp/workspace/RussianEnglishDialogue/Dataset/format/train_format.jsonl"</span>
-<span class="pl-s1">test_jsonl_new_path</span>  <span class="pl-c1">=</span> <span class="pl-s">"/tmp/workspace/RussianEnglishDialogue/Dataset/format/val_format.jsonl"</span>
+<pre lang="python" class="notranslate"><code class="notranslate">train_jsonl_new_path = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/train_format.jsonl"
+test_jsonl_new_path  = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val_format.jsonl"
 
-<span class="pl-k">if</span> <span class="pl-c1">not</span> <span class="pl-s1">os</span>.<span class="pl-c1">path</span>.<span class="pl-c1">exists</span>(<span class="pl-s1">train_jsonl_new_path</span>):
-    <span class="pl-en">dataset_jsonl_transfer</span>(<span class="pl-s1">train_dataset_path</span>, <span class="pl-s1">train_jsonl_new_path</span>)
-<span class="pl-k">if</span> <span class="pl-c1">not</span> <span class="pl-s1">os</span>.<span class="pl-c1">path</span>.<span class="pl-c1">exists</span>(<span class="pl-s1">test_jsonl_new_path</span>):
-    <span class="pl-en">dataset_jsonl_transfer</span>(<span class="pl-s1">test_dataset_path</span>, <span class="pl-s1">test_jsonl_new_path</span>)</pre></div>
+if not os.path.exists(train_jsonl_new_path):
+    dataset_jsonl_transfer(train_dataset_path, train_jsonl_new_path)
+if not os.path.exists(test_jsonl_new_path):
+    dataset_jsonl_transfer(test_dataset_path, test_jsonl_new_path)
+</code></pre>
 </li>
 </ul>
 <hr>
 <h2>4. 数据预处理函数（Tokenize &amp; 构造 labels）</h2>
 <p>在对话或 SFT（Supervised Fine-Tuning）场景下，需要手动拼接“提示”“用户输入”“模型输出”三部分，并生成 <code class="notranslate">input_ids, attention_mask, labels</code>。labels 的构造方式是让模型只惩罚（loss）属于“回答”部分，而不惩罚“提示+用户输入”那段。</p>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">def</span> <span class="pl-en">process_func</span>(<span class="pl-s1">example</span>):
-    <span class="pl-s1">input_ids</span>, <span class="pl-s1">attention_mask</span>, <span class="pl-s1">labels</span> <span class="pl-c1">=</span> [], [], []
-    <span class="pl-s1">instruction</span> <span class="pl-c1">=</span> <span class="pl-en">tokenizer</span>(
-        <span class="pl-s">f"&lt;|im_start|&gt;system<span class="pl-cce">\n</span><span class="pl-s1"><span class="pl-kos">{</span><span class="pl-c1">PROMPT</span><span class="pl-kos">}</span></span>&lt;|im_end|&gt;<span class="pl-cce">\n</span>"</span>
-        <span class="pl-s">f"&lt;|im_start|&gt;user<span class="pl-cce">\n</span><span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">example</span>[<span class="pl-s">'input'</span>]<span class="pl-kos">}</span></span>&lt;|im_end|&gt;<span class="pl-cce">\n</span>"</span>
-        <span class="pl-s">f"&lt;|im_start|&gt;assistant<span class="pl-cce">\n</span>"</span>,
-        <span class="pl-s1">add_special_tokens</span><span class="pl-c1">=</span><span class="pl-c1">False</span>,
+<pre lang="python" class="notranslate"><code class="notranslate">def process_func(example):
+    input_ids, attention_mask, labels = [], [], []
+    instruction = tokenizer(
+        f"&lt;|im_start|&gt;system\n{PROMPT}&lt;|im_end|&gt;\n"
+        f"&lt;|im_start|&gt;user\n{example['input']}&lt;|im_end|&gt;\n"
+        f"&lt;|im_start|&gt;assistant\n",
+        add_special_tokens=False,
     )
-    <span class="pl-s1">response</span> <span class="pl-c1">=</span> <span class="pl-en">tokenizer</span>(<span class="pl-s">f"<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">example</span>[<span class="pl-s">'output'</span>]<span class="pl-kos">}</span></span>"</span>, <span class="pl-s1">add_special_tokens</span><span class="pl-c1">=</span><span class="pl-c1">False</span>)
+    response = tokenizer(f"{example['output']}", add_special_tokens=False)
 
-    <span class="pl-c"># 把 instruction 和 response 的 ids 拼接起来，末尾多一个 pad_token_id，用于强制生成结束</span>
-    <span class="pl-s1">input_ids</span> <span class="pl-c1">=</span> <span class="pl-s1">instruction</span>[<span class="pl-s">"input_ids"</span>] <span class="pl-c1">+</span> <span class="pl-s1">response</span>[<span class="pl-s">"input_ids"</span>] <span class="pl-c1">+</span> [<span class="pl-s1">tokenizer</span>.<span class="pl-c1">pad_token_id</span>]
-    <span class="pl-s1">attention_mask</span> <span class="pl-c1">=</span> <span class="pl-s1">instruction</span>[<span class="pl-s">"attention_mask"</span>] <span class="pl-c1">+</span> <span class="pl-s1">response</span>[<span class="pl-s">"attention_mask"</span>] <span class="pl-c1">+</span> [<span class="pl-c1">1</span>]
+    # 把 instruction 和 response 的 ids 拼接起来，末尾多一个 pad_token_id，用于强制生成结束
+    input_ids = instruction["input_ids"] + response["input_ids"] + [tokenizer.pad_token_id]
+    attention_mask = instruction["attention_mask"] + response["attention_mask"] + [1]
 
-    <span class="pl-c"># labels：前面 instruction 的部分都标成 -100（表示这个位置的 token 不计算 loss），</span>
-    <span class="pl-c"># 后面才是真正要让模型去预测的回复 token，最后一位 pad_token_id 也参与计算（可以算作一个结束标记）。</span>
-    <span class="pl-s1">labels</span> <span class="pl-c1">=</span> [<span class="pl-c1">-</span><span class="pl-c1">100</span>] <span class="pl-c1">*</span> <span class="pl-en">len</span>(<span class="pl-s1">instruction</span>[<span class="pl-s">"input_ids"</span>]) <span class="pl-c1">+</span> <span class="pl-s1">response</span>[<span class="pl-s">"input_ids"</span>] <span class="pl-c1">+</span> [<span class="pl-s1">tokenizer</span>.<span class="pl-c1">pad_token_id</span>]
+    # labels：前面 instruction 的部分都标成 -100（表示这个位置的 token 不计算 loss），
+    # 后面才是真正要让模型去预测的回复 token，最后一位 pad_token_id 也参与计算（可以算作一个结束标记）。
+    labels = [-100] * len(instruction["input_ids"]) + response["input_ids"] + [tokenizer.pad_token_id]
 
-    <span class="pl-c"># 如果长度超过了 MAX_LENGTH，就进行截断</span>
-    <span class="pl-k">if</span> <span class="pl-en">len</span>(<span class="pl-s1">input_ids</span>) <span class="pl-c1">&gt;</span> <span class="pl-c1">MAX_LENGTH</span>:
-        <span class="pl-s1">input_ids</span> <span class="pl-c1">=</span> <span class="pl-s1">input_ids</span>[:<span class="pl-c1">MAX_LENGTH</span>]
-        <span class="pl-s1">attention_mask</span> <span class="pl-c1">=</span> <span class="pl-s1">attention_mask</span>[:<span class="pl-c1">MAX_LENGTH</span>]
-        <span class="pl-s1">labels</span> <span class="pl-c1">=</span> <span class="pl-s1">labels</span>[:<span class="pl-c1">MAX_LENGTH</span>]
-    <span class="pl-k">return</span> {<span class="pl-s">"input_ids"</span>: <span class="pl-s1">input_ids</span>, <span class="pl-s">"attention_mask"</span>: <span class="pl-s1">attention_mask</span>, <span class="pl-s">"labels"</span>: <span class="pl-s1">labels</span>}</pre></div>
+    # 如果长度超过了 MAX_LENGTH，就进行截断
+    if len(input_ids) &gt; MAX_LENGTH:
+        input_ids = input_ids[:MAX_LENGTH]
+        attention_mask = attention_mask[:MAX_LENGTH]
+        labels = labels[:MAX_LENGTH]
+    return {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
+</code></pre>
 <ul>
 <li><code class="notranslate">&lt;|im_start|&gt;system</code>、<code class="notranslate">&lt;|im_end|&gt;</code> 等是 QQE（Qwen Prompt）里约定的特殊分隔符，用来标记对话角色。</li>
 <li>整个 <code class="notranslate">input_ids</code> 里先包含 system+user，然后紧跟 response。</li>
@@ -419,32 +428,34 @@ test_dataset_path  = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.j
 </ul>
 <hr>
 <h2>5. 推理（Inference）函数</h2>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">def</span> <span class="pl-en">predict</span>(<span class="pl-s1">messages</span>, <span class="pl-s1">model</span>, <span class="pl-s1">tokenizer</span>):
-    <span class="pl-s1">device</span> <span class="pl-c1">=</span> <span class="pl-s">"cuda"</span>
-    <span class="pl-s1">text</span> <span class="pl-c1">=</span> <span class="pl-s1">tokenizer</span>.<span class="pl-c1">apply_chat_template</span>(
-        <span class="pl-s1">messages</span>,
-        <span class="pl-s1">tokenize</span><span class="pl-c1">=</span><span class="pl-c1">False</span>,
-        <span class="pl-s1">add_generation_prompt</span><span class="pl-c1">=</span><span class="pl-c1">True</span>
+<pre lang="python" class="notranslate"><code class="notranslate">def predict(messages, model, tokenizer):
+    device = "cuda"
+    text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
     )
-    <span class="pl-s1">model_inputs</span> <span class="pl-c1">=</span> <span class="pl-en">tokenizer</span>([<span class="pl-s1">text</span>], <span class="pl-s1">return_tensors</span><span class="pl-c1">=</span><span class="pl-s">"pt"</span>).<span class="pl-c1">to</span>(<span class="pl-s1">device</span>)
-    <span class="pl-s1">generated_ids</span> <span class="pl-c1">=</span> <span class="pl-s1">model</span>.<span class="pl-c1">generate</span>(
-        <span class="pl-s1">model_inputs</span>.<span class="pl-c1">input_ids</span>,
-        <span class="pl-s1">max_new_tokens</span><span class="pl-c1">=</span><span class="pl-c1">MAX_LENGTH</span>,
+    model_inputs = tokenizer([text], return_tensors="pt").to(device)
+    generated_ids = model.generate(
+        model_inputs.input_ids,
+        max_new_tokens=MAX_LENGTH,
     )
-    <span class="pl-c"># 这里去掉输入部分，只保留模型“新生成的” token</span>
-    <span class="pl-s1">generated_ids</span> <span class="pl-c1">=</span> [
-        <span class="pl-s1">output_ids</span>[<span class="pl-en">len</span>(<span class="pl-s1">input_ids</span>):] <span class="pl-k">for</span> <span class="pl-s1">input_ids</span>, <span class="pl-s1">output_ids</span> <span class="pl-c1">in</span> <span class="pl-en">zip</span>(<span class="pl-s1">model_inputs</span>.<span class="pl-c1">input_ids</span>, <span class="pl-s1">generated_ids</span>)
+    # 这里去掉输入部分，只保留模型“新生成的” token
+    generated_ids = [
+        output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
     ]
-    <span class="pl-s1">response</span> <span class="pl-c1">=</span> <span class="pl-s1">tokenizer</span>.<span class="pl-c1">batch_decode</span>(<span class="pl-s1">generated_ids</span>, <span class="pl-s1">skip_special_tokens</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)[<span class="pl-c1">0</span>]
-    <span class="pl-k">return</span> <span class="pl-s1">response</span></pre></div>
+    response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    return response
+</code></pre>
 <ul>
 <li>
 <p><code class="notranslate">messages</code> 的格式如：</p>
-<div class="highlight highlight-source-python"><pre class="notranslate">[
-  {<span class="pl-s">"role"</span>: <span class="pl-s">"system"</span>,    <span class="pl-s">"content"</span>: <span class="pl-c1">PROMPT</span>},
-  {<span class="pl-s">"role"</span>: <span class="pl-s">"user"</span>,      <span class="pl-s">"content"</span>: <span class="pl-s">"&lt;用户输入&gt;"</span>},
-  <span class="pl-c"># 这里函数内部会自动在末尾加上一个 &lt;|im_start|&gt;assistant&gt; 的生成提示</span>
-]</pre></div>
+<pre lang="python" class="notranslate"><code class="notranslate">[
+  {"role": "system",    "content": PROMPT},
+  {"role": "user",      "content": "&lt;用户输入&gt;"},
+  # 这里函数内部会自动在末尾加上一个 &lt;|im_start|&gt;assistant&gt; 的生成提示
+]
+</code></pre>
 </li>
 <li>
 <p>先用 <code class="notranslate">apply_chat_template</code> 拼成一个完整的对话字符串（带角色分隔）交给 tokenizer 编码。</p>
@@ -458,12 +469,13 @@ test_dataset_path  = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.j
 </ul>
 <hr>
 <h2>6. 预训练模型加载：<code class="notranslate">model_dir</code></h2>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">model_dir</span> <span class="pl-c1">=</span> <span class="pl-s">"/tmp/workspace/model/.cache/huggingface/download/naive"</span>
+<pre lang="python" class="notranslate"><code class="notranslate">model_dir = "/tmp/workspace/model/.cache/huggingface/download/naive"
 
-<span class="pl-c"># 加载 tokenizer 和模型</span>
-<span class="pl-s1">tokenizer</span> <span class="pl-c1">=</span> <span class="pl-v">AutoTokenizer</span>.<span class="pl-c1">from_pretrained</span>(<span class="pl-s1">model_dir</span>, <span class="pl-s1">use_fast</span><span class="pl-c1">=</span><span class="pl-c1">False</span>, <span class="pl-s1">trust_remote_code</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
-<span class="pl-s1">model</span> <span class="pl-c1">=</span> <span class="pl-v">AutoModelForCausalLM</span>.<span class="pl-c1">from_pretrained</span>(<span class="pl-s1">model_dir</span>, <span class="pl-s1">device_map</span><span class="pl-c1">=</span><span class="pl-s">"auto"</span>, <span class="pl-s1">torch_dtype</span><span class="pl-c1">=</span><span class="pl-s1">torch</span>.<span class="pl-c1">bfloat16</span>)
-<span class="pl-s1">model</span>.<span class="pl-c1">enable_input_require_grads</span>()  <span class="pl-c"># 开启梯度检查点支持</span></pre></div>
+# 加载 tokenizer 和模型
+tokenizer = AutoTokenizer.from_pretrained(model_dir, use_fast=False, trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained(model_dir, device_map="auto", torch_dtype=torch.bfloat16)
+model.enable_input_require_grads()  # 开启梯度检查点支持
+</code></pre>
 <ul>
 <li><code class="notranslate">model_dir</code> 指向一个本地目录，里面应该已经缓存好了预训练的基础模型权重（这里是 “Qwen/Qwen3-0.5B”）。</li>
 <li>先用 <code class="notranslate">AutoTokenizer.from_pretrained(model_dir)</code> 把对应的 tokenizer 加载进来。</li>
@@ -472,15 +484,16 @@ test_dataset_path  = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.j
 </ul>
 <hr>
 <h2>7. 构建 Dataset 对象</h2>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-c"># --- 训练集 ---</span>
-<span class="pl-s1">train_df</span> <span class="pl-c1">=</span> <span class="pl-s1">pd</span>.<span class="pl-c1">read_json</span>(<span class="pl-s1">train_jsonl_new_path</span>, <span class="pl-s1">lines</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
-<span class="pl-s1">train_ds</span> <span class="pl-c1">=</span> <span class="pl-v">Dataset</span>.<span class="pl-c1">from_pandas</span>(<span class="pl-s1">train_df</span>)
-<span class="pl-s1">train_dataset</span> <span class="pl-c1">=</span> <span class="pl-s1">train_ds</span>.<span class="pl-c1">map</span>(<span class="pl-s1">process_func</span>, <span class="pl-s1">remove_columns</span><span class="pl-c1">=</span><span class="pl-s1">train_ds</span>.<span class="pl-c1">column_names</span>)
+<pre lang="python" class="notranslate"><code class="notranslate"># --- 训练集 ---
+train_df = pd.read_json(train_jsonl_new_path, lines=True)
+train_ds = Dataset.from_pandas(train_df)
+train_dataset = train_ds.map(process_func, remove_columns=train_ds.column_names)
 
-<span class="pl-c"># --- 验证集 ---</span>
-<span class="pl-s1">eval_df</span> <span class="pl-c1">=</span> <span class="pl-s1">pd</span>.<span class="pl-c1">read_json</span>(<span class="pl-s1">test_jsonl_new_path</span>, <span class="pl-s1">lines</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)
-<span class="pl-s1">eval_ds</span> <span class="pl-c1">=</span> <span class="pl-v">Dataset</span>.<span class="pl-c1">from_pandas</span>(<span class="pl-s1">eval_df</span>)
-<span class="pl-s1">eval_dataset</span> <span class="pl-c1">=</span> <span class="pl-s1">eval_ds</span>.<span class="pl-c1">map</span>(<span class="pl-s1">process_func</span>, <span class="pl-s1">remove_columns</span><span class="pl-c1">=</span><span class="pl-s1">eval_ds</span>.<span class="pl-c1">column_names</span>)</pre></div>
+# --- 验证集 ---
+eval_df = pd.read_json(test_jsonl_new_path, lines=True)
+eval_ds = Dataset.from_pandas(eval_df)
+eval_dataset = eval_ds.map(process_func, remove_columns=eval_ds.column_names)
+</code></pre>
 <ul>
 <li><code class="notranslate">pd.read_json(..., lines=True)</code>：把新格式的 JSONL 文件读成一个 pandas DataFrame，DataFrame 列名是 <code class="notranslate">["instruction","input","output"]</code>。</li>
 <li><code class="notranslate">Dataset.from_pandas(...)</code>：Hugging Face 的 <code class="notranslate">Dataset</code> 定义，用它可以把 pandas DataFrame 转换成一个能被 <code class="notranslate">Trainer</code> 直接消费的 dataset 对象。</li>
@@ -489,22 +502,23 @@ test_dataset_path  = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.j
 </ul>
 <hr>
 <h2>8. 设置训练参数（<code class="notranslate">TrainingArguments</code>）</h2>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">args</span> <span class="pl-c1">=</span> <span class="pl-en">TrainingArguments</span>(
-    <span class="pl-s1">output_dir</span><span class="pl-c1">=</span><span class="pl-s">"/root/autodl-tmp/output/Qwen3-0.5B"</span>,
-    <span class="pl-s1">per_device_train_batch_size</span><span class="pl-c1">=</span><span class="pl-c1">1</span>,
-    <span class="pl-s1">per_device_eval_batch_size</span><span class="pl-c1">=</span><span class="pl-c1">1</span>,
-    <span class="pl-s1">gradient_accumulation_steps</span><span class="pl-c1">=</span><span class="pl-c1">4</span>,
-    <span class="pl-s1">eval_strategy</span><span class="pl-c1">=</span><span class="pl-s">"steps"</span>,
-    <span class="pl-s1">eval_steps</span><span class="pl-c1">=</span><span class="pl-c1">100</span>,
-    <span class="pl-s1">logging_steps</span><span class="pl-c1">=</span><span class="pl-c1">10</span>,
-    <span class="pl-s1">num_train_epochs</span><span class="pl-c1">=</span><span class="pl-c1">2</span>,
-    <span class="pl-s1">save_steps</span><span class="pl-c1">=</span><span class="pl-c1">400</span>,
-    <span class="pl-s1">learning_rate</span><span class="pl-c1">=</span><span class="pl-c1">1e-4</span>,
-    <span class="pl-s1">save_on_each_node</span><span class="pl-c1">=</span><span class="pl-c1">True</span>,
-    <span class="pl-s1">gradient_checkpointing</span><span class="pl-c1">=</span><span class="pl-c1">True</span>,
-    <span class="pl-s1">report_to</span><span class="pl-c1">=</span><span class="pl-s">"swanlab"</span>,
-    <span class="pl-s1">run_name</span><span class="pl-c1">=</span><span class="pl-s">"qwen3-0.5B"</span>,
-)</pre></div>
+<pre lang="python" class="notranslate"><code class="notranslate">args = TrainingArguments(
+    output_dir="/root/autodl-tmp/output/Qwen3-0.5B",
+    per_device_train_batch_size=1,
+    per_device_eval_batch_size=1,
+    gradient_accumulation_steps=4,
+    eval_strategy="steps",
+    eval_steps=100,
+    logging_steps=10,
+    num_train_epochs=2,
+    save_steps=400,
+    learning_rate=1e-4,
+    save_on_each_node=True,
+    gradient_checkpointing=True,
+    report_to="swanlab",
+    run_name="qwen3-0.5B",
+)
+</code></pre>
 <p>重点参数说明：</p>
 <ul>
 <li>
@@ -568,16 +582,17 @@ test_dataset_path  = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.j
 </ul>
 <hr>
 <h2>9. 初始化 Trainer 并开始训练</h2>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">trainer</span> <span class="pl-c1">=</span> <span class="pl-en">Trainer</span>(
-    <span class="pl-s1">model</span><span class="pl-c1">=</span><span class="pl-s1">model</span>,
-    <span class="pl-s1">args</span><span class="pl-c1">=</span><span class="pl-s1">args</span>,
-    <span class="pl-s1">train_dataset</span><span class="pl-c1">=</span><span class="pl-s1">train_dataset</span>,
-    <span class="pl-s1">eval_dataset</span><span class="pl-c1">=</span><span class="pl-s1">eval_dataset</span>,
-    <span class="pl-s1">data_collator</span><span class="pl-c1">=</span><span class="pl-en">DataCollatorForSeq2Seq</span>(<span class="pl-s1">tokenizer</span><span class="pl-c1">=</span><span class="pl-s1">tokenizer</span>, <span class="pl-s1">padding</span><span class="pl-c1">=</span><span class="pl-c1">True</span>),
+<pre lang="python" class="notranslate"><code class="notranslate">trainer = Trainer(
+    model=model,
+    args=args,
+    train_dataset=train_dataset,
+    eval_dataset=eval_dataset,
+    data_collator=DataCollatorForSeq2Seq(tokenizer=tokenizer, padding=True),
 )
 
-<span class="pl-c"># 开始训练</span>
-<span class="pl-s1">trainer</span>.<span class="pl-c1">train</span>()</pre></div>
+# 开始训练
+trainer.train()
+</code></pre>
 <ul>
 <li><code class="notranslate">Trainer</code> 会根据上面传入的 <code class="notranslate">model</code>、<code class="notranslate">args</code>、<code class="notranslate">train_dataset</code>、<code class="notranslate">eval_dataset</code> 拆分训练循环、eval 循环，并且自动调用 <code class="notranslate">save_steps</code> 时保存检查点。</li>
 <li><code class="notranslate">data_collator=DataCollatorForSeq2Seq(...)</code> 负责在一个 batch 中把不同长度的 <code class="notranslate">input_ids</code> 填充到相同长度、生成对应的 <code class="notranslate">attention_mask</code> 和 <code class="notranslate">labels</code>，以便 Hugging Face 可以直接把它送进模型做前向 / 反向传播。</li>
@@ -592,25 +607,26 @@ test_dataset_path  = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.j
 <hr>
 <h2>10. 测试模型输出并将结果通过 SwanLab 上报</h2>
 <p>训练完成后，我们用同样的验证集前 3 条数据做一次简单的推理，看看模型的回答与真实答案有何差距，并把推理结果也上传到 SwanLab。</p>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-c"># 读取验证集前三条</span>
-<span class="pl-s1">test_df</span> <span class="pl-c1">=</span> <span class="pl-s1">pd</span>.<span class="pl-c1">read_json</span>(<span class="pl-s1">test_jsonl_new_path</span>, <span class="pl-s1">lines</span><span class="pl-c1">=</span><span class="pl-c1">True</span>)[:<span class="pl-c1">3</span>]
-<span class="pl-s1">test_text_list</span> <span class="pl-c1">=</span> []
+<pre lang="python" class="notranslate"><code class="notranslate"># 读取验证集前三条
+test_df = pd.read_json(test_jsonl_new_path, lines=True)[:3]
+test_text_list = []
 
-<span class="pl-k">for</span> <span class="pl-s1">index</span>, <span class="pl-s1">row</span> <span class="pl-c1">in</span> <span class="pl-s1">test_df</span>.<span class="pl-c1">iterrows</span>():
-    <span class="pl-s1">instruction</span> <span class="pl-c1">=</span> <span class="pl-s1">row</span>[<span class="pl-s">'instruction'</span>]
-    <span class="pl-s1">input_value</span> <span class="pl-c1">=</span> <span class="pl-s1">row</span>[<span class="pl-s">'input'</span>]
-    <span class="pl-s1">messages</span> <span class="pl-c1">=</span> [
-        {<span class="pl-s">"role"</span>: <span class="pl-s">"system"</span>,    <span class="pl-s">"content"</span>: <span class="pl-s">f"<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">instruction</span><span class="pl-kos">}</span></span>"</span>},
-        {<span class="pl-s">"role"</span>: <span class="pl-s">"user"</span>,      <span class="pl-s">"content"</span>: <span class="pl-s">f"<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">input_value</span><span class="pl-kos">}</span></span>"</span>}
+for index, row in test_df.iterrows():
+    instruction = row['instruction']
+    input_value = row['input']
+    messages = [
+        {"role": "system",    "content": f"{instruction}"},
+        {"role": "user",      "content": f"{input_value}"}
     ]
-    <span class="pl-s1">response</span> <span class="pl-c1">=</span> <span class="pl-en">predict</span>(<span class="pl-s1">messages</span>, <span class="pl-s1">model</span>, <span class="pl-s1">tokenizer</span>)
-    <span class="pl-s1">response_text</span> <span class="pl-c1">=</span> <span class="pl-s">f"""</span>
-<span class="pl-s">    Question: <span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">input_value</span><span class="pl-kos">}</span></span></span>
-<span class="pl-s"></span>
-<span class="pl-s">    LLM:<span class="pl-s1"><span class="pl-kos">{</span><span class="pl-s1">response</span><span class="pl-kos">}</span></span></span>
-<span class="pl-s">    """</span>
-    <span class="pl-s1">test_text_list</span>.<span class="pl-c1">append</span>(<span class="pl-s1">swanlab</span>.<span class="pl-c1">Text</span>(<span class="pl-s1">response_text</span>))
-    <span class="pl-en">print</span>(<span class="pl-s1">response_text</span>)</pre></div>
+    response = predict(messages, model, tokenizer)
+    response_text = f"""
+    Question: {input_value}
+
+    LLM:{response}
+    """
+    test_text_list.append(swanlab.Text(response_text))
+    print(response_text)
+</code></pre>
 <ul>
 <li>
 <p><code class="notranslate">predict(...)</code> 函数会把 <code class="notranslate">instruction</code> + <code class="notranslate">user input</code> 拼进去，调用 <code class="notranslate">model.generate</code> 生成回答。</p>
@@ -620,8 +636,9 @@ test_dataset_path  = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.j
 </li>
 <li>
 <p>训练结束后，调用：</p>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">swanlab</span>.<span class="pl-c1">log</span>({<span class="pl-s">"Prediction"</span>: <span class="pl-s1">test_text_list</span>})
-<span class="pl-s1">swanlab</span>.<span class="pl-c1">finish</span>()</pre></div>
+<pre lang="python" class="notranslate"><code class="notranslate">swanlab.log({"Prediction": test_text_list})
+swanlab.finish()
+</code></pre>
 <ul>
 <li>这意味着把测试结果一起上传到 SwanLab 平台，最后调用 <code class="notranslate">finish()</code> 报告实验结束。</li>
 </ul>
@@ -632,7 +649,8 @@ test_dataset_path  = "/tmp/workspace/RussianEnglishDialogue/Dataset/format/val.j
 <ul>
 <li>
 <p><strong>关键在 <code class="notranslate">TrainingArguments</code> 里的 <code class="notranslate">output_dir</code></strong>，代码中指定为：</p>
-<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">output_dir</span><span class="pl-c1">=</span><span class="pl-s">"/root/autodl-tmp/output/Qwen3-0.5B"</span></pre></div>
+<pre lang="python" class="notranslate"><code class="notranslate">output_dir="/root/autodl-tmp/output/Qwen3-0.5B"
+</code></pre>
 </li>
 <li>
 <p>在训练过程中，<code class="notranslate">Trainer</code> 会在该目录下自动保存多个 checkpoint，例如：</p>
