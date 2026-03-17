@@ -17,7 +17,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/yuan-ma-xiu-gai-%20pip%20site-package.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>源码修改 pip site-package</title>
-<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
 
 
 </head>
@@ -121,10 +121,11 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <ul>
 <li>
 <p>如果你在某个项目目录下执行了：</p>
-<div class="highlight highlight-source-shell"><pre class="notranslate">python -m venv .venv
-<span class="pl-c1">source</span> .venv/bin/activate  <span class="pl-c"><span class="pl-c">#</span> (Linux/macOS)</span>
-.venv<span class="pl-cce">\S</span>cripts<span class="pl-cce">\a</span>ctivate     <span class="pl-c"><span class="pl-c">#</span> (Windows)</span>
-pip install 包名</pre></div>
+<pre lang="bash" class="notranslate"><code class="notranslate">python -m venv .venv
+source .venv/bin/activate  # (Linux/macOS)
+.venv\Scripts\activate     # (Windows)
+pip install 包名
+</code></pre>
 </li>
 <li>
 <p>那么包会安装在：</p>
@@ -139,7 +140,8 @@ pip install 包名</pre></div>
 <li>
 <p><strong>查看某个包的实际安装位置</strong><br>
 可以用：</p>
-<div class="highlight highlight-source-shell"><pre class="notranslate">pip show 包名</pre></div>
+<pre lang="bash" class="notranslate"><code class="notranslate">pip show 包名
+</code></pre>
 <p>输出里会有一行 <code class="notranslate">Location: /…/site-packages</code>，指明这个包所在的目录。</p>
 </li>
 </ol>
@@ -152,12 +154,14 @@ pip install 包名</pre></div>
 <ol>
 <li>
 <p><strong>克隆官方仓库</strong>（或你想改的那个版本）</p>
-<div class="highlight highlight-source-shell"><pre class="notranslate">git clone https://github.com/xxx/your-package.git
-<span class="pl-c1">cd</span> your-package</pre></div>
+<pre lang="bash" class="notranslate"><code class="notranslate">git clone https://github.com/xxx/your-package.git
+cd your-package
+</code></pre>
 </li>
 <li>
 <p><strong>在源码目录下启用开发模式安装</strong></p>
-<div class="highlight highlight-source-shell"><pre class="notranslate">pip install --editable <span class="pl-c1">.</span></pre></div>
+<pre lang="bash" class="notranslate"><code class="notranslate">pip install --editable .
+</code></pre>
 <p>这样，Python 在导入该包时会直接引用你这个源码目录里的文件。</p>
 </li>
 <li>
@@ -169,8 +173,9 @@ pip install 包名</pre></div>
 <ol>
 <li>
 <p>定位到包所在目录：</p>
-<div class="highlight highlight-source-shell"><pre class="notranslate">pip show 包名
-<span class="pl-c"><span class="pl-c">#</span> 读取 Location，然后打开 .../site-packages/包名 目录</span></pre></div>
+<pre lang="bash" class="notranslate"><code class="notranslate">pip show 包名
+# 读取 Location，然后打开 .../site-packages/包名 目录
+</code></pre>
 </li>
 <li>
 <p>打开对应的 <code class="notranslate">.py</code> 文件，修改后保存。</p>
@@ -192,7 +197,8 @@ pip install 包名</pre></div>
 </li>
 <li>
 <p>在项目中引用你的版本：</p>
-<div class="highlight highlight-source-shell"><pre class="notranslate">pip install git+https://github.com/你/your-package.git@v1.2.3-myfix</pre></div>
+<pre lang="bash" class="notranslate"><code class="notranslate">pip install git+https://github.com/你/your-package.git@v1.2.3-myfix
+</code></pre>
 <p>或者在 <code class="notranslate">requirements.txt</code> 写：</p>
 <pre class="notranslate"><code class="notranslate">git+https://github.com/你/your-package.git@v1.2.3-myfix#egg=your-package
 </code></pre>

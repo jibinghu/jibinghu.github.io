@@ -17,7 +17,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/zhi-neng-zhi-zhen-de-shi-fang-he-xian-cun-zhi-zhen.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>智能指针的释放和显存指针</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -41,7 +41,17 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     body {padding: 8px;}
     .postTitle{font-size:24px;}
 }
-
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
 </style>
 
 
@@ -91,18 +101,17 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <li><strong>默认行为</strong>：智能指针的默认析构函数内部会调用 <code class="notranslate">delete</code>（或 <code class="notranslate">delete[]</code>）来释放内存。</li>
 </ul>
 <p><strong>代码对比：</strong></p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">void oldWay() {
-    int* data = new int[100];
-    // ... 如果这里抛出异常，delete 将不会执行，导致内存泄漏
-    delete[] data; // 必须手动回收
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">void</span> <span class="pl-en">oldWay</span>() {
+    <span class="pl-k">int</span>* data = <span class="pl-k">new</span> <span class="pl-k">int</span>[<span class="pl-c1">100</span>];
+    <span class="pl-c"><span class="pl-c">//</span> ... 如果这里抛出异常，delete 将不会执行，导致内存泄漏</span>
+    <span class="pl-k">delete[]</span> data; <span class="pl-c"><span class="pl-c">//</span> 必须手动回收</span>
 }
 
-void smartWay() {
-    // 离开函数作用域时，p 的析构函数自动被调用，内存自动释放
-    std::unique_ptr&lt;int[]&gt; p = std::make_unique&lt;int[]&gt;(100); 
-    // 不需要写 delete
-}
-</code></pre>
+<span class="pl-k">void</span> <span class="pl-en">smartWay</span>() {
+    <span class="pl-c"><span class="pl-c">//</span> 离开函数作用域时，p 的析构函数自动被调用，内存自动释放</span>
+    std::unique_ptr&lt;<span class="pl-k">int</span>[]&gt; p = std::make_unique&lt;<span class="pl-k">int</span>[]&gt;(<span class="pl-c1">100</span>); 
+    <span class="pl-c"><span class="pl-c">//</span> 不需要写 delete</span>
+}</pre></div>
 <hr>
 <h3>第二部分：智能指针指向设备显存（GPU 端）</h3>
 <h4>1. 智能指针可以指向显存吗？</h4>
@@ -121,65 +130,63 @@ void smartWay() {
 <p>你必须告诉智能指针：“嘿，这块内存不用 <code class="notranslate">delete</code> 删，请用 <code class="notranslate">cudaFree</code> 删。”</p>
 <p><strong>实现代码示例：</strong></p>
 <p>我们可以定义一个非常轻量级的结构体来实现这个删除逻辑。</p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">#include &lt;memory&gt;
-#include &lt;cuda_runtime.h&gt;
-#include &lt;iostream&gt;
+<div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>memory<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cuda_runtime.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
 
-// 1. 定义一个仿函数（Functor）作为删除器
-struct CudaDeleter {
-    void operator()(void* ptr) {
-        if (ptr) {
-            cudaFree(ptr); // 使用 CUDA 专用的释放函数
-            std::cout &lt;&lt; "GPU Memory freed automatically!" &lt;&lt; std::endl;
+<span class="pl-c"><span class="pl-c">//</span> 1. 定义一个仿函数（Functor）作为删除器</span>
+<span class="pl-k">struct</span> <span class="pl-en">CudaDeleter</span> {
+    <span class="pl-k">void</span> <span class="pl-en">operator</span>()(<span class="pl-k">void</span>* ptr) {
+        <span class="pl-k">if</span> (ptr) {
+            <span class="pl-c1">cudaFree</span>(ptr); <span class="pl-c"><span class="pl-c">//</span> 使用 CUDA 专用的释放函数</span>
+            std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>GPU Memory freed automatically!<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
         }
     }
 };
 
-// 2. 定义一个别名，方便使用 (推荐做法)
-// 这是一个指向 float，且使用 CudaDeleter 的 unique_ptr
-using CudaUniquePtr = std::unique_ptr&lt;float, CudaDeleter&gt;;
+<span class="pl-c"><span class="pl-c">//</span> 2. 定义一个别名，方便使用 (推荐做法)</span>
+<span class="pl-c"><span class="pl-c">//</span> 这是一个指向 float，且使用 CudaDeleter 的 unique_ptr</span>
+<span class="pl-k">using</span> CudaUniquePtr = std::unique_ptr&lt;<span class="pl-k">float</span>, CudaDeleter&gt;;
 
-int main() {
-    float* raw_ptr = nullptr;
-    size_t size = 1024 * sizeof(float);
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    <span class="pl-k">float</span>* raw_ptr = <span class="pl-c1">nullptr</span>;
+    <span class="pl-c1">size_t</span> size = <span class="pl-c1">1024</span> * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>);
 
-    // 分配显存
-    cudaMalloc(&amp;raw_ptr, size);
+    <span class="pl-c"><span class="pl-c">//</span> 分配显存</span>
+    <span class="pl-c1">cudaMalloc</span>(&amp;raw_ptr, size);
 
     {
-        // 接管显存所有权
-        CudaUniquePtr dev_ptr(raw_ptr);
+        <span class="pl-c"><span class="pl-c">//</span> 接管显存所有权</span>
+        CudaUniquePtr <span class="pl-smi">dev_ptr</span>(raw_ptr);
 
-        // ... 在这里使用 dev_ptr.get() 进行 Kernel 运算 ...
-        // kernel&lt;&lt;&lt;...&gt;&gt;&gt;(dev_ptr.get(), ...);
+        <span class="pl-c"><span class="pl-c">//</span> ... 在这里使用 dev_ptr.get() 进行 Kernel 运算 ...</span>
+        <span class="pl-c"><span class="pl-c">//</span> kernel&lt;&lt;&lt;...&gt;&gt;&gt;(dev_ptr.get(), ...);</span>
 
-    } // &lt;--- 出了这个大括号，dev_ptr 析构，自动调用 CudaDeleter::operator()，执行 cudaFree
+    } <span class="pl-c"><span class="pl-c">//</span> &lt;--- 出了这个大括号，dev_ptr 析构，自动调用 CudaDeleter::operator()，执行 cudaFree</span>
 
-    // 此时显存已被安全回收
-    return 0;
-}
-</code></pre>
+    <span class="pl-c"><span class="pl-c">//</span> 此时显存已被安全回收</span>
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
 <h3>进阶优化：封装成工厂函数</h3>
 <p>为了避免每次都手动写 <code class="notranslate">cudaMalloc</code>，可以模仿 <code class="notranslate">std::make_unique</code> 封装一个分配器：</p>
-<pre lang="cpp" class="notranslate"><code class="notranslate">template &lt;typename T&gt;
-std::unique_ptr&lt;T, CudaDeleter&gt; make_device_unique(size_t n_elements) {
-    T* raw_ptr = nullptr;
-    // 注意：这里没有处理 cudaMalloc 可能的错误，实际工程中需要检查
-    cudaMalloc(&amp;raw_ptr, n_elements * sizeof(T));
-    return std::unique_ptr&lt;T, CudaDeleter&gt;(raw_ptr);
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template </span>&lt;<span class="pl-k">typename</span> T&gt;
+std::unique_ptr&lt;T, CudaDeleter&gt; <span class="pl-en">make_device_unique</span>(<span class="pl-c1">size_t</span> n_elements) {
+    T* raw_ptr = <span class="pl-c1">nullptr</span>;
+    <span class="pl-c"><span class="pl-c">//</span> 注意：这里没有处理 cudaMalloc 可能的错误，实际工程中需要检查</span>
+    <span class="pl-c1">cudaMalloc</span>(&amp;raw_ptr, n_elements * <span class="pl-k">sizeof</span>(T));
+    <span class="pl-k">return</span> std::unique_ptr&lt;T, CudaDeleter&gt;(raw_ptr);
 }
 
-// 使用方式极其清爽：
-void your_simulation_function() {
-    auto u_dev = make_device_unique&lt;float&gt;(1000); // 自动分配
-    auto v_dev = make_device_unique&lt;float&gt;(1000); 
+<span class="pl-c"><span class="pl-c">//</span> 使用方式极其清爽：</span>
+<span class="pl-k">void</span> <span class="pl-en">your_simulation_function</span>() {
+    <span class="pl-k">auto</span> u_dev = make_device_unique&lt;<span class="pl-k">float</span>&gt;(<span class="pl-c1">1000</span>); <span class="pl-c"><span class="pl-c">//</span> 自动分配</span>
+    <span class="pl-k">auto</span> v_dev = make_device_unique&lt;<span class="pl-k">float</span>&gt;(<span class="pl-c1">1000</span>); 
     
-    // 传给 Kernel 时使用 .get()
-    // kernel&lt;&lt;&lt;...&gt;&gt;&gt;(u_dev.get(), v_dev.get());
+    <span class="pl-c"><span class="pl-c">//</span> 传给 Kernel 时使用 .get()</span>
+    <span class="pl-c"><span class="pl-c">//</span> kernel&lt;&lt;&lt;...&gt;&gt;&gt;(u_dev.get(), v_dev.get());</span>
     
-    // 函数结束，自动 cudaFree
-}
-</code></pre>
+    <span class="pl-c"><span class="pl-c">//</span> 函数结束，自动 cudaFree</span>
+}</pre></div>
 <h3>总结</h3>
 <ul>
 <li><strong>普通指针</strong>：无需手动回收，智能指针默认的 <code class="notranslate">delete</code> 会自动处理。</li>
@@ -210,7 +217,7 @@ if("05/28/2024"!=""){
 </script></div>
 </body>
 <script>
-var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
 var utterancesLoad=0;
 
 let themeSettings={
@@ -284,7 +291,70 @@ function iFrameLoading(){
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
 
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
 
 </script>
 

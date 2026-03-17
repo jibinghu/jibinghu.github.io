@@ -17,7 +17,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/CUDA%20Graph.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>CUDA Graph</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -85,86 +85,85 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     <div id="content">
 <div class="markdown-body" id="postBody"><p>使用 CUDA 图（CUDA Graph）来加速向量加法操作的示例。<br>
 --》〉该示例展示了如何通过 CUDA 图将一系列 CUDA 操作打包成一个图形，然后在 GPU 上执行这个图形，从而减少内核启动的开销。</p>
-<pre lang="cuda" class="notranslate"><code class="notranslate">#include &lt;cuda_runtime.h&gt;
-#include &lt;iostream&gt;
+<div class="highlight highlight-source-cuda-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cuda_runtime.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
 
-#define N 1000000  // 向量大小
+#<span class="pl-k">define</span> <span class="pl-en">N</span> <span class="pl-c1">1000000</span>  <span class="pl-c"><span class="pl-c">//</span> 向量大小</span>
 
-__global__ void vectorAdd(const float* A, const float* B, float* C, int numElements) {
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i &lt; numElements) {
+<span class="pl-k">__global__</span> <span class="pl-k">void</span> <span class="pl-en">vectorAdd</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* A, <span class="pl-k">const</span> <span class="pl-k">float</span>* B, <span class="pl-k">float</span>* C, <span class="pl-k">int</span> numElements) {
+    <span class="pl-k">int</span> i = <span class="pl-c1">blockDim</span>.<span class="pl-smi">x</span> * <span class="pl-c1">blockIdx</span>.<span class="pl-smi">x</span> + <span class="pl-c1">threadIdx</span>.<span class="pl-smi">x</span>;
+    <span class="pl-k">if</span> (i &lt; numElements) {
         C[i] = A[i] + B[i];
     }
 }
 
-int main() {
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
     cudaStream_t stream;
-    cudaStreamCreate(&amp;stream);
+    <span class="pl-c1">cudaStreamCreate</span>(&amp;stream);
 
-    // 分配主机内存
-    float *h_A = (float*)malloc(N * sizeof(float));
-    float *h_B = (float*)malloc(N * sizeof(float));
-    float *h_C = (float*)malloc(N * sizeof(float));
+    <span class="pl-c"><span class="pl-c">//</span> 分配主机内存</span>
+    <span class="pl-k">float</span> *h_A = (<span class="pl-k">float</span>*)<span class="pl-c1">malloc</span>(N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>));
+    <span class="pl-k">float</span> *h_B = (<span class="pl-k">float</span>*)<span class="pl-c1">malloc</span>(N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>));
+    <span class="pl-k">float</span> *h_C = (<span class="pl-k">float</span>*)<span class="pl-c1">malloc</span>(N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>));
 
-    // 初始化输入向量
-    for (int i = 0; i &lt; N; ++i) {
-        h_A[i] = static_cast&lt;float&gt;(i);
-        h_B[i] = static_cast&lt;float&gt;(i * 2);
+    <span class="pl-c"><span class="pl-c">//</span> 初始化输入向量</span>
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; N; ++i) {
+        h_A[i] = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">float</span>&gt;(i);
+        h_B[i] = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">float</span>&gt;(i * <span class="pl-c1">2</span>);
     }
 
-    // 分配设备内存
-    float *d_A, *d_B, *d_C;
-    cudaMalloc((void**)&amp;d_A, N * sizeof(float));
-    cudaMalloc((void**)&amp;d_B, N * sizeof(float));
-    cudaMalloc((void**)&amp;d_C, N * sizeof(float));
+    <span class="pl-c"><span class="pl-c">//</span> 分配设备内存</span>
+    <span class="pl-k">float</span> *d_A, *d_B, *d_C;
+    <span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_A, N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>));
+    <span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_B, N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>));
+    <span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;d_C, N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>));
 
-    // 创建 CUDA 图
+    <span class="pl-c"><span class="pl-c">//</span> 创建 CUDA 图</span>
     cudaGraph_t graph;
     cudaGraphExec_t graphExec;
-    cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+    <span class="pl-c1">cudaStreamBeginCapture</span>(stream, cudaStreamCaptureModeGlobal);
 
-    // 将数据从主机传输到设备
-    cudaMemcpyAsync(d_A, h_A, N * sizeof(float), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(d_B, h_B, N * sizeof(float), cudaMemcpyHostToDevice, stream);
+    <span class="pl-c"><span class="pl-c">//</span> 将数据从主机传输到设备</span>
+    <span class="pl-c1">cudaMemcpyAsync</span>(d_A, h_A, N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>), cudaMemcpyHostToDevice, stream);
+    <span class="pl-c1">cudaMemcpyAsync</span>(d_B, h_B, N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>), cudaMemcpyHostToDevice, stream);
 
-    // 执行向量加法内核
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
-    vectorAdd&lt;&lt;&lt;blocksPerGrid, threadsPerBlock, 0, stream&gt;&gt;&gt;(d_A, d_B, d_C, N);
+    <span class="pl-c"><span class="pl-c">//</span> 执行向量加法内核</span>
+    <span class="pl-k">int</span> threadsPerBlock = <span class="pl-c1">256</span>;
+    <span class="pl-k">int</span> blocksPerGrid = (N + threadsPerBlock - <span class="pl-c1">1</span>) / threadsPerBlock;
+    vectorAdd<span class="pl-k">&lt;&lt;&lt;blocksPerGrid, threadsPerBlock, <span class="pl-c1">0</span>, stream&gt;&gt;&gt;</span>(d_A, d_B, d_C, N);
 
-    // 将结果从设备传回主机
-    cudaMemcpyAsync(h_C, d_C, N * sizeof(float), cudaMemcpyDeviceToHost, stream);
+    <span class="pl-c"><span class="pl-c">//</span> 将结果从设备传回主机</span>
+    <span class="pl-c1">cudaMemcpyAsync</span>(h_C, d_C, N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>), cudaMemcpyDeviceToHost, stream);
 
-    cudaStreamEndCapture(stream, &amp;graph);
-    cudaGraphInstantiate(&amp;graphExec, graph, NULL, NULL, 0);
+    <span class="pl-c1">cudaStreamEndCapture</span>(stream, &amp;graph);
+    <span class="pl-c1">cudaGraphInstantiate</span>(&amp;graphExec, graph, <span class="pl-c1">NULL</span>, <span class="pl-c1">NULL</span>, <span class="pl-c1">0</span>);
 
-    // 执行图
-    cudaGraphLaunch(graphExec, stream);
-    cudaStreamSynchronize(stream);
+    <span class="pl-c"><span class="pl-c">//</span> 执行图</span>
+    <span class="pl-c1">cudaGraphLaunch</span>(graphExec, stream);
+    <span class="pl-c1">cudaStreamSynchronize</span>(stream);
 
-    // 验证结果
-    for (int i = 0; i &lt; N; ++i) {
-        if (fabs(h_A[i] + h_B[i] - h_C[i]) &gt; 1e-5) {
-            std::cerr &lt;&lt; "Result verification failed at element " &lt;&lt; i &lt;&lt; std::endl;
-            exit(EXIT_FAILURE);
+    <span class="pl-c"><span class="pl-c">//</span> 验证结果</span>
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; N; ++i) {
+        <span class="pl-k">if</span> (<span class="pl-c1">fabs</span>(h_A[i] + h_B[i] - h_C[i]) &gt; <span class="pl-c1">1e-5</span>) {
+            std::cerr &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Result verification failed at element <span class="pl-pds">"</span></span> &lt;&lt; i &lt;&lt; std::endl;
+            <span class="pl-c1">exit</span>(EXIT_FAILURE);
         }
     }
-    std::cout &lt;&lt; "Test PASSED" &lt;&lt; std::endl;
+    std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Test PASSED<span class="pl-pds">"</span></span> &lt;&lt; std::endl;
 
-    // 释放资源
-    cudaGraphExecDestroy(graphExec);
-    cudaGraphDestroy(graph);
-    cudaFree(d_A);
-    cudaFree(d_B);
-    cudaFree(d_C);
-    free(h_A);
-    free(h_B);
-    free(h_C);
-    cudaStreamDestroy(stream);
+    <span class="pl-c"><span class="pl-c">//</span> 释放资源</span>
+    <span class="pl-c1">cudaGraphExecDestroy</span>(graphExec);
+    <span class="pl-c1">cudaGraphDestroy</span>(graph);
+    <span class="pl-c1">cudaFree</span>(d_A);
+    <span class="pl-c1">cudaFree</span>(d_B);
+    <span class="pl-c1">cudaFree</span>(d_C);
+    <span class="pl-c1">free</span>(h_A);
+    <span class="pl-c1">free</span>(h_B);
+    <span class="pl-c1">free</span>(h_C);
+    <span class="pl-c1">cudaStreamDestroy</span>(stream);
 
-    return 0;
-}
-</code></pre>
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
 <p>代码说明：</p>
 <pre class="notranslate"><code class="notranslate">1.	内核函数 vectorAdd： 执行向量加法操作，将输入向量 A 和 B 的对应元素相加，结果存储在向量 C 中。
 2.	主函数 main：

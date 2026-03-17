@@ -21,7 +21,7 @@ BLAS（Basic Linear Algebra Subprograms）是一组标准化的线性代数计�
 <meta property="og:url" content="https://jibinghu.github.io/post/BLAS-ku.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>BLAS库</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -215,46 +215,44 @@ int main() {
 }
 </code></pre>
 <p>Python 使用 BLAS（NumPy）</p>
-<pre lang="python" class="notranslate"><code class="notranslate">import numpy as np
+<div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-k">import</span> <span class="pl-s1">numpy</span> <span class="pl-k">as</span> <span class="pl-s1">np</span>
 
-# Example: Dot product (Level 1)
-x = np.array([1, 2, 3], dtype=np.float32)
-y = np.array([4, 5, 6], dtype=np.float32)
-result = np.dot(x, y)  # BLAS is used internally
-print(result)  # Output: 32.0
+<span class="pl-c"># Example: Dot product (Level 1)</span>
+<span class="pl-s1">x</span> <span class="pl-c1">=</span> <span class="pl-s1">np</span>.<span class="pl-c1">array</span>([<span class="pl-c1">1</span>, <span class="pl-c1">2</span>, <span class="pl-c1">3</span>], <span class="pl-s1">dtype</span><span class="pl-c1">=</span><span class="pl-s1">np</span>.<span class="pl-c1">float32</span>)
+<span class="pl-s1">y</span> <span class="pl-c1">=</span> <span class="pl-s1">np</span>.<span class="pl-c1">array</span>([<span class="pl-c1">4</span>, <span class="pl-c1">5</span>, <span class="pl-c1">6</span>], <span class="pl-s1">dtype</span><span class="pl-c1">=</span><span class="pl-s1">np</span>.<span class="pl-c1">float32</span>)
+<span class="pl-s1">result</span> <span class="pl-c1">=</span> <span class="pl-s1">np</span>.<span class="pl-c1">dot</span>(<span class="pl-s1">x</span>, <span class="pl-s1">y</span>)  <span class="pl-c"># BLAS is used internally</span>
+<span class="pl-en">print</span>(<span class="pl-s1">result</span>)  <span class="pl-c"># Output: 32.0</span>
 
-# Example: Matrix-vector multiplication (Level 2)
-A = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float32)
-x = np.array([1, 1, 1], dtype=np.float32)
-y = np.matmul(A, x)  # BLAS is used
-print(y)  # Output: [ 6. 15.]
+<span class="pl-c"># Example: Matrix-vector multiplication (Level 2)</span>
+<span class="pl-c1">A</span> <span class="pl-c1">=</span> <span class="pl-s1">np</span>.<span class="pl-c1">array</span>([[<span class="pl-c1">1</span>, <span class="pl-c1">2</span>, <span class="pl-c1">3</span>], [<span class="pl-c1">4</span>, <span class="pl-c1">5</span>, <span class="pl-c1">6</span>]], <span class="pl-s1">dtype</span><span class="pl-c1">=</span><span class="pl-s1">np</span>.<span class="pl-c1">float32</span>)
+<span class="pl-s1">x</span> <span class="pl-c1">=</span> <span class="pl-s1">np</span>.<span class="pl-c1">array</span>([<span class="pl-c1">1</span>, <span class="pl-c1">1</span>, <span class="pl-c1">1</span>], <span class="pl-s1">dtype</span><span class="pl-c1">=</span><span class="pl-s1">np</span>.<span class="pl-c1">float32</span>)
+<span class="pl-s1">y</span> <span class="pl-c1">=</span> <span class="pl-s1">np</span>.<span class="pl-c1">matmul</span>(<span class="pl-c1">A</span>, <span class="pl-s1">x</span>)  <span class="pl-c"># BLAS is used</span>
+<span class="pl-en">print</span>(<span class="pl-s1">y</span>)  <span class="pl-c"># Output: [ 6. 15.]</span>
 
-# Example: Matrix multiplication (Level 3)
-B = np.array([[1, 2], [3, 4], [5, 6]], dtype=np.float32)
-C = np.matmul(A, B)  # BLAS is used
-print(C)  # Output: [[22. 28.]
-          #          [49. 64.]]
-</code></pre>
+<span class="pl-c"># Example: Matrix multiplication (Level 3)</span>
+<span class="pl-c1">B</span> <span class="pl-c1">=</span> <span class="pl-s1">np</span>.<span class="pl-c1">array</span>([[<span class="pl-c1">1</span>, <span class="pl-c1">2</span>], [<span class="pl-c1">3</span>, <span class="pl-c1">4</span>], [<span class="pl-c1">5</span>, <span class="pl-c1">6</span>]], <span class="pl-s1">dtype</span><span class="pl-c1">=</span><span class="pl-s1">np</span>.<span class="pl-c1">float32</span>)
+<span class="pl-c1">C</span> <span class="pl-c1">=</span> <span class="pl-s1">np</span>.<span class="pl-c1">matmul</span>(<span class="pl-c1">A</span>, <span class="pl-c1">B</span>)  <span class="pl-c"># BLAS is used</span>
+<span class="pl-en">print</span>(<span class="pl-c1">C</span>)  <span class="pl-c"># Output: [[22. 28.]</span>
+          <span class="pl-c">#          [49. 64.]]</span></pre></div>
 <p>Fortran 使用 BLAS</p>
-<pre lang="fortran" class="notranslate"><code class="notranslate">! Example: General matrix multiplication (Level 3) using SGEMM
-program blas_example
-    implicit none
-    integer :: m, n, k, lda, ldb, ldc
-    real :: alpha, beta
-    real, dimension(2,4) :: A
-    real, dimension(4,3) :: B
-    real, dimension(2,3) :: C
+<div class="highlight highlight-source-fortran"><pre class="notranslate">! Example: General matrix multiplication (Level <span class="pl-c1">3</span>) using SGEMM
+<span class="pl-k">program</span> blas_example
+    <span class="pl-k">implicit none</span>
+    <span class="pl-k">integer</span> <span class="pl-k">::</span> m, n, k, lda, ldb, ldc
+    <span class="pl-k">real</span> <span class="pl-k">::</span> alpha, beta
+    <span class="pl-k">real</span>, <span class="pl-k">dimension</span>(<span class="pl-c1">2</span>,<span class="pl-c1">4</span>) <span class="pl-k">::</span> A
+    <span class="pl-k">real</span>, <span class="pl-k">dimension</span>(<span class="pl-c1">4</span>,<span class="pl-c1">3</span>) <span class="pl-k">::</span> B
+    <span class="pl-k">real</span>, <span class="pl-k">dimension</span>(<span class="pl-c1">2</span>,<span class="pl-c1">3</span>) <span class="pl-k">::</span> C
 
-    m = 2; n = 3; k = 4
-    alpha = 1.0; beta = 0.0
-    A = reshape([1, 2, 3, 4, 5, 6, 7, 8], [2, 4])
-    B = reshape([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [4, 3])
-    C = 0.0
+    m <span class="pl-k">=</span> <span class="pl-c1">2</span>; n <span class="pl-k">=</span> <span class="pl-c1">3</span>; k <span class="pl-k">=</span> <span class="pl-c1">4</span>
+    alpha <span class="pl-k">=</span> <span class="pl-c1">1.0</span>; beta <span class="pl-k">=</span> <span class="pl-c1">0.0</span>
+    A <span class="pl-k">=</span> <span class="pl-k">reshape</span>([<span class="pl-c1">1</span>, <span class="pl-c1">2</span>, <span class="pl-c1">3</span>, <span class="pl-c1">4</span>, <span class="pl-c1">5</span>, <span class="pl-c1">6</span>, <span class="pl-c1">7</span>, <span class="pl-c1">8</span>], [<span class="pl-c1">2</span>, <span class="pl-c1">4</span>])
+    B <span class="pl-k">=</span> <span class="pl-k">reshape</span>([<span class="pl-c1">1</span>, <span class="pl-c1">2</span>, <span class="pl-c1">3</span>, <span class="pl-c1">4</span>, <span class="pl-c1">5</span>, <span class="pl-c1">6</span>, <span class="pl-c1">7</span>, <span class="pl-c1">8</span>, <span class="pl-c1">9</span>, <span class="pl-c1">10</span>, <span class="pl-c1">11</span>, <span class="pl-c1">12</span>], [<span class="pl-c1">4</span>, <span class="pl-c1">3</span>])
+    C <span class="pl-k">=</span> <span class="pl-c1">0.0</span>
 
-    call sgemm('N', 'N', m, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
-    print *, "Result C:", C
-end program blas_example
-</code></pre>
+    <span class="pl-k">call</span> sgemm(<span class="pl-s"><span class="pl-pds">'</span>N<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>N<span class="pl-pds">'</span></span>, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
+    <span class="pl-k">print</span> <span class="pl-k">*</span>, <span class="pl-s"><span class="pl-pds">"</span>Result C:<span class="pl-pds">"</span></span>, C
+<span class="pl-k">end program</span> blas_example</pre></div>
 <p>以上代码展示了 BLAS 的各个层次操作及其在 C、Python 和 Fortran 中的实现。BLAS 提供了高效的矩阵运算支持，是科学和工程计算中必不可少的工具。</p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
