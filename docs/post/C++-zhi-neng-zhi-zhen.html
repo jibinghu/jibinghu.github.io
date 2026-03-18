@@ -17,7 +17,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/C%2B%2B-zhi-neng-zhi-zhen.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>C++智能指针</title>
-<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
 
 
 </head>
@@ -96,10 +96,11 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 •	适用于需要独占资源的场景，且不需要共享所有权时。<br>
 •	非常适合用于管理临时对象或者不打算与其他对象共享的动态分配资源。<br>
 •	示例：</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate">std::unique_ptr&lt;<span class="pl-k">int</span>&gt; <span class="pl-en">ptr1</span>(<span class="pl-k">new</span> <span class="pl-k">int</span>(<span class="pl-c1">10</span>));
-<span class="pl-c"><span class="pl-c">//</span> std::unique_ptr&lt;int&gt; ptr2 = ptr1; // 错误，不能复制 unique_ptr</span>
-std::unique_ptr&lt;<span class="pl-k">int</span>&gt; ptr2 = std::move(ptr1); <span class="pl-c"><span class="pl-c">//</span> 转移所有权</span>
-</pre></div>
+<pre lang="cpp" class="notranslate"><code class="notranslate">std::unique_ptr&lt;int&gt; ptr1(new int(10));
+// std::unique_ptr&lt;int&gt; ptr2 = ptr1; // 错误，不能复制 unique_ptr
+std::unique_ptr&lt;int&gt; ptr2 = std::move(ptr1); // 转移所有权
+
+</code></pre>
 <pre class="notranslate"><code class="notranslate">•	优点：
 •	内存管理自动化，生命周期结束时自动释放资源，避免内存泄漏。
 •	没有额外的引用计数开销，性能较好。
@@ -119,9 +120,10 @@ std::unique_ptr&lt;<span class="pl-k">int</span>&gt; ptr2 = std::move(ptr1); <sp
 •	示例：</p>
 </li>
 </ol>
-<div class="highlight highlight-source-c++"><pre class="notranslate">std::shared_ptr&lt;<span class="pl-k">int</span>&gt; ptr1 = std::make_shared&lt;<span class="pl-k">int</span>&gt;(<span class="pl-c1">10</span>);
-std::shared_ptr&lt;<span class="pl-k">int</span>&gt; ptr2 = ptr1; <span class="pl-c"><span class="pl-c">//</span> 共享所有权，引用计数增加</span>
-</pre></div>
+<pre lang="cpp" class="notranslate"><code class="notranslate">std::shared_ptr&lt;int&gt; ptr1 = std::make_shared&lt;int&gt;(10);
+std::shared_ptr&lt;int&gt; ptr2 = ptr1; // 共享所有权，引用计数增加
+
+</code></pre>
 <pre class="notranslate"><code class="notranslate">•	优点：
 •	能够自动管理共享资源，不需要显式释放内存。
 •	允许多个指针同时指向同一个对象，引用计数跟踪对象的所有者数量。
@@ -142,13 +144,14 @@ std::shared_ptr&lt;<span class="pl-k">int</span>&gt; ptr2 = ptr1; <span class="p
 •	示例：</p>
 </li>
 </ol>
-<div class="highlight highlight-source-c++"><pre class="notranslate">std::shared_ptr&lt;<span class="pl-k">int</span>&gt; ptr1 = std::make_shared&lt;<span class="pl-k">int</span>&gt;(<span class="pl-c1">10</span>);
-std::weak_ptr&lt;<span class="pl-k">int</span>&gt; weakPtr = ptr1; <span class="pl-c"><span class="pl-c">//</span> 不会增加引用计数</span>
-<span class="pl-k">if</span> (<span class="pl-k">auto</span> sharedPtr = weakPtr.lock()) {
-    <span class="pl-c"><span class="pl-c">//</span> 安全地访问对象</span>
+<pre lang="cpp" class="notranslate"><code class="notranslate">std::shared_ptr&lt;int&gt; ptr1 = std::make_shared&lt;int&gt;(10);
+std::weak_ptr&lt;int&gt; weakPtr = ptr1; // 不会增加引用计数
+if (auto sharedPtr = weakPtr.lock()) {
+    // 安全地访问对象
     std::cout &lt;&lt; *sharedPtr &lt;&lt; std::endl;
 }
-</pre></div>
+
+</code></pre>
 <pre class="notranslate"><code class="notranslate">•	优点：
 •	不会影响 shared_ptr 的引用计数，避免循环引用问题。
 •	能够安全地访问对象并检查对象是否依然存在。

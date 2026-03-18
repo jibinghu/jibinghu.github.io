@@ -17,7 +17,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/Java%2B-wei-xin-xiao-cheng-xu-_Web-jie-shao.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>Java+微信小程序_Web介绍</title>
-<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
 
 
 </head>
@@ -121,19 +121,20 @@ Spring 是一个庞大的开源框架家族，提供了一系列用于构建现�
 <p><a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/84915dc4e42137eb4747c9bf5ead640d45832a045c56d8c878483f053c4f240b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f696d675f636f6e766572742f30646464626631653133383838353732323637376539303839626564303033362e706e67"><img src="https://camo.githubusercontent.com/84915dc4e42137eb4747c9bf5ead640d45832a045c56d8c878483f053c4f240b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f696d675f636f6e766572742f30646464626631653133383838353732323637376539303839626564303033362e706e67" height="300" data-canonical-src="https://img-blog.csdnimg.cn/img_convert/0dddbf1e138885722677e9089bed0036.png" style="max-width: 100%; height: auto; max-height: 300px;"></a></p>
 <p>通过浏览 Spring 的官方网站，我们可以看到 Spring Boot 已经成为 Spring 中顶级的子项目。自 2014 年 4 月发布 1.0.0 版本以来，Spring Boot 俨然已经发展为 Java EE 领域开发 Web 应用程序的首选框架。</p>
 <p>🥮：使用 Spring Boot 开发一个 RESTful风格 的 HTTP 端点所需要做的编码工作，如下所示：</p>
-<div class="highlight highlight-source-java"><pre class="notranslate"><span class="pl-c1">@</span><span class="pl-c1">SpringBootApplication</span>
-<span class="pl-c1">@</span><span class="pl-c1">RestController</span>
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-smi">DemoApplication</span> {
+<pre lang="java" class="notranslate"><code class="notranslate">@SpringBootApplication
+@RestController
+public class DemoApplication {
  
-    <span class="pl-c1">@</span><span class="pl-c1">GetMapping</span>(<span class="pl-s">"/helloworld"</span>)
-	<span class="pl-k">public</span> <span class="pl-smi">String</span> <span class="pl-en">hello</span>() { 
-	    <span class="pl-k">return</span> <span class="pl-s">"Hello World!"</span>;
+    @GetMapping("/helloworld")
+	public String hello() { 
+	    return "Hello World!";
 	}
  
-	<span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">void</span> <span class="pl-en">main</span>(<span class="pl-smi">String</span>[] <span class="pl-s1">args</span>) {
-        <span class="pl-smi">SpringApplication</span>.<span class="pl-en">run</span>(<span class="pl-smi">DemoApplication</span>.<span class="pl-k">class</span>, <span class="pl-s1">args</span>);
+	public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
     }
-}</pre></div>
+}
+</code></pre>
 <p>这是一个经典的“Hello World”程序，而且使用 Spring Boot 来构建这样一个支持 RESTful 风格的 Web 应用程序只需要几秒钟。一旦创建了一个 Spring Boot 应用程序，并添加类似上面的 DemoApplication 类，我们就可以启动 Spring Boot 内置的 Web 服务器并监听 8080 端口，剩余的一切工作 Spring Boot 都帮你自动完成。</p>
 <blockquote>
 <p>Spring Boot 并没有像以前使用 Spring MVC 一样需要指定一大堆关于 HTTP 请求和响应的 XML 配置，Spring Boot应用大量第三方库几乎可以零配置的使用。事实上，Spring Boot 的运行过程同样还是依赖于 Spring MVC，但是它把原本需要开发人员指定的各种配置项设置了默认值，并内置在了运行时环境中，例如默认的服务器端口就是 8080，如果我们不需要对这些配置项有定制化需求，就可以不做任何的处理，采用既定的开发约定即可。这就是 Spring Boot 所倡导的约定优于配置（Convention over Configuration）设计理念。</p>
