@@ -21,7 +21,7 @@
 <meta property="og:url" content="https://jibinghu.github.io/post/cuda%20ptx%20-sui-shou-ji-%20-%20lop3.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>cuda ptx 随手记 - lop3</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -45,7 +45,17 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     body {padding: 8px;}
     .postTitle{font-size:24px;}
 }
-
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
 </style>
 
 
@@ -127,8 +137,7 @@ $$</p>
 <li>在 PTX 中写 <code class="notranslate">lop3.b32 d, a, b, c, immLut</code></li>
 </ol>
 <p>StackOverflow 上有示例，假设这个函数对应的 <code class="notranslate">immLut = 0x54</code>（这只是举例），就写成：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">lop3.b32 %d, %a, %b, %c, 0x54;
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">lop3.b32 %d</span><span class="pl-s1">,</span><span class="pl-en"> %a</span><span class="pl-s1">,</span><span class="pl-en"> %b</span><span class="pl-s1">,</span><span class="pl-en"> %c</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x54</span><span class="pl-c">;</span></pre></div>
 <p>这个指令就对每个位执行相应的布尔逻辑。([<a href="https://stackoverflow.com/questions/37149662/how-to-write-lop3-based-instructions-for-maxwell-and-up-nvidia-architecture?utm_source=chatgpt.com" rel="nofollow">Stack Overflow</a>]<a href="https://stackoverflow.com/questions/37149662/how-to-write-lop3-based-instructions-for-maxwell-and-up-nvidia-architecture?utm_source=chatgpt.com" title="cuda - How to write LOP3 based instructions for Maxwell and up NVIDIA ..." rel="nofollow">1</a>)</p>
 <hr>
 <h2>LOP3 vs PRMT 的区别 / 场景对比</h2>
@@ -146,103 +155,102 @@ $$</p>
 </blockquote>
 </li>
 </ul>
-<pre lang="cpp" class="notranslate"><code class="notranslate">__device__ uint4 dequantize_s4_to_fp16x2(uint32_t const&amp; source) {
-#if defined(__CUDA_ARCH__) &amp;&amp; __CUDA_ARCH__ &lt; 750
-  assert(false);
-#else
+<div class="highlight highlight-source-c++"><pre class="notranslate">__device__ uint4 <span class="pl-en">dequantize_s4_to_fp16x2</span>(<span class="pl-c1">uint32_t</span> <span class="pl-k">const</span>&amp; source) {
+#<span class="pl-k">if</span> defined(__CUDA_ARCH__) &amp;&amp; __CUDA_ARCH__ &lt; 750
+  <span class="pl-k">assert</span>(<span class="pl-c1">false</span>);
+#<span class="pl-k">else</span>
   uint4 result;
-  // 现在拿到的 source 是 int4 类型，要转成 fp16 类型
-  uint32_t* h = reinterpret_cast&lt;uint32_t*&gt;(&amp;result);
-  uint32_t const i4s = reinterpret_cast&lt;uint32_t const&amp;&gt;(source);
+  <span class="pl-c"><span class="pl-c">//</span> 现在拿到的 source 是 int4 类型，要转成 fp16 类型</span>
+  <span class="pl-c1">uint32_t</span>* h = <span class="pl-k">reinterpret_cast</span>&lt;<span class="pl-c1">uint32_t</span>*&gt;(&amp;result);
+  <span class="pl-c1">uint32_t</span> <span class="pl-k">const</span> i4s = <span class="pl-k">reinterpret_cast</span>&lt;<span class="pl-c1">uint32_t</span> <span class="pl-k">const</span>&amp;&gt;(source);
 
-  // First, we extract the i4s and construct an intermediate fp16 number.
-  // 0xcc = 0b1100 1100, 0xaa = 0b1010 1010
-  // 这里 immuLut 是 lop3 的操作符
-  static constexpr uint32_t immLut = (0xf0 &amp; 0xcc) | 0xaa;
-  // 0~7个int4
-  static constexpr uint32_t BOTTOM_MASK = 0x000f000f;
-  static constexpr uint32_t TOP_MASK = 0x00f000f0;
-  // 0x6400 == 0b0110 0100 0000 0000 ### 1 5=25 8
-  // 这里 6400 的作用就是把 int4或者说int8转为 fp16，exp=25(-15)
-  // 最后还要减一个 6480，也就是减一个(1024+128)=1152，其中1024是科学计数法的1.0中的1，128是int转uint时多加的。
-  static constexpr uint32_t I4s_TO_F16s_MAGIC_NUM = 0x64006400;
+  <span class="pl-c"><span class="pl-c">//</span> First, we extract the i4s and construct an intermediate fp16 number.</span>
+  <span class="pl-c"><span class="pl-c">//</span> 0xcc = 0b1100 1100, 0xaa = 0b1010 1010</span>
+  <span class="pl-c"><span class="pl-c">//</span> 这里 immuLut 是 lop3 的操作符</span>
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> immLut = (<span class="pl-c1">0xf0</span> &amp; <span class="pl-c1">0xcc</span>) | <span class="pl-c1">0xaa</span>;
+  <span class="pl-c"><span class="pl-c">//</span> 0~7个int4</span>
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> BOTTOM_MASK = <span class="pl-c1">0x000f000f</span>;
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> TOP_MASK = <span class="pl-c1">0x00f000f0</span>;
+  <span class="pl-c"><span class="pl-c">//</span> 0x6400 == 0b0110 0100 0000 0000 ### 1 5=25 8</span>
+  <span class="pl-c"><span class="pl-c">//</span> 这里 6400 的作用就是把 int4或者说int8转为 fp16，exp=25(-15)</span>
+  <span class="pl-c"><span class="pl-c">//</span> 最后还要减一个 6480，也就是减一个(1024+128)=1152，其中1024是科学计数法的1.0中的1，128是int转uint时多加的。</span>
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> I4s_TO_F16s_MAGIC_NUM = <span class="pl-c1">0x64006400</span>;
 
-  // Note that the entire sequence only requires 1 shift instruction. This is
-  // thanks to the register packing format and the fact that we force our
-  // integers to be unsigned, and account for this in the fp16 subtractions. In
-  // addition, I exploit the fact that sub and fma have the same throughput in
-  // order to convert elt_23 and elt_67 to fp16 without having to shift them to
-  // the bottom bits before hand.
+  <span class="pl-c"><span class="pl-c">//</span> Note that the entire sequence only requires 1 shift instruction. This is</span>
+  <span class="pl-c"><span class="pl-c">//</span> thanks to the register packing format and the fact that we force our</span>
+  <span class="pl-c"><span class="pl-c">//</span> integers to be unsigned, and account for this in the fp16 subtractions. In</span>
+  <span class="pl-c"><span class="pl-c">//</span> addition, I exploit the fact that sub and fma have the same throughput in</span>
+  <span class="pl-c"><span class="pl-c">//</span> order to convert elt_23 and elt_67 to fp16 without having to shift them to</span>
+  <span class="pl-c"><span class="pl-c">//</span> the bottom bits before hand.</span>
 
-  // Shift right by 8 to now consider elt_45 and elt_67. Issue first to hide RAW
-  // dependency if we issue immediately before required.
-  const uint32_t top_i4s = i4s &gt;&gt; 8;
-  // Extract elt_01 - (i4s &amp; 0x000f000f) | 0x64006400
-  asm volatile("lop3.b32 %0, %1, %2, %3, %4;\n"
-               : "=r"(h[0])
-               : "r"(i4s), "n"(BOTTOM_MASK), "n"(I4s_TO_F16s_MAGIC_NUM),
-                 "n"(immLut));
-  // Extract elt_23 (i4s &amp; 0x00f000f0) | 0x64006400
-  asm volatile("lop3.b32 %0, %1, %2, %3, %4;\n"
-               : "=r"(h[1])
-               : "r"(i4s), "n"(TOP_MASK), "n"(I4s_TO_F16s_MAGIC_NUM),
-                 "n"(immLut));
-  // Extract elt_45 (top_i4s &amp; 0x000f000f) | 0x64006400
-  asm volatile("lop3.b32 %0, %1, %2, %3, %4;\n"
-               : "=r"(h[2])
-               : "r"(top_i4s), "n"(BOTTOM_MASK), "n"(I4s_TO_F16s_MAGIC_NUM),
-                 "n"(immLut));
-  // Extract elt_67 (top_i4s &amp; 0x00f000f0) | 0x64006400
-  asm volatile("lop3.b32 %0, %1, %2, %3, %4;\n"
-               : "=r"(h[3])
-               : "r"(top_i4s), "n"(TOP_MASK), "n"(I4s_TO_F16s_MAGIC_NUM),
-                 "n"(immLut));
+  <span class="pl-c"><span class="pl-c">//</span> Shift right by 8 to now consider elt_45 and elt_67. Issue first to hide RAW</span>
+  <span class="pl-c"><span class="pl-c">//</span> dependency if we issue immediately before required.</span>
+  <span class="pl-k">const</span> <span class="pl-c1">uint32_t</span> top_i4s = i4s &gt;&gt; <span class="pl-c1">8</span>;
+  <span class="pl-c"><span class="pl-c">//</span> Extract elt_01 - (i4s &amp; 0x000f000f) | 0x64006400</span>
+  <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>lop3.b32 %0, %1, %2, %3, %4;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
+               : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">0</span>])
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(BOTTOM_MASK), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
+                 <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(immLut));
+  <span class="pl-c"><span class="pl-c">//</span> Extract elt_23 (i4s &amp; 0x00f000f0) | 0x64006400</span>
+  <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>lop3.b32 %0, %1, %2, %3, %4;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
+               : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">1</span>])
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(TOP_MASK), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
+                 <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(immLut));
+  <span class="pl-c"><span class="pl-c">//</span> Extract elt_45 (top_i4s &amp; 0x000f000f) | 0x64006400</span>
+  <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>lop3.b32 %0, %1, %2, %3, %4;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
+               : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">2</span>])
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(top_i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(BOTTOM_MASK), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
+                 <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(immLut));
+  <span class="pl-c"><span class="pl-c">//</span> Extract elt_67 (top_i4s &amp; 0x00f000f0) | 0x64006400</span>
+  <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>lop3.b32 %0, %1, %2, %3, %4;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
+               : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">3</span>])
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(top_i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(TOP_MASK), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
+                 <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(immLut));
 
-  // I use inline PTX below because I am not sure if the compiler will emit
-  // float2half instructions if I use the half2 ctor. In this case, I chose
-  // performance reliability over code readability.
+  <span class="pl-c"><span class="pl-c">//</span> I use inline PTX below because I am not sure if the compiler will emit</span>
+  <span class="pl-c"><span class="pl-c">//</span> float2half instructions if I use the half2 ctor. In this case, I chose</span>
+  <span class="pl-c"><span class="pl-c">//</span> performance reliability over code readability.</span>
 
-  // This is the half2 {1032, 1032} represented as an integer.
-  // static constexpr uint32_t FP16_TOP_MAGIC_NUM = 0x64086408;
-  // Haotian: subtract {1024, 1024} instead, we do not need to map to [-8, 7]
-  // 定义用于最终转换的魔数常量
-  // 表示fp16格式的{1024, 1024}
-  static constexpr uint32_t FP16_TOP_MAGIC_NUM = 0x64006400;
-  // This is the half2 {1 / 16, 1 / 16} represented as an integer.
-  // 表示fp16格式的{1 / 16, 1 / 16}，用于缩放高4位的值
-  static constexpr uint32_t ONE_SIXTEENTH = 0x2c002c00;
-  // This is the half2 {-72, -72} represented as an integer.
-  // static constexpr uint32_t NEG_72 = 0xd480d480;
-  // Haotian: Let's use {-64, -64}.
-  // 表示fp16格式的{-64, -64}，用于偏移校正
-  static constexpr uint32_t NEG_64 = 0xd400d400;
+  <span class="pl-c"><span class="pl-c">//</span> This is the half2 {1032, 1032} represented as an integer.</span>
+  <span class="pl-c"><span class="pl-c">//</span> static constexpr uint32_t FP16_TOP_MAGIC_NUM = 0x64086408;</span>
+  <span class="pl-c"><span class="pl-c">//</span> Haotian: subtract {1024, 1024} instead, we do not need to map to [-8, 7]</span>
+  <span class="pl-c"><span class="pl-c">//</span> 定义用于最终转换的魔数常量</span>
+  <span class="pl-c"><span class="pl-c">//</span> 表示fp16格式的{1024, 1024}</span>
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> FP16_TOP_MAGIC_NUM = <span class="pl-c1">0x64006400</span>;
+  <span class="pl-c"><span class="pl-c">//</span> This is the half2 {1 / 16, 1 / 16} represented as an integer.</span>
+  <span class="pl-c"><span class="pl-c">//</span> 表示fp16格式的{1 / 16, 1 / 16}，用于缩放高4位的值</span>
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> ONE_SIXTEENTH = <span class="pl-c1">0x2c002c00</span>;
+  <span class="pl-c"><span class="pl-c">//</span> This is the half2 {-72, -72} represented as an integer.</span>
+  <span class="pl-c"><span class="pl-c">//</span> static constexpr uint32_t NEG_72 = 0xd480d480;</span>
+  <span class="pl-c"><span class="pl-c">//</span> Haotian: Let's use {-64, -64}.</span>
+  <span class="pl-c"><span class="pl-c">//</span> 表示fp16格式的{-64, -64}，用于偏移校正</span>
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> NEG_64 = <span class="pl-c1">0xd400d400</span>;
 
-  // 交织？
-  // e7 e3 e5 e1 e6 e2 e4 e0
+  <span class="pl-c"><span class="pl-c">//</span> 交织？</span>
+  <span class="pl-c"><span class="pl-c">//</span> e7 e3 e5 e1 e6 e2 e4 e0</span>
 
-  // Finally, we construct the output numbers.
-  // Convert elt_01
-  asm volatile("sub.f16x2 %0, %1, %2;\n"
-               : "=r"(h[0])
-               : "r"(h[0]), "r"(FP16_TOP_MAGIC_NUM));
-  // Convert elt_23
-  asm volatile("fma.rn.f16x2 %0, %1, %2, %3;\n"
-               : "=r"(h[1])
-               : "r"(h[1]), "r"(ONE_SIXTEENTH), "r"(NEG_64));
-  // Convert elt_45
-  asm volatile("sub.f16x2 %0, %1, %2;\n"
-               : "=r"(h[2])
-               : "r"(h[2]), "r"(FP16_TOP_MAGIC_NUM));
-  // Convert elt_67
-  asm volatile("fma.rn.f16x2 %0, %1, %2, %3;\n"
-               : "=r"(h[3])
-               : "r"(h[3]), "r"(ONE_SIXTEENTH), "r"(NEG_64));
+  <span class="pl-c"><span class="pl-c">//</span> Finally, we construct the output numbers.</span>
+  <span class="pl-c"><span class="pl-c">//</span> Convert elt_01</span>
+  <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>sub.f16x2 %0, %1, %2;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
+               : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">0</span>])
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">0</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(FP16_TOP_MAGIC_NUM));
+  <span class="pl-c"><span class="pl-c">//</span> Convert elt_23</span>
+  <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>fma.rn.f16x2 %0, %1, %2, %3;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
+               : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">1</span>])
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">1</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(ONE_SIXTEENTH), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(NEG_64));
+  <span class="pl-c"><span class="pl-c">//</span> Convert elt_45</span>
+  <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>sub.f16x2 %0, %1, %2;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
+               : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">2</span>])
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">2</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(FP16_TOP_MAGIC_NUM));
+  <span class="pl-c"><span class="pl-c">//</span> Convert elt_67</span>
+  <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>fma.rn.f16x2 %0, %1, %2, %3;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
+               : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">3</span>])
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">3</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(ONE_SIXTEENTH), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(NEG_64));
 
-  return result;
-#endif
-  __builtin_unreachable();  // Suppress missing return statement warning
-}
-</code></pre>
+  <span class="pl-k">return</span> result;
+#<span class="pl-k">endif</span>
+  <span class="pl-c1">__builtin_unreachable</span>();  <span class="pl-c"><span class="pl-c">//</span> Suppress missing return statement warning</span>
+}</pre></div>
 <hr></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
@@ -268,7 +276,7 @@ if("05/28/2024"!=""){
 </script></div>
 </body>
 <script>
-var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
 var utterancesLoad=0;
 
 let themeSettings={
@@ -342,7 +350,70 @@ function iFrameLoading(){
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
 
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
 
 </script>
 <script>MathJax = {tex: {inlineMath: [["$", "$"]]}};</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>

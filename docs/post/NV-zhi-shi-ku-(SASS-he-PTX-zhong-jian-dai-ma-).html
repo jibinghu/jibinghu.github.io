@@ -21,7 +21,7 @@ SASS(Streaming Assembler) 和 PTX(Parallel Thread Execution)都是 NVIDIA CUDA �
 <meta property="og:url" content="https://jibinghu.github.io/post/NV-zhi-shi-ku-%28SASS-he-PTX-zhong-jian-dai-ma-%29.html">
 <meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
 <title>NV知识库(SASS和PTX中间代码)</title>
-
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
 
 
 </head>
@@ -45,7 +45,17 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     body {padding: 8px;}
     .postTitle{font-size:24px;}
 }
-
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
 </style>
 
 
@@ -90,24 +100,22 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <strong>不可移植</strong>：SASS 是硬件绑定的，不同架构之间的 SASS 代码不可互换。因此，SASS 代码不能像 PTX 那样容易移植到不同的硬件架构上。<br>
 <strong>性能调优</strong>：高级开发者可以查看或手动调整 SASS 代码以进行性能调优，但这是非常底层的操作，通常只有在需要极致性能优化时才会涉及。</p>
 <h4>eg.</h4>
-<pre lang="cuda" class="notranslate"><code class="notranslate">__global__ void test(int&amp; c){
-    c= blockIdx.x;
-}
-</code></pre>
+<div class="highlight highlight-source-cuda-c++"><pre class="notranslate"><span class="pl-k">__global__</span> <span class="pl-k">void</span> <span class="pl-en">test</span>(<span class="pl-k">int</span>&amp; c){
+    c= <span class="pl-c1">blockIdx</span>.<span class="pl-smi">x</span>;
+}</pre></div>
 <p>编译成PTX代码：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">.visible .entry test(int&amp;)( 
-        .param .u64 test(int&amp;)_param_0
-)
-{
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">.visible .entry </span><span class="pl-k">test</span><span class="pl-en">(</span><span class="pl-k">int</span><span class="pl-en">&amp;)( </span>
+<span class="pl-en">        .param .u64 </span><span class="pl-k">test</span><span class="pl-en">(</span><span class="pl-k">int</span><span class="pl-en">&amp;)_param_0</span>
+<span class="pl-en">)</span>
+<span class="pl-en">{</span>
 
-        ld.param.u64    %rd1, [test(int&amp;)_param_0]; 从函数的参数寄存器中加载参数（即int&amp;的地址）到通用寄存器%rd1中
-        cvta.to.global.u64      %rd2, %rd1; 将这个地址转换为全局内存地址，并存储在寄存器%rd2中
-        mov.u32         %r1, %ctaid.x; 将当前线程块的ID（%ctaid.x）存储到寄存器%r1中。%ctaid.x是一个内置的PTX变量，表示当前线程块在网格中的x维索引
-        st.global.u32   [%rd2], %r1; 将线程块的ID（存储在%r1中）写入到全局内存中%rd2指向的地址。也就是说，test函数把线程块ID存储在传入的int&amp;所指向的位置
-        ret;
+<span class="pl-en">        ld.param.u64    %rd1</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-k">test</span><span class="pl-en">(</span><span class="pl-k">int</span><span class="pl-en">&amp;)_param_0</span><span class="pl-s1">]</span><span class="pl-c">; 从函数的参数寄存器中加载参数（即int&amp;的地址）到通用寄存器%rd1中</span>
+<span class="pl-en">        cvta.to.</span><span class="pl-c1">global</span><span class="pl-en">.u64      %rd2</span><span class="pl-s1">,</span><span class="pl-en"> %rd1</span><span class="pl-c">; 将这个地址转换为全局内存地址，并存储在寄存器%rd2中</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.u32         %r1</span><span class="pl-s1">,</span><span class="pl-en"> %ctaid.x</span><span class="pl-c">; 将当前线程块的ID（%ctaid.x）存储到寄存器%r1中。%ctaid.x是一个内置的PTX变量，表示当前线程块在网格中的x维索引</span>
+<span class="pl-en">        st.</span><span class="pl-c1">global</span><span class="pl-en">.u32   </span><span class="pl-s1">[</span><span class="pl-en">%rd2</span><span class="pl-s1">],</span><span class="pl-en"> %r1</span><span class="pl-c">; 将线程块的ID（存储在%r1中）写入到全局内存中%rd2指向的地址。也就是说，test函数把线程块ID存储在传入的int&amp;所指向的位置</span>
+<span class="pl-en">        </span><span class="pl-k">ret</span><span class="pl-c">;</span>
 
-}
-</code></pre>
+<span class="pl-en">}</span></pre></div>
 <p>具体架构与 SM 关系：</p>
 <ul>
 <li>sm50: Maxswell 麦克斯韦架构。比如sm52对应GTX 980.</li>
@@ -118,170 +126,160 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <li>sm90: Hopper 哈珀架构。比如H100, RTX4080</li>
 </ul>
 <p>下面我们将其编译成sm50架构的SASS代码：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">test(int&amp;):
- MOV R1, c[0x0][0x20]  ; 将寄存器c[0x0][0x20]的内容移动到寄存器R1，c[0x0][0x20]通常是%tid.x
- MOV R2, c[0x0][0x140]  ； 将寄存器c[0x0][0x140]的内容移动到寄存器R2。c[0x0][0x140]通常存储的是传递给内核的第一个参数的地址
- S2R R0, SR_CTAID.X         ; S2R指令将特殊寄存器SR_CTAID.X的值加载到寄存器R0中。SR_CTAID.X表示当前线程块在网格中的X维索引
- MOV R3, c[0x0][0x144]  ; 将寄存器c[0x0][0x144]的内容移动到寄存器R3
- STG.E [R2], R0  ; STG.E指令是一个存储指令，将寄存器R0的值存储到寄存器R2所指向的全局内存地址中
- NOP 
- NOP 
- EXIT 
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-k">test</span><span class="pl-en">(</span><span class="pl-k">int</span><span class="pl-en">&amp;):</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x20</span><span class="pl-s1">]</span><span class="pl-c">  ; 将寄存器c[0x0][0x20]的内容移动到寄存器R1，c[0x0][0x20]通常是%tid.x</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x140</span><span class="pl-s1">]</span><span class="pl-en">  ； 将寄存器c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x140</span><span class="pl-s1">]</span><span class="pl-en">的内容移动到寄存器R2。c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x140</span><span class="pl-s1">]</span><span class="pl-en">通常存储的是传递给内核的第一个参数的地址</span>
+<span class="pl-en"> S2R R0</span><span class="pl-s1">,</span><span class="pl-en"> SR_CTAID.X</span><span class="pl-c">         ; S2R指令将特殊寄存器SR_CTAID.X的值加载到寄存器R0中。SR_CTAID.X表示当前线程块在网格中的X维索引</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x144</span><span class="pl-s1">]</span><span class="pl-c">  ; 将寄存器c[0x0][0x144]的内容移动到寄存器R3</span>
+<span class="pl-en"> STG.E </span><span class="pl-s1">[</span><span class="pl-en">R2</span><span class="pl-s1">],</span><span class="pl-en"> R0</span><span class="pl-c">  ; STG.E指令是一个存储指令，将寄存器R0的值存储到寄存器R2所指向的全局内存地址中</span>
+<span class="pl-en"> </span><span class="pl-k">NOP</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">NOP</span><span class="pl-en"> </span>
+<span class="pl-en"> EXIT </span></pre></div>
 <p>与PTX不同，麦克斯韦架构下读取内存没有用ld指令，而仍然是MOV指令。而读取特殊寄存器SR_CTAID有专门指令S2R。写全局内存有指令STG.<br>
 sm60架构汇编：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">test(int&amp;):
- MOV R1, c[0x0][0x20] 
- MOV R2, c[0x0][0x140] 
- S2R R0, SR_CTAID.X         
- MOV R3, c[0x0][0x144] 
- STG.E [R2], R0 
- NOP 
- NOP 
- EXIT
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-k">test</span><span class="pl-en">(</span><span class="pl-k">int</span><span class="pl-en">&amp;):</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x20</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x140</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> S2R R0</span><span class="pl-s1">,</span><span class="pl-en"> SR_CTAID.X         </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x144</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> STG.E </span><span class="pl-s1">[</span><span class="pl-en">R2</span><span class="pl-s1">],</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> </span><span class="pl-k">NOP</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">NOP</span><span class="pl-en"> </span>
+<span class="pl-en"> EXIT</span></pre></div>
 <p>再看sm70架构汇编：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">test(int&amp;):
- MOV R1, c[0x0][0x28] 
- @!PT SHFL.IDX PT, RZ, RZ, RZ, RZ 
- S2R R5, SR_CTAID.X 
- MOV R2, c[0x0][0x160] 
- MOV R3, c[0x0][0x164] 
- STG.E.SYS [R2], R5 
- EXIT
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-k">test</span><span class="pl-en">(</span><span class="pl-k">int</span><span class="pl-en">&amp;):</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x28</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> @!PT SHFL.IDX PT</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> S2R R5</span><span class="pl-s1">,</span><span class="pl-en"> SR_CTAID.X </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x160</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x164</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> STG.E.SYS </span><span class="pl-s1">[</span><span class="pl-en">R2</span><span class="pl-s1">],</span><span class="pl-en"> R5 </span>
+<span class="pl-en"> EXIT</span></pre></div>
 <blockquote>
 <p>伏特架构的代码出现了线程同步指令SHFL.IDX，这是一种用于线程之间通信的指令，可以在一个线程中访问另一个线程的寄存器值。这里所有的源和目标寄存器都是RZ，这是一个特殊的寄存器，总是包含0。@!PT表示这个指令只在谓词寄存器PT的值为false时执行，但是PT始终为true，所以这个SHFL.IDX指令不会执行任何实际操作。</p>
 </blockquote>
-<pre lang="asm" class="notranslate"><code class="notranslate">test(int&amp;):
- MOV R1, c[0x0][0x28] 
- S2R R0, SR_CTAID.X 
- ULDC.64 UR4, c[0x0][0x160] 
- STG.E.SYS [UR4], R0 
- EXIT 
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-k">test</span><span class="pl-en">(</span><span class="pl-k">int</span><span class="pl-en">&amp;):</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x28</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> S2R R0</span><span class="pl-s1">,</span><span class="pl-en"> SR_CTAID.X </span>
+<span class="pl-en"> ULDC.</span><span class="pl-c1">64</span><span class="pl-en"> UR4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x160</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> STG.E.SYS </span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">],</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> EXIT </span></pre></div>
 <p>图灵架构增加了ULDC指令，它用来从常量内存中读取到通用寄存器中。<br>
 sm80架构sass:</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">test(int&amp;):
- MOV R1, c[0x0][0x28] 
- S2R R5, SR_CTAID.X 
- MOV R2, c[0x0][0x160] 
- ULDC.64 UR4, c[0x0][0x118] 
- MOV R3, c[0x0][0x164] 
- STG.E [R2.64], R5 
- EXIT 
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-k">test</span><span class="pl-en">(</span><span class="pl-k">int</span><span class="pl-en">&amp;):</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x28</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> S2R R5</span><span class="pl-s1">,</span><span class="pl-en"> SR_CTAID.X </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x160</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> ULDC.</span><span class="pl-c1">64</span><span class="pl-en"> UR4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x118</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x164</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> STG.E </span><span class="pl-s1">[</span><span class="pl-en">R2.</span><span class="pl-c1">64</span><span class="pl-s1">],</span><span class="pl-en"> R5 </span>
+<span class="pl-en"> EXIT </span></pre></div>
 <p>sm90架构sass:</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">test(int&amp;):
- LDC R1, c[0x0][0x28] 
- S2R R5, SR_CTAID.X 
- LDC.64 R2, c[0x0][0x210] 
- ULDC.64 UR4, c[0x0][0x208] 
- STG.E desc[UR4][R2.64], R5 
- EXIT
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-k">test</span><span class="pl-en">(</span><span class="pl-k">int</span><span class="pl-en">&amp;):</span>
+<span class="pl-en"> LDC R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x28</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> S2R R5</span><span class="pl-s1">,</span><span class="pl-en"> SR_CTAID.X </span>
+<span class="pl-en"> LDC.</span><span class="pl-c1">64</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x210</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> ULDC.</span><span class="pl-c1">64</span><span class="pl-en"> UR4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x208</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> STG.E desc</span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">][</span><span class="pl-en">R2.</span><span class="pl-c1">64</span><span class="pl-s1">],</span><span class="pl-en"> R5 </span>
+<span class="pl-en"> EXIT</span></pre></div>
 <p>sm80和90没有实质上的变化。</p>
 <h2>编译和反汇编工具</h2>
 <p>接下来通过完整流程对 cuda 代码进行分析：<br>
 首先是设备代码：</p>
-<pre lang="cuda" class="notranslate"><code class="notranslate">__global__ void sine(double* a) {
-    int i = threadIdx.x;
-    a[i] = sin(a[i]);
-}
-</code></pre>
+<div class="highlight highlight-source-cuda-c++"><pre class="notranslate"><span class="pl-k">__global__</span> <span class="pl-k">void</span> <span class="pl-en">sine</span>(<span class="pl-k">double</span>* a) {
+    <span class="pl-k">int</span> i = <span class="pl-c1">threadIdx</span>.<span class="pl-smi">x</span>;
+    a[i] = <span class="pl-c1">sin</span>(a[i]);
+}</pre></div>
 <p>然后我们加上CPU和GPU之间内存来回复制以及错误检查的代码：</p>
-<pre lang="cuda" class="notranslate"><code class="notranslate">// Helper function for using CUDA to add vectors in parallel.
-cudaError_t sineWithCuda(double* a, unsigned int size)
+<div class="highlight highlight-source-cuda-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> Helper function for using CUDA to add vectors in parallel.</span>
+cudaError_t <span class="pl-en">sineWithCuda</span>(<span class="pl-k">double</span>* a, <span class="pl-k">unsigned</span> <span class="pl-k">int</span> size)
 {
-    double* dev_a = 0;
+    <span class="pl-k">double</span>* dev_a = <span class="pl-c1">0</span>;
     cudaError_t cudaStatus;
 
-    // Choose which GPU to run on, change this on a multi-GPU system.
-    cudaStatus = cudaSetDevice(0);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-        goto Error;
+    <span class="pl-c"><span class="pl-c">//</span> Choose which GPU to run on, change this on a multi-GPU system.</span>
+    cudaStatus = <span class="pl-c1">cudaSetDevice</span>(<span class="pl-c1">0</span>);
+    <span class="pl-k">if</span> (cudaStatus != cudaSuccess) {
+        <span class="pl-c1">fprintf</span>(stderr, <span class="pl-s"><span class="pl-pds">"</span>cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?<span class="pl-pds">"</span></span>);
+        <span class="pl-k">goto</span> Error;
     }
 
-    cudaStatus = cudaMalloc((void**)&amp;dev_a, size * sizeof(double));
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
-        goto Error;
+    cudaStatus = <span class="pl-c1">cudaMalloc</span>((<span class="pl-k">void</span>**)&amp;dev_a, size * <span class="pl-k">sizeof</span>(<span class="pl-k">double</span>));
+    <span class="pl-k">if</span> (cudaStatus != cudaSuccess) {
+        <span class="pl-c1">fprintf</span>(stderr, <span class="pl-s"><span class="pl-pds">"</span>cudaMalloc failed!<span class="pl-pds">"</span></span>);
+        <span class="pl-k">goto</span> Error;
     }
 
-    // Copy input vectors from host memory to GPU buffers.
-    cudaStatus = cudaMemcpy(dev_a, a, size * sizeof(double), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
+    <span class="pl-c"><span class="pl-c">//</span> Copy input vectors from host memory to GPU buffers.</span>
+    cudaStatus = <span class="pl-c1">cudaMemcpy</span>(dev_a, a, size * <span class="pl-k">sizeof</span>(<span class="pl-k">double</span>), cudaMemcpyHostToDevice);
+    <span class="pl-k">if</span> (cudaStatus != cudaSuccess) {
+        <span class="pl-c1">fprintf</span>(stderr, <span class="pl-s"><span class="pl-pds">"</span>cudaMemcpy failed!<span class="pl-pds">"</span></span>);
+        <span class="pl-k">goto</span> Error;
     }
 
-    // Launch a kernel on the GPU with one thread for each element.
-    sine &lt;&lt; &lt;1, size &gt;&gt; &gt; (dev_a);
+    <span class="pl-c"><span class="pl-c">//</span> Launch a kernel on the GPU with one thread for each element.</span>
+    sine &lt;&lt; &lt;<span class="pl-c1">1</span>, size &gt;&gt; &gt; (dev_a);
 
-    // Check for any errors launching the kernel
-    cudaStatus = cudaGetLastError();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-        goto Error;
+    <span class="pl-c"><span class="pl-c">//</span> Check for any errors launching the kernel</span>
+    cudaStatus = <span class="pl-c1">cudaGetLastError</span>();
+    <span class="pl-k">if</span> (cudaStatus != cudaSuccess) {
+        <span class="pl-c1">fprintf</span>(stderr, <span class="pl-s"><span class="pl-pds">"</span>addKernel launch failed: %s<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-c1">cudaGetErrorString</span>(cudaStatus));
+        <span class="pl-k">goto</span> Error;
     }
 
-    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-    // any errors encountered during the launch.
-    cudaStatus = cudaDeviceSynchronize();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
-        goto Error;
+    <span class="pl-c"><span class="pl-c">//</span> cudaDeviceSynchronize waits for the kernel to finish, and returns</span>
+    <span class="pl-c"><span class="pl-c">//</span> any errors encountered during the launch.</span>
+    cudaStatus = <span class="pl-c1">cudaDeviceSynchronize</span>();
+    <span class="pl-k">if</span> (cudaStatus != cudaSuccess) {
+        <span class="pl-c1">fprintf</span>(stderr, <span class="pl-s"><span class="pl-pds">"</span>cudaDeviceSynchronize returned error code %d after launching addKernel!<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, cudaStatus);
+        <span class="pl-k">goto</span> Error;
     }
 
-    // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(a, dev_a, size * sizeof(double), cudaMemcpyDeviceToHost);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
+    <span class="pl-c"><span class="pl-c">//</span> Copy output vector from GPU buffer to host memory.</span>
+    cudaStatus = <span class="pl-c1">cudaMemcpy</span>(a, dev_a, size * <span class="pl-k">sizeof</span>(<span class="pl-k">double</span>), cudaMemcpyDeviceToHost);
+    <span class="pl-k">if</span> (cudaStatus != cudaSuccess) {
+        <span class="pl-c1">fprintf</span>(stderr, <span class="pl-s"><span class="pl-pds">"</span>cudaMemcpy failed!<span class="pl-pds">"</span></span>);
+        <span class="pl-k">goto</span> Error;
     }
 
 Error:
-    cudaFree(dev_a);
+    <span class="pl-c1">cudaFree</span>(dev_a);
 
-    return cudaStatus;
-}
-</code></pre>
+    <span class="pl-k">return</span> cudaStatus;
+}</pre></div>
 <p>最后写一个main函数来调用，以及释放设备：</p>
-<pre lang="cuda" class="notranslate"><code class="notranslate">int main()
+<div class="highlight highlight-source-cuda-c++"><pre class="notranslate"><span class="pl-k">int</span> <span class="pl-en">main</span>()
 {
-    const int arraySize = 5;
+    <span class="pl-k">const</span> <span class="pl-k">int</span> arraySize = <span class="pl-c1">5</span>;
 
-    double s1[arraySize] = { 1, 2, 3, 4, 5 };
+    <span class="pl-k">double</span> s1[arraySize] = { <span class="pl-c1">1</span>, <span class="pl-c1">2</span>, <span class="pl-c1">3</span>, <span class="pl-c1">4</span>, <span class="pl-c1">5</span> };
 
-    cudaError_t cudaStatus = sineWithCuda(s1, arraySize);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "sineWithCuda failed!");
-        return 1;
+    cudaError_t cudaStatus = <span class="pl-c1">sineWithCuda</span>(s1, arraySize);
+    <span class="pl-k">if</span> (cudaStatus != cudaSuccess) {
+        <span class="pl-c1">fprintf</span>(stderr, <span class="pl-s"><span class="pl-pds">"</span>sineWithCuda failed!<span class="pl-pds">"</span></span>);
+        <span class="pl-k">return</span> <span class="pl-c1">1</span>;
     }
 
-    for (int i0 = 0; i0 &lt; arraySize; i0++) {
-        std::cout &lt;&lt; s1[i0] &lt;&lt;" ";
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i0 = <span class="pl-c1">0</span>; i0 &lt; arraySize; i0++) {
+        std::cout &lt;&lt; s1[i0] &lt;&lt;<span class="pl-s"><span class="pl-pds">"</span> <span class="pl-pds">"</span></span>;
     }
     std::cout &lt;&lt; std::endl;
 
-    // cudaDeviceReset must be called before exiting in order for profiling and
-    // tracing tools such as Nsight and Visual Profiler to show complete traces.
-    cudaStatus = cudaDeviceReset();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceReset failed!");
-        return 1;
+    <span class="pl-c"><span class="pl-c">//</span> cudaDeviceReset must be called before exiting in order for profiling and</span>
+    <span class="pl-c"><span class="pl-c">//</span> tracing tools such as Nsight and Visual Profiler to show complete traces.</span>
+    cudaStatus = <span class="pl-c1">cudaDeviceReset</span>();
+    <span class="pl-k">if</span> (cudaStatus != cudaSuccess) {
+        <span class="pl-c1">fprintf</span>(stderr, <span class="pl-s"><span class="pl-pds">"</span>cudaDeviceReset failed!<span class="pl-pds">"</span></span>);
+        <span class="pl-k">return</span> <span class="pl-c1">1</span>;
     }
 
-    return 0;
-}
-</code></pre>
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
 <p>将文件保存为kernel.cu，编译运行：<br>
 <code class="notranslate">nvcc kernel.cu</code><br>
 如果是在Linux下，就生成a.out；在Windows下就生成a.exe.<br>
 我们还可以通过gencode参数来指定编译成不同的架构的代码，比如：</p>
-<pre lang="bash" class="notranslate"><code class="notranslate">nvcc kernel.cu -gencode=arch=compute_52,code=\"sm_52,compute_52\" -gencode=arch=compute_61,code=\"sm_61,compute_61\" -gencode=arch=compute_70,code=\"sm_70,compute_70\" -gencode=arch=compute_75,code=\"sm_75,compute_75\" -gencode=arch=compute_80,code=\"sm_80,compute_80\" -gencode=arch=compute_90,code=\"sm_90,compute_90\"
-</code></pre>
+<div class="highlight highlight-source-shell"><pre class="notranslate">nvcc kernel.cu -gencode=arch=compute_52,code=<span class="pl-cce">\"</span>sm_52,compute_52<span class="pl-cce">\"</span> -gencode=arch=compute_61,code=<span class="pl-cce">\"</span>sm_61,compute_61<span class="pl-cce">\"</span> -gencode=arch=compute_70,code=<span class="pl-cce">\"</span>sm_70,compute_70<span class="pl-cce">\"</span> -gencode=arch=compute_75,code=<span class="pl-cce">\"</span>sm_75,compute_75<span class="pl-cce">\"</span> -gencode=arch=compute_80,code=<span class="pl-cce">\"</span>sm_80,compute_80<span class="pl-cce">\"</span> -gencode=arch=compute_90,code=<span class="pl-cce">\"</span>sm_90,compute_90<span class="pl-cce">\"</span></pre></div>
 <p>下面我们就可以通过cuobjdump工具来查看ptx和sass代码。<br>
 查看PTX代码，以Windows为例：<br>
 <code class="notranslate">cuobjdump --dump-ptx a.exe</code><br>
@@ -297,128 +295,120 @@ Error:
 <a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/9ef1bf80-834c-4ac4-a4b5-18e8e15bd0a3"><img src="https://github.com/user-attachments/assets/9ef1bf80-834c-4ac4-a4b5-18e8e15bd0a3" alt="image" style="max-width: 100%;"></a></p>
 <h2>加法指令</h2>
 <p>下面我们在上面test的基础上，增加一个加法指令：</p>
-<pre lang="cuda" class="notranslate"><code class="notranslate">__global__ void test1(int&amp; c){
-    c= blockIdx.x+1;
-}
-</code></pre>
+<div class="highlight highlight-source-cuda-c++"><pre class="notranslate"><span class="pl-k">__global__</span> <span class="pl-k">void</span> <span class="pl-en">test1</span>(<span class="pl-k">int</span>&amp; c){
+    c= <span class="pl-c1">blockIdx</span>.<span class="pl-smi">x</span>+<span class="pl-c1">1</span>;
+}</pre></div>
 <p>编译成PTX代码：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">.visible .entry test1(int&amp;)(
-        .param .u64 test1(int&amp;)_param_0
-)
-{
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">.visible .entry test1(</span><span class="pl-k">int</span><span class="pl-en">&amp;)(</span>
+<span class="pl-en">        .param .u64 test1(</span><span class="pl-k">int</span><span class="pl-en">&amp;)_param_0</span>
+<span class="pl-en">)</span>
+<span class="pl-en">{</span>
 
-        ld.param.u64    %rd1, [test1(int&amp;)_param_0];
-        cvta.to.global.u64      %rd2, %rd1;
-        mov.u32         %r1, %ctaid.x;
-        add.s32         %r2, %r1, 1;
-        st.global.u32   [%rd2], %r2;
-        ret;
+<span class="pl-en">        ld.param.u64    %rd1</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">test1(</span><span class="pl-k">int</span><span class="pl-en">&amp;)_param_0</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        cvta.to.</span><span class="pl-c1">global</span><span class="pl-en">.u64      %rd2</span><span class="pl-s1">,</span><span class="pl-en"> %rd1</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.u32         %r1</span><span class="pl-s1">,</span><span class="pl-en"> %ctaid.x</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">add</span><span class="pl-en">.s32         %r2</span><span class="pl-s1">,</span><span class="pl-en"> %r1</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">1</span><span class="pl-c">;</span>
+<span class="pl-en">        st.</span><span class="pl-c1">global</span><span class="pl-en">.u32   </span><span class="pl-s1">[</span><span class="pl-en">%rd2</span><span class="pl-s1">],</span><span class="pl-en"> %r2</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">ret</span><span class="pl-c">;</span>
 
-}
-</code></pre>
+<span class="pl-en">}</span></pre></div>
 <p>增加了一条add.s32指令，用于32位有符号加法操作。<br>
 编译成sm50架构的SASS代码</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">test1(int&amp;):
- MOV R1, c[0x0][0x20] 
- MOV R2, c[0x0][0x140] 
- S2R R0, SR_CTAID.X         
- MOV R3, c[0x0][0x144] 
- IADD32I R0, R0, 0x1 
- STG.E [R2], R0 
- NOP 
- NOP 
- EXIT 
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">test1(</span><span class="pl-k">int</span><span class="pl-en">&amp;):</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x20</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x140</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> S2R R0</span><span class="pl-s1">,</span><span class="pl-en"> SR_CTAID.X         </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x144</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> IADD32I R0</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-en"> </span>
+<span class="pl-en"> STG.E </span><span class="pl-s1">[</span><span class="pl-en">R2</span><span class="pl-s1">],</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> </span><span class="pl-k">NOP</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">NOP</span><span class="pl-en"> </span>
+<span class="pl-en"> EXIT </span></pre></div>
 <p>add.s32指令被编译成了IADD32I指令。</p>
 <p>sm70的代码就比较有新意了，它使用加乘计算指令IMAD.MOV.U32来代替sm50,sm60的MOV. 计算时改用了三元计算的IADD3指令。当然，对于功能上没有什么影响。</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">test1(int&amp;):
-IMAD.MOV.U32 R1, RZ, RZ, c[0x0][0x28] 
-@!PT SHFL.IDX PT, RZ, RZ, RZ, RZ 
-S2R R5, SR_CTAID.X 
-MOV R2, c[0x0][0x160] 
-IMAD.MOV.U32 R3, RZ, RZ, c[0x0][0x164] 
-IADD3 R5, R5, 0x1, RZ 
-STG.E.SYS [R2], R5 
-EXIT
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">test1(</span><span class="pl-k">int</span><span class="pl-en">&amp;):</span>
+<span class="pl-en">IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R1</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x28</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en">@!PT SHFL.IDX PT</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en">S2R R5</span><span class="pl-s1">,</span><span class="pl-en"> SR_CTAID.X </span>
+<span class="pl-k">MOV</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x160</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en">IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x164</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en">IADD3 R5</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en">STG.E.SYS </span><span class="pl-s1">[</span><span class="pl-en">R2</span><span class="pl-s1">],</span><span class="pl-en"> R5 </span>
+<span class="pl-en">EXIT</span></pre></div>
 <p>sm75的时候又变回来了,不过仍然使用IADD3.</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">test1(int&amp;):
- MOV R1, c[0x0][0x28] 
- S2R R0, SR_CTAID.X 
- ULDC.64 UR4, c[0x0][0x160] 
- IADD3 R0, R0, 0x1, RZ 
- STG.E.SYS [UR4], R0 
- EXIT 
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">test1(</span><span class="pl-k">int</span><span class="pl-en">&amp;):</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x28</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> S2R R0</span><span class="pl-s1">,</span><span class="pl-en"> SR_CTAID.X </span>
+<span class="pl-en"> ULDC.</span><span class="pl-c1">64</span><span class="pl-en"> UR4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x160</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> IADD3 R0</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> STG.E.SYS </span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">],</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> EXIT </span></pre></div>
 <h2>数学函数</h2>
 <p>我们下面来求一个平方根。CUDA内置了很多数学函数，我们可以直接调用：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">__global__ void test2(float&amp; f){
-    f = blockIdx.x;
-    f = sqrtf(f);
-}
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">__global__ void test2(</span><span class="pl-c1">float</span><span class="pl-en">&amp; f){</span>
+<span class="pl-en">    f = blockIdx.x</span><span class="pl-c">;</span>
+<span class="pl-en">    f = sqrtf(f)</span><span class="pl-c">;</span>
+<span class="pl-en">}</span></pre></div>
 <p>PTX代码：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">.visible .entry test2(float&amp;)(
-        .param .u64 test2(float&amp;)_param_0
-)
-{
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">.visible .entry test2(</span><span class="pl-c1">float</span><span class="pl-en">&amp;)(</span>
+<span class="pl-en">        .param .u64 test2(</span><span class="pl-c1">float</span><span class="pl-en">&amp;)_param_0</span>
+<span class="pl-en">)</span>
+<span class="pl-en">{</span>
 
-        ld.param.u64    %rd1, [test2(float&amp;)_param_0];
-        cvta.to.global.u64      %rd2, %rd1;
-        mov.u32         %r1, %ctaid.x;
-        cvt.rn.f32.u32  %f1, %r1;
-        sqrt.rn.f32     %f2, %f1;
-        st.global.f32   [%rd2], %f2;
-        ret;
+<span class="pl-en">        ld.param.u64    %rd1</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">test2(</span><span class="pl-c1">float</span><span class="pl-en">&amp;)_param_0</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        cvta.to.</span><span class="pl-c1">global</span><span class="pl-en">.u64      %rd2</span><span class="pl-s1">,</span><span class="pl-en"> %rd1</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.u32         %r1</span><span class="pl-s1">,</span><span class="pl-en"> %ctaid.x</span><span class="pl-c">;</span>
+<span class="pl-en">        cvt.rn.f32.u32  %f1</span><span class="pl-s1">,</span><span class="pl-en"> %r1</span><span class="pl-c">;</span>
+<span class="pl-en">        sqrt.rn.f32     %f2</span><span class="pl-s1">,</span><span class="pl-en"> %f1</span><span class="pl-c">;</span>
+<span class="pl-en">        st.</span><span class="pl-c1">global</span><span class="pl-en">.f32   </span><span class="pl-s1">[</span><span class="pl-en">%rd2</span><span class="pl-s1">],</span><span class="pl-en"> %f2</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">ret</span><span class="pl-c">;</span>
 
-}
-</code></pre>
+<span class="pl-en">}</span></pre></div>
 <p>sqrtf被编译成了sqrt.rn.f32指令。<br>
 到了SASS代码，这一条指令就变得相当有趣了：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">test2(float&amp;):
- MOV R1, c[0x0][0x20] 
- S2R R0, SR_CTAID.X 
- I2F.F32.U32 R0, R0 
- IADD32I R3, R0, -0xd000000 
- MUFU.RSQ R2, R0         
- ISETP.GT.U32.AND P0, PT, R3, c[0x2][0x0], PT 
- @!P0 BRA `(.L_x_0) 
- CAL `($test2(float&amp;)$__cuda_sm20_sqrt_rn_f32_slowpath) 
- MOV R0, R2 
- BRA `(.L_x_1)         
-.L_x_0:
- FMUL.FTZ R3, R0, R2 
- FMUL.FTZ R2, R2, 0.5 
- FFMA R0, R3, -R3, R0 
- FFMA R0, R0, R2, R3 
-.L_x_1:
- MOV R2, c[0x0][0x140] 
- MOV R3, c[0x0][0x144] 
- STG.E [R2], R0 
- EXIT 
-$test2(float&amp;)$__cuda_sm20_sqrt_rn_f32_slowpath:
- LOP.AND.NZ P0, RZ, R0, c[0x2][0x4] 
- @!P0 MOV R2, R0 
- @!P0 RET         
- FSETP.GEU.FTZ.AND P0, PT, R0, RZ, PT 
- @!P0 MOV32I R2, 0x7fffffff 
- @!P0 RET         
- FSETP.GTU.FTZ.AND P0, PT, |R0|, +INF , PT 
- @P0 FADD.FTZ R2, R0, 1 
- @P0 RET         
- FSETP.NEU.FTZ.AND P0, PT, |R0|, +INF , PT 
- @!P0 MOV R2, R0 
- @!P0 RET         
- FFMA R0, R0, 1.84467440737095516160e+19, RZ 
- MUFU.RSQ R2, R0 
- FMUL.FTZ R3, R0, R2 
- FMUL.FTZ R2, R2, 0.5 
- FADD.FTZ R5, -R3.reuse, -RZ 
- FFMA R5, R3, R5, R0 
- FFMA R2, R5, R2, R3 
- FMUL.FTZ R2, R2, 2.3283064365386962891e-10 
- RET  
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">test2(</span><span class="pl-c1">float</span><span class="pl-en">&amp;):</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x20</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> S2R R0</span><span class="pl-s1">,</span><span class="pl-en"> SR_CTAID.X </span>
+<span class="pl-en"> I2F.F32.U32 R0</span><span class="pl-s1">,</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> IADD32I R3</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0xd000000</span><span class="pl-en"> </span>
+<span class="pl-en"> MUFU.RSQ R2</span><span class="pl-s1">,</span><span class="pl-en"> R0         </span>
+<span class="pl-en"> ISETP.GT.U32.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x0</span><span class="pl-s1">],</span><span class="pl-en"> PT </span>
+<span class="pl-en"> @!P0 BRA `(.L_x_0) </span>
+<span class="pl-en"> CAL `(</span><span class="pl-c1">$</span><span class="pl-en">test2(</span><span class="pl-c1">float</span><span class="pl-en">&amp;)</span><span class="pl-c1">$</span><span class="pl-en">__cuda_sm20_sqrt_rn_f32_slowpath) </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> R2 </span>
+<span class="pl-en"> BRA `(.L_x_1)         </span>
+<span class="pl-en">.L_x_0:</span>
+<span class="pl-en"> </span><span class="pl-k">FMUL</span><span class="pl-en">.FTZ R3</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> R2 </span>
+<span class="pl-en"> </span><span class="pl-k">FMUL</span><span class="pl-en">.FTZ R2</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">5</span><span class="pl-en"> </span>
+<span class="pl-en"> FFMA R0</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R3</span><span class="pl-s1">,</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> FFMA R0</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> R3 </span>
+<span class="pl-en">.L_x_1:</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x140</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x144</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> STG.E </span><span class="pl-s1">[</span><span class="pl-en">R2</span><span class="pl-s1">],</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> EXIT </span>
+<span class="pl-c1">$</span><span class="pl-en">test2(</span><span class="pl-c1">float</span><span class="pl-en">&amp;)</span><span class="pl-c1">$</span><span class="pl-en">__cuda_sm20_sqrt_rn_f32_slowpath:</span>
+<span class="pl-en"> LOP.</span><span class="pl-k">AND</span><span class="pl-en">.NZ P0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x4</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> @!P0 </span><span class="pl-k">MOV</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> @!P0 </span><span class="pl-k">RET</span><span class="pl-en">         </span>
+<span class="pl-en"> FSETP.GEU.FTZ.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> @!P0 MOV32I R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x7fffffff</span><span class="pl-en"> </span>
+<span class="pl-en"> @!P0 </span><span class="pl-k">RET</span><span class="pl-en">         </span>
+<span class="pl-en"> FSETP.GTU.FTZ.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> |R0|</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">+</span><span class="pl-en">INF </span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> @P0 </span><span class="pl-k">FADD</span><span class="pl-en">.FTZ R2</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">1</span><span class="pl-en"> </span>
+<span class="pl-en"> @P0 </span><span class="pl-k">RET</span><span class="pl-en">         </span>
+<span class="pl-en"> FSETP.NEU.FTZ.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> |R0|</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">+</span><span class="pl-en">INF </span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> @!P0 </span><span class="pl-k">MOV</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> @!P0 </span><span class="pl-k">RET</span><span class="pl-en">         </span>
+<span class="pl-en"> FFMA R0</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">1</span><span class="pl-en">.84467440737095516160e</span><span class="pl-s1">+</span><span class="pl-c1">19</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> MUFU.RSQ R2</span><span class="pl-s1">,</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> </span><span class="pl-k">FMUL</span><span class="pl-en">.FTZ R3</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> R2 </span>
+<span class="pl-en"> </span><span class="pl-k">FMUL</span><span class="pl-en">.FTZ R2</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">5</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">FADD</span><span class="pl-en">.FTZ R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R3.reuse</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">RZ </span>
+<span class="pl-en"> FFMA R5</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> FFMA R2</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> R3 </span>
+<span class="pl-en"> </span><span class="pl-k">FMUL</span><span class="pl-en">.FTZ R2</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">2</span><span class="pl-en">.3283064365386962891e</span><span class="pl-s1">-</span><span class="pl-c1">10</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">RET</span><span class="pl-en">  </span></pre></div>
 <p>首先，因为sqrtf要求输入是浮点数，所以用I2F.F32.U32指令将整数转换成浮点数。然后，sqrtf的实现是一个迭代算法，需要一个初始值。这里用IADD32I指令将初始值设为-0xd000000。然后，用MUFU.RSQ指令计算初始值的平方根的倒数。</p>
 <p>slowpath这一分支主要用于处理异常情况，比如NaN, INF, 0等。比如：<br>
 <code class="notranslate">FSETP.GTU.FTZ.AND P0, PT, |R0|, +INF , PT </code><br>
@@ -426,471 +416,464 @@ $test2(float&amp;)$__cuda_sm20_sqrt_rn_f32_slowpath:
 <h2>不能封装成一条指令的数学计算</h2>
 <p>求平方根可以用一条指令来搞定，但是对于大多数的数学计算来说，并没有这么多指令。最终的实现还是会以汇编序列的方式来实现。<br>
 我们先看一个相对简单的，求自然对数的：</p>
-<pre lang="cuda" class="notranslate"><code class="notranslate">__global__ void testLog(float&amp; f){
-    f = logf(f);
-}
-</code></pre>
+<div class="highlight highlight-source-cuda-c++"><pre class="notranslate"><span class="pl-k">__global__</span> <span class="pl-k">void</span> <span class="pl-en">testLog</span>(<span class="pl-k">float</span>&amp; f){
+    f = <span class="pl-c1">logf</span>(f);
+}</pre></div>
 <p>翻译成PTX代码：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">.visible .entry testLog(float&amp;)(
-        .param .u64 testLog(float&amp;)_param_0
-)
-{
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">.visible .entry testLog(</span><span class="pl-c1">float</span><span class="pl-en">&amp;)(</span>
+<span class="pl-en">        .param .u64 testLog(</span><span class="pl-c1">float</span><span class="pl-en">&amp;)_param_0</span>
+<span class="pl-en">)</span>
+<span class="pl-en">{</span>
 
-        ld.param.u64    %rd2, [testLog(float&amp;)_param_0];
-        cvta.to.global.u64      %rd1, %rd2;
-        ld.global.f32   %f5, [%rd1];
-        setp.lt.f32     %p1, %f5, 0f00800000;
-        mul.f32         %f6, %f5, 0f4B000000;
-        selp.f32        %f1, %f6, %f5, %p1;
-        selp.f32        %f7, 0fC1B80000, 0f00000000, %p1;
-        mov.b32         %r1, %f1;
-        add.s32         %r2, %r1, -1059760811;
-        and.b32         %r3, %r2, -8388608;
-        sub.s32         %r4, %r1, %r3;
-        mov.b32         %f8, %r4;
-        cvt.rn.f32.s32  %f9, %r3;
-        mov.f32         %f10, 0f34000000;
-        fma.rn.f32      %f11, %f9, %f10, %f7;
-        add.f32         %f12, %f8, 0fBF800000;
-        mov.f32         %f13, 0f3E1039F6;
-        mov.f32         %f14, 0fBE055027;
-        fma.rn.f32      %f15, %f14, %f12, %f13;
-        mov.f32         %f16, 0fBDF8CDCC;
-        fma.rn.f32      %f17, %f15, %f12, %f16;
-        mov.f32         %f18, 0f3E0F2955;
-        fma.rn.f32      %f19, %f17, %f12, %f18;
-        mov.f32         %f20, 0fBE2AD8B9;
-        fma.rn.f32      %f21, %f19, %f12, %f20;
-        mov.f32         %f22, 0f3E4CED0B;
-        fma.rn.f32      %f23, %f21, %f12, %f22;
-        mov.f32         %f24, 0fBE7FFF22;
-        fma.rn.f32      %f25, %f23, %f12, %f24;
-        mov.f32         %f26, 0f3EAAAA78;
-        fma.rn.f32      %f27, %f25, %f12, %f26;
-        mov.f32         %f28, 0fBF000000;
-        fma.rn.f32      %f29, %f27, %f12, %f28;
-        mul.f32         %f30, %f12, %f29;
-        fma.rn.f32      %f31, %f30, %f12, %f12;
-        mov.f32         %f32, 0f3F317218;
-        fma.rn.f32      %f35, %f11, %f32, %f31;
-        setp.lt.u32     %p2, %r1, 2139095040;
-        @%p2 bra        $L__BB3_2;
+<span class="pl-en">        ld.param.u64    %rd2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">testLog(</span><span class="pl-c1">float</span><span class="pl-en">&amp;)_param_0</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        cvta.to.</span><span class="pl-c1">global</span><span class="pl-en">.u64      %rd1</span><span class="pl-s1">,</span><span class="pl-en"> %rd2</span><span class="pl-c">;</span>
+<span class="pl-en">        ld.</span><span class="pl-c1">global</span><span class="pl-en">.f32   %f5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">%rd1</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        setp.lt.f32     %p1</span><span class="pl-s1">,</span><span class="pl-en"> %f5</span><span class="pl-s1">,</span><span class="pl-en"> 0f00800000</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mul</span><span class="pl-en">.f32         %f6</span><span class="pl-s1">,</span><span class="pl-en"> %f5</span><span class="pl-s1">,</span><span class="pl-en"> 0f4B000000</span><span class="pl-c">;</span>
+<span class="pl-en">        selp.f32        %f1</span><span class="pl-s1">,</span><span class="pl-en"> %f6</span><span class="pl-s1">,</span><span class="pl-en"> %f5</span><span class="pl-s1">,</span><span class="pl-en"> %p1</span><span class="pl-c">;</span>
+<span class="pl-en">        selp.f32        %f7</span><span class="pl-s1">,</span><span class="pl-en"> 0fC1B80000</span><span class="pl-s1">,</span><span class="pl-en"> 0f00000000</span><span class="pl-s1">,</span><span class="pl-en"> %p1</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.b32         %r1</span><span class="pl-s1">,</span><span class="pl-en"> %f1</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">add</span><span class="pl-en">.s32         %r2</span><span class="pl-s1">,</span><span class="pl-en"> %r1</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">1059760811</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">and</span><span class="pl-en">.b32         %r3</span><span class="pl-s1">,</span><span class="pl-en"> %r2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">8388608</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">sub</span><span class="pl-en">.s32         %r4</span><span class="pl-s1">,</span><span class="pl-en"> %r1</span><span class="pl-s1">,</span><span class="pl-en"> %r3</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.b32         %f8</span><span class="pl-s1">,</span><span class="pl-en"> %r4</span><span class="pl-c">;</span>
+<span class="pl-en">        cvt.rn.f32.s32  %f9</span><span class="pl-s1">,</span><span class="pl-en"> %r3</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f10</span><span class="pl-s1">,</span><span class="pl-en"> 0f34000000</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f11</span><span class="pl-s1">,</span><span class="pl-en"> %f9</span><span class="pl-s1">,</span><span class="pl-en"> %f10</span><span class="pl-s1">,</span><span class="pl-en"> %f7</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">add</span><span class="pl-en">.f32         %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f8</span><span class="pl-s1">,</span><span class="pl-en"> 0fBF800000</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f13</span><span class="pl-s1">,</span><span class="pl-en"> 0f3E1039F6</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f14</span><span class="pl-s1">,</span><span class="pl-en"> 0fBE055027</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f15</span><span class="pl-s1">,</span><span class="pl-en"> %f14</span><span class="pl-s1">,</span><span class="pl-en"> %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f13</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f16</span><span class="pl-s1">,</span><span class="pl-en"> 0fBDF8CDCC</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f17</span><span class="pl-s1">,</span><span class="pl-en"> %f15</span><span class="pl-s1">,</span><span class="pl-en"> %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f16</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f18</span><span class="pl-s1">,</span><span class="pl-en"> 0f3E0F2955</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f19</span><span class="pl-s1">,</span><span class="pl-en"> %f17</span><span class="pl-s1">,</span><span class="pl-en"> %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f18</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f20</span><span class="pl-s1">,</span><span class="pl-en"> 0fBE2AD8B9</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f21</span><span class="pl-s1">,</span><span class="pl-en"> %f19</span><span class="pl-s1">,</span><span class="pl-en"> %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f20</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f22</span><span class="pl-s1">,</span><span class="pl-en"> 0f3E4CED0B</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f23</span><span class="pl-s1">,</span><span class="pl-en"> %f21</span><span class="pl-s1">,</span><span class="pl-en"> %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f22</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f24</span><span class="pl-s1">,</span><span class="pl-en"> 0fBE7FFF22</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f25</span><span class="pl-s1">,</span><span class="pl-en"> %f23</span><span class="pl-s1">,</span><span class="pl-en"> %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f24</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f26</span><span class="pl-s1">,</span><span class="pl-en"> 0f3EAAAA78</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f27</span><span class="pl-s1">,</span><span class="pl-en"> %f25</span><span class="pl-s1">,</span><span class="pl-en"> %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f26</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f28</span><span class="pl-s1">,</span><span class="pl-en"> 0fBF000000</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f29</span><span class="pl-s1">,</span><span class="pl-en"> %f27</span><span class="pl-s1">,</span><span class="pl-en"> %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f28</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mul</span><span class="pl-en">.f32         %f30</span><span class="pl-s1">,</span><span class="pl-en"> %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f29</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f31</span><span class="pl-s1">,</span><span class="pl-en"> %f30</span><span class="pl-s1">,</span><span class="pl-en"> %f12</span><span class="pl-s1">,</span><span class="pl-en"> %f12</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f32</span><span class="pl-s1">,</span><span class="pl-en"> 0f3F317218</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f35</span><span class="pl-s1">,</span><span class="pl-en"> %f11</span><span class="pl-s1">,</span><span class="pl-en"> %f32</span><span class="pl-s1">,</span><span class="pl-en"> %f31</span><span class="pl-c">;</span>
+<span class="pl-en">        setp.lt.u32     %p2</span><span class="pl-s1">,</span><span class="pl-en"> %r1</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">2139095040</span><span class="pl-c">;</span>
+<span class="pl-en">        @%p2 bra</span>        <span class="pl-c1">$</span><span class="pl-en">L__BB3_2</span><span class="pl-c">;</span>
 
-        mov.f32         %f33, 0f7F800000;
-        fma.rn.f32      %f35, %f1, %f33, %f33;
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f32         %f33</span><span class="pl-s1">,</span><span class="pl-en"> 0f7F800000</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f32      %f35</span><span class="pl-s1">,</span><span class="pl-en"> %f1</span><span class="pl-s1">,</span><span class="pl-en"> %f33</span><span class="pl-s1">,</span><span class="pl-en"> %f33</span><span class="pl-c">;</span>
 
-$L__BB3_2:
-        setp.eq.f32     %p3, %f1, 0f00000000;
-        selp.f32        %f34, 0fFF800000, %f35, %p3;
-        st.global.f32   [%rd1], %f34;
-        ret;
+<span class="pl-c1">$</span><span class="pl-en">L__BB3_2:</span>
+<span class="pl-en">        setp.eq.f32     %p3</span><span class="pl-s1">,</span><span class="pl-en"> %f1</span><span class="pl-s1">,</span><span class="pl-en"> 0f00000000</span><span class="pl-c">;</span>
+<span class="pl-en">        selp.f32        %f34</span><span class="pl-s1">,</span><span class="pl-en"> 0fFF800000</span><span class="pl-s1">,</span><span class="pl-en"> %f35</span><span class="pl-s1">,</span><span class="pl-en"> %p3</span><span class="pl-c">;</span>
+<span class="pl-en">        st.</span><span class="pl-c1">global</span><span class="pl-en">.f32   </span><span class="pl-s1">[</span><span class="pl-en">%rd1</span><span class="pl-s1">],</span><span class="pl-en"> %f34</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">ret</span><span class="pl-c">;</span>
 
-}
-</code></pre>
+<span class="pl-en">}</span></pre></div>
 <p>翻译成sm50架构：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">testLog(float&amp;):
- MOV R1, c[0x0][0x20] 
- MOV R2, c[0x0][0x140] 
- MOV R3, c[0x0][0x144] 
- LDG.E R0, [R2] 
- MOV32I R7, 0x3e1039f6 
- FSETP.GEU.AND P0, PT, R0, 1.175494350822287508e-38, PT 
- @!P0 FMUL R0, R0, 8388608 
- IADD32I R4, R0, -0x3f2aaaab 
- ISETP.GE.U32.AND P1, PT, R0.reuse, c[0x2][0x28], PT 
- LOP32I.AND R5, R4, 0xff800000 
- IADD R4, R0, -R5 
- I2F.F32.S32 R5, R5         
- FADD R6, R4, -1 
- FFMA R4, R6.reuse, c[0x2][0x4], R7 
- FFMA R4, R6, R4, c[0x2][0x8] 
- FFMA R4, R6.reuse, R4, c[0x2][0xc] 
- FFMA R4, R6, R4, c[0x2][0x10] 
- FFMA R4, R6.reuse, R4, c[0x2][0x14] 
- FFMA R4, R6.reuse, R4, c[0x2][0x18] 
- FFMA R4, R6.reuse, R4, c[0x2][0x1c] 
- FFMA R7, R6, R4, c[0x2][0x20] 
- SEL R4, RZ, c[0x2][0x0], P0 
- FMUL R7, R6.reuse, R7 
- FFMA R4, R5, 1.1920928955078125e-07, R4 
- FFMA R7, R6, R7, R6 
- @P1 MOV32I R6, 0x7f800000 
- FFMA R7, R4, c[0x2][0x24], R7 
- @P1 FFMA R7, R0, +INF , R6 
- FCMP.NEU R7, R7, -INF , R0 
- STG.E [R2], R7 
- EXIT 
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">testLog(</span><span class="pl-c1">float</span><span class="pl-en">&amp;):</span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x20</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x140</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x144</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> LDG.E R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">R2</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> MOV32I R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x3e1039f6</span><span class="pl-en"> </span>
+<span class="pl-en"> FSETP.GEU.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">1</span><span class="pl-en">.175494350822287508e</span><span class="pl-s1">-</span><span class="pl-c1">38</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> @!P0 </span><span class="pl-k">FMUL</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">8388608</span><span class="pl-en"> </span>
+<span class="pl-en"> IADD32I R4</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0x3f2aaaab</span><span class="pl-en"> </span>
+<span class="pl-en"> ISETP.GE.U32.</span><span class="pl-k">AND</span><span class="pl-en"> P1</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R0.reuse</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x28</span><span class="pl-s1">],</span><span class="pl-en"> PT </span>
+<span class="pl-en"> LOP32I.</span><span class="pl-k">AND</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xff800000</span><span class="pl-en"> </span>
+<span class="pl-en"> IADD R4</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R5 </span>
+<span class="pl-en"> I2F.F32.S32 R5</span><span class="pl-s1">,</span><span class="pl-en"> R5         </span>
+<span class="pl-en"> </span><span class="pl-k">FADD</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">1</span><span class="pl-en"> </span>
+<span class="pl-en"> FFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> R6.reuse</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x4</span><span class="pl-s1">],</span><span class="pl-en"> R7 </span>
+<span class="pl-en"> FFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x8</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> FFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> R6.reuse</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0xc</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> FFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x10</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> FFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> R6.reuse</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x14</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> FFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> R6.reuse</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x18</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> FFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> R6.reuse</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x1c</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x20</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> SEL R4</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x0</span><span class="pl-s1">],</span><span class="pl-en"> P0 </span>
+<span class="pl-en"> </span><span class="pl-k">FMUL</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> R6.reuse</span><span class="pl-s1">,</span><span class="pl-en"> R7 </span>
+<span class="pl-en"> FFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">1</span><span class="pl-en">.1920928955078125e</span><span class="pl-s1">-</span><span class="pl-c1">07</span><span class="pl-s1">,</span><span class="pl-en"> R4 </span>
+<span class="pl-en"> FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> R6 </span>
+<span class="pl-en"> @P1 MOV32I R6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x7f800000</span><span class="pl-en"> </span>
+<span class="pl-en"> FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x2</span><span class="pl-s1">][</span><span class="pl-c1">0x24</span><span class="pl-s1">],</span><span class="pl-en"> R7 </span>
+<span class="pl-en"> @P1 FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">+</span><span class="pl-en">INF </span><span class="pl-s1">,</span><span class="pl-en"> R6 </span>
+<span class="pl-en"> FCMP.NEU R7</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">INF </span><span class="pl-s1">,</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> STG.E </span><span class="pl-s1">[</span><span class="pl-en">R2</span><span class="pl-s1">],</span><span class="pl-en"> R7 </span>
+<span class="pl-en"> EXIT </span></pre></div>
 <p>sm90:</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">testLog(float&amp;):
-LDC R1, c[0x0][0x28] 
-LDC.64 R2, c[0x0][0x210] 
-ULDC.64 UR4, c[0x0][0x208] 
-LDG.E R0, desc[UR4][R2.64] 
-HFMA2.MMA R7, -RZ, RZ, 1.5048828125, 33.21875 
-FSETP.GEU.AND P0, PT, R0, 1.175494350822287508e-38, PT 
-@!P0 FMUL R0, R0, 8388608 
-IADD3 R4, R0.reuse, -0x3f2aaaab, RZ 
-ISETP.GE.U32.AND P1, PT, R0, 0x7f800000, PT 
-LOP3.LUT R5, R4, 0xff800000, RZ, 0xc0, !PT 
-IADD3 R4, R0, -R5, RZ 
-I2FP.F32.S32 R5, R5 
-FADD R6, R4, -1 
-FSEL R4, RZ, -23, P0 
-FSETP.NEU.AND P0, PT, R0, RZ, PT 
-FFMA R7, R6.reuse, -R7, 0.14084610342979431152 
-FFMA R4, R5, 1.1920928955078125e-07, R4 
-@P1 MOV R5, 0x7f800000 
-FFMA R7, R6, R7, -0.12148627638816833496 
-FFMA R7, R6, R7, 0.13980610668659210205 
-FFMA R7, R6, R7, -0.16684235632419586182 
-FFMA R7, R6, R7, 0.20012299716472625732 
-FFMA R7, R6, R7, -0.24999669194221496582 
-FFMA R7, R6, R7, 0.33333182334899902344 
-FFMA R7, R6, R7, -0.5 
-FMUL R7, R6, R7 
-FFMA R7, R6, R7, R6 
-FFMA R4, R4, 0.69314718246459960938, R7 
-@P1 FFMA R4, R0, R5, +INF  
-FSEL R5, R4, -INF , P0 
-STG.E desc[UR4][R2.64], R5 
-EXIT 
-</code></pre>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">testLog(</span><span class="pl-c1">float</span><span class="pl-en">&amp;):</span>
+<span class="pl-en">LDC R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x28</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en">LDC.</span><span class="pl-c1">64</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x210</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en">ULDC.</span><span class="pl-c1">64</span><span class="pl-en"> UR4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x208</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en">LDG.E R0</span><span class="pl-s1">,</span><span class="pl-en"> desc</span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">][</span><span class="pl-en">R2.</span><span class="pl-c1">64</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en">HFMA2.MMA R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">1</span><span class="pl-en">.</span><span class="pl-c1">5048828125</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">33</span><span class="pl-en">.</span><span class="pl-c1">21875</span><span class="pl-en"> </span>
+<span class="pl-en">FSETP.GEU.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">1</span><span class="pl-en">.175494350822287508e</span><span class="pl-s1">-</span><span class="pl-c1">38</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en">@!P0 </span><span class="pl-k">FMUL</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">8388608</span><span class="pl-en"> </span>
+<span class="pl-en">IADD3 R4</span><span class="pl-s1">,</span><span class="pl-en"> R0.reuse</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0x3f2aaaab</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en">ISETP.GE.U32.</span><span class="pl-k">AND</span><span class="pl-en"> P1</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x7f800000</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en">LOP3.LUT R5</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xff800000</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xc0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en">IADD3 R4</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R5</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en">I2FP.F32.S32 R5</span><span class="pl-s1">,</span><span class="pl-en"> R5 </span>
+<span class="pl-k">FADD</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">1</span><span class="pl-en"> </span>
+<span class="pl-en">FSEL R4</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">23</span><span class="pl-s1">,</span><span class="pl-en"> P0 </span>
+<span class="pl-en">FSETP.NEU.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en">FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R6.reuse</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">14084610342979431152</span><span class="pl-en"> </span>
+<span class="pl-en">FFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">1</span><span class="pl-en">.1920928955078125e</span><span class="pl-s1">-</span><span class="pl-c1">07</span><span class="pl-s1">,</span><span class="pl-en"> R4 </span>
+<span class="pl-en">@P1 </span><span class="pl-k">MOV</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x7f800000</span><span class="pl-en"> </span>
+<span class="pl-en">FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">12148627638816833496</span><span class="pl-en"> </span>
+<span class="pl-en">FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">13980610668659210205</span><span class="pl-en"> </span>
+<span class="pl-en">FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">16684235632419586182</span><span class="pl-en"> </span>
+<span class="pl-en">FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">20012299716472625732</span><span class="pl-en"> </span>
+<span class="pl-en">FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">24999669194221496582</span><span class="pl-en"> </span>
+<span class="pl-en">FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">33333182334899902344</span><span class="pl-en"> </span>
+<span class="pl-en">FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">5</span><span class="pl-en"> </span>
+<span class="pl-k">FMUL</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R7 </span>
+<span class="pl-en">FFMA R7</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> R6 </span>
+<span class="pl-en">FFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">69314718246459960938</span><span class="pl-s1">,</span><span class="pl-en"> R7 </span>
+<span class="pl-en">@P1 FFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">+</span><span class="pl-en">INF  </span>
+<span class="pl-en">FSEL R5</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">INF </span><span class="pl-s1">,</span><span class="pl-en"> P0 </span>
+<span class="pl-en">STG.E desc</span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">][</span><span class="pl-en">R2.</span><span class="pl-c1">64</span><span class="pl-s1">],</span><span class="pl-en"> R5 </span>
+<span class="pl-en">EXIT </span></pre></div>
 <p>求正弦值的，我们这次换成双精度的计算：</p>
-<pre lang="cuda" class="notranslate"><code class="notranslate">__global__ void testSin(double&amp; d){
-    d = sin(d);
-}
-</code></pre>
+<div class="highlight highlight-source-cuda-c++"><pre class="notranslate"><span class="pl-k">__global__</span> <span class="pl-k">void</span> <span class="pl-en">testSin</span>(<span class="pl-k">double</span>&amp; d){
+    d = <span class="pl-c1">sin</span>(d);
+}</pre></div>
 <p>PTX代码：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">.visible .entry testSin(double&amp;)(
-        .param .u64 testSin(double&amp;)_param_0
-)
-{
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">.visible .entry testSin(double&amp;)(</span>
+<span class="pl-en">        .param .u64 testSin(double&amp;)_param_0</span>
+<span class="pl-en">)</span>
+<span class="pl-en">{</span>
 
-        mov.u64         %SPL, __local_depot4;
-        cvta.local.u64  %SP, %SPL;
-        ld.param.u64    %rd3, [testSin(double&amp;)_param_0];
-        cvta.to.global.u64      %rd1, %rd3;
-        add.u64         %rd4, %SP, 0;
-        add.u64         %rd2, %SPL, 0;
-        ld.global.f64   %fd1, [%rd1];
-        {
-        mov.b64         {%r4, %temp}, %fd1;
-        }
-        {
-        mov.b64         {%temp, %r5}, %fd1;
-        }
-        and.b32         %r6, %r5, 2147483647;
-        setp.eq.s32     %p1, %r6, 2146435072;
-        setp.eq.s32     %p2, %r4, 0;
-        and.pred        %p3, %p2, %p1;
-        @%p3 bra        $L__BB4_3;
-        bra.uni         $L__BB4_1;
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.u64         %SPL</span><span class="pl-s1">,</span><span class="pl-en"> __local_depot4</span><span class="pl-c">;</span>
+<span class="pl-en">        cvta.local.u64  %</span><span class="pl-v">SP</span><span class="pl-s1">,</span><span class="pl-en"> %SPL</span><span class="pl-c">;</span>
+<span class="pl-en">        ld.param.u64    %rd3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">testSin(double&amp;)_param_0</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        cvta.to.</span><span class="pl-c1">global</span><span class="pl-en">.u64      %rd1</span><span class="pl-s1">,</span><span class="pl-en"> %rd3</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">add</span><span class="pl-en">.u64         %rd4</span><span class="pl-s1">,</span><span class="pl-en"> %</span><span class="pl-v">SP</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">add</span><span class="pl-en">.u64         %rd2</span><span class="pl-s1">,</span><span class="pl-en"> %SPL</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-c">;</span>
+<span class="pl-en">        ld.</span><span class="pl-c1">global</span><span class="pl-en">.f64   %fd1</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">%rd1</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        {</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.b64         {%r4</span><span class="pl-s1">,</span><span class="pl-en"> %temp}</span><span class="pl-s1">,</span><span class="pl-en"> %fd1</span><span class="pl-c">;</span>
+<span class="pl-en">        }</span>
+<span class="pl-en">        {</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.b64         {%temp</span><span class="pl-s1">,</span><span class="pl-en"> %r5}</span><span class="pl-s1">,</span><span class="pl-en"> %fd1</span><span class="pl-c">;</span>
+<span class="pl-en">        }</span>
+<span class="pl-en">        </span><span class="pl-k">and</span><span class="pl-en">.b32         %r6</span><span class="pl-s1">,</span><span class="pl-en"> %r5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">2147483647</span><span class="pl-c">;</span>
+<span class="pl-en">        setp.eq.s32     %p1</span><span class="pl-s1">,</span><span class="pl-en"> %r6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">2146435072</span><span class="pl-c">;</span>
+<span class="pl-en">        setp.eq.s32     %p2</span><span class="pl-s1">,</span><span class="pl-en"> %r4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">and</span><span class="pl-en">.pred        %p3</span><span class="pl-s1">,</span><span class="pl-en"> %p2</span><span class="pl-s1">,</span><span class="pl-en"> %p1</span><span class="pl-c">;</span>
+<span class="pl-en">        @%p3 bra</span>        <span class="pl-c1">$</span><span class="pl-en">L__BB4_3</span><span class="pl-c">;</span>
+<span class="pl-en">        bra.uni</span>         <span class="pl-c1">$</span><span class="pl-en">L__BB4_1</span><span class="pl-c">;</span>
 
-$L__BB4_3:
-        mov.f64         %fd22, 0d0000000000000000;
-        mul.rn.f64      %fd38, %fd1, %fd22;
-        mov.u32         %r12, 0;
-        bra.uni         $L__BB4_4;
+<span class="pl-c1">$</span><span class="pl-en">L__BB4_3:</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f64         %fd22</span><span class="pl-s1">,</span><span class="pl-en"> 0d0000000000000000</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mul</span><span class="pl-en">.rn.f64      %fd38</span><span class="pl-s1">,</span><span class="pl-en"> %fd1</span><span class="pl-s1">,</span><span class="pl-en"> %fd22</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.u32         %</span><span class="pl-v">r12</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-c">;</span>
+<span class="pl-en">        bra.uni</span>         <span class="pl-c1">$</span><span class="pl-en">L__BB4_4</span><span class="pl-c">;</span>
 
-$L__BB4_1:
-        mul.f64         %fd13, %fd1, 0d3FE45F306DC9C883;
-        cvt.rni.s32.f64         %r12, %fd13;
-        st.local.u32    [%rd2], %r12;
-        cvt.rn.f64.s32  %fd14, %r12;
-        neg.f64         %fd15, %fd14;
-        mov.f64         %fd16, 0d3FF921FB54442D18;
-        fma.rn.f64      %fd17, %fd15, %fd16, %fd1;
-        mov.f64         %fd18, 0d3C91A62633145C00;
-        fma.rn.f64      %fd19, %fd15, %fd18, %fd17;
-        mov.f64         %fd20, 0d397B839A252049C0;
-        fma.rn.f64      %fd38, %fd15, %fd20, %fd19;
-        abs.f64         %fd21, %fd1;
-        setp.ltu.f64    %p4, %fd21, 0d41E0000000000000;
-        @%p4 bra        $L__BB4_4;
+<span class="pl-c1">$</span><span class="pl-en">L__BB4_1:</span>
+<span class="pl-en">        </span><span class="pl-k">mul</span><span class="pl-en">.f64         %fd13</span><span class="pl-s1">,</span><span class="pl-en"> %fd1</span><span class="pl-s1">,</span><span class="pl-en"> 0d3FE45F306DC9C883</span><span class="pl-c">;</span>
+<span class="pl-en">        cvt.rni.s32.f64         %</span><span class="pl-v">r12</span><span class="pl-s1">,</span><span class="pl-en"> %fd13</span><span class="pl-c">;</span>
+<span class="pl-en">        st.local.u32    </span><span class="pl-s1">[</span><span class="pl-en">%rd2</span><span class="pl-s1">],</span><span class="pl-en"> %</span><span class="pl-v">r12</span><span class="pl-c">;</span>
+<span class="pl-en">        cvt.rn.f64.s32  %fd14</span><span class="pl-s1">,</span><span class="pl-en"> %</span><span class="pl-v">r12</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">neg</span><span class="pl-en">.f64         %fd15</span><span class="pl-s1">,</span><span class="pl-en"> %fd14</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f64         %fd16</span><span class="pl-s1">,</span><span class="pl-en"> 0d3FF921FB54442D18</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd17</span><span class="pl-s1">,</span><span class="pl-en"> %fd15</span><span class="pl-s1">,</span><span class="pl-en"> %fd16</span><span class="pl-s1">,</span><span class="pl-en"> %fd1</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f64         %fd18</span><span class="pl-s1">,</span><span class="pl-en"> 0d3C91A62633145C00</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd19</span><span class="pl-s1">,</span><span class="pl-en"> %fd15</span><span class="pl-s1">,</span><span class="pl-en"> %fd18</span><span class="pl-s1">,</span><span class="pl-en"> %fd17</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f64         %fd20</span><span class="pl-s1">,</span><span class="pl-en"> 0d397B839A252049C0</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd38</span><span class="pl-s1">,</span><span class="pl-en"> %fd15</span><span class="pl-s1">,</span><span class="pl-en"> %fd20</span><span class="pl-s1">,</span><span class="pl-en"> %fd19</span><span class="pl-c">;</span>
+<span class="pl-en">        abs.f64         %fd21</span><span class="pl-s1">,</span><span class="pl-en"> %fd1</span><span class="pl-c">;</span>
+<span class="pl-en">        setp.ltu.f64    %p4</span><span class="pl-s1">,</span><span class="pl-en"> %fd21</span><span class="pl-s1">,</span><span class="pl-en"> 0d41E0000000000000</span><span class="pl-c">;</span>
+<span class="pl-en">        @%p4 bra</span>        <span class="pl-c1">$</span><span class="pl-en">L__BB4_4</span><span class="pl-c">;</span>
 
-        { // callseq 0, 0
-        st.param.f64    [param0+0], %fd1;
-        st.param.b64    [param1+0], %rd4;
-        call.uni (retval0), 
-        __internal_trig_reduction_slowpathd, 
-        (
-        param0, 
-        param1
-        );
-        ld.param.f64    %fd38, [retval0+0];
-        } // callseq 0
-        ld.local.u32    %r12, [%rd2];
+<span class="pl-en">        { // callseq </span><span class="pl-c1">0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span>
+<span class="pl-en">        st.param.f64    </span><span class="pl-s1">[</span><span class="pl-en">param0</span><span class="pl-s1">+</span><span class="pl-c1">0</span><span class="pl-s1">],</span><span class="pl-en"> %fd1</span><span class="pl-c">;</span>
+<span class="pl-en">        st.param.b64    </span><span class="pl-s1">[</span><span class="pl-en">param1</span><span class="pl-s1">+</span><span class="pl-c1">0</span><span class="pl-s1">],</span><span class="pl-en"> %rd4</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">call</span><span class="pl-en">.uni (retval0)</span><span class="pl-s1">,</span><span class="pl-en"> </span>
+<span class="pl-en">        __internal_trig_reduction_slowpathd</span><span class="pl-s1">,</span><span class="pl-en"> </span>
+<span class="pl-en">        (</span>
+<span class="pl-en">        param0</span><span class="pl-s1">,</span><span class="pl-en"> </span>
+<span class="pl-en">        param1</span>
+<span class="pl-en">        )</span><span class="pl-c">;</span>
+<span class="pl-en">        ld.param.f64    %fd38</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">retval0</span><span class="pl-s1">+</span><span class="pl-c1">0</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        } // callseq </span><span class="pl-c1">0</span>
+<span class="pl-en">        ld.local.u32    %</span><span class="pl-v">r12</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">%rd2</span><span class="pl-s1">]</span><span class="pl-c">;</span>
 
-$L__BB4_4:
-        and.b32         %r8, %r12, 1;
-        shl.b32         %r9, %r12, 3;
-        and.b32         %r10, %r9, 8;
-        setp.eq.s32     %p5, %r8, 0;
-        selp.f64        %fd23, 0d3DE5DB65F9785EBA, 0dBDA8FF8320FD8164, %p5;
-        mul.wide.s32    %rd6, %r10, 8;
-        mov.u64         %rd7, __cudart_sin_cos_coeffs;
-        add.s64         %rd8, %rd7, %rd6;
-        ld.global.nc.f64        %fd24, [%rd8+8];
-        mul.rn.f64      %fd6, %fd38, %fd38;
-        fma.rn.f64      %fd25, %fd23, %fd6, %fd24;
-        ld.global.nc.f64        %fd26, [%rd8+16];
-        fma.rn.f64      %fd27, %fd25, %fd6, %fd26;
-        ld.global.nc.f64        %fd28, [%rd8+24];
-        fma.rn.f64      %fd29, %fd27, %fd6, %fd28;
-        ld.global.nc.f64        %fd30, [%rd8+32];
-        fma.rn.f64      %fd31, %fd29, %fd6, %fd30;
-        ld.global.nc.f64        %fd32, [%rd8+40];
-        fma.rn.f64      %fd33, %fd31, %fd6, %fd32;
-        ld.global.nc.f64        %fd34, [%rd8+48];
-        fma.rn.f64      %fd7, %fd33, %fd6, %fd34;
-        fma.rn.f64      %fd40, %fd7, %fd38, %fd38;
-        @%p5 bra        $L__BB4_6;
+<span class="pl-c1">$</span><span class="pl-en">L__BB4_4:</span>
+<span class="pl-en">        </span><span class="pl-k">and</span><span class="pl-en">.b32         %</span><span class="pl-v">r8</span><span class="pl-s1">,</span><span class="pl-en"> %</span><span class="pl-v">r12</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">1</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">shl</span><span class="pl-en">.b32         %</span><span class="pl-v">r9</span><span class="pl-s1">,</span><span class="pl-en"> %</span><span class="pl-v">r12</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">3</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">and</span><span class="pl-en">.b32         %</span><span class="pl-v">r10</span><span class="pl-s1">,</span><span class="pl-en"> %</span><span class="pl-v">r9</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">8</span><span class="pl-c">;</span>
+<span class="pl-en">        setp.eq.s32     %p5</span><span class="pl-s1">,</span><span class="pl-en"> %</span><span class="pl-v">r8</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-c">;</span>
+<span class="pl-en">        selp.f64        %fd23</span><span class="pl-s1">,</span><span class="pl-en"> 0d3DE5DB65F9785EBA</span><span class="pl-s1">,</span><span class="pl-en"> 0dBDA8FF8320FD8164</span><span class="pl-s1">,</span><span class="pl-en"> %p5</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mul</span><span class="pl-en">.wide.s32    %rd6</span><span class="pl-s1">,</span><span class="pl-en"> %</span><span class="pl-v">r10</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">8</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.u64         %rd7</span><span class="pl-s1">,</span><span class="pl-en"> __cudart_sin_cos_coeffs</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">add</span><span class="pl-en">.s64         %rd8</span><span class="pl-s1">,</span><span class="pl-en"> %rd7</span><span class="pl-s1">,</span><span class="pl-en"> %rd6</span><span class="pl-c">;</span>
+<span class="pl-en">        ld.</span><span class="pl-c1">global</span><span class="pl-en">.nc.f64        %fd24</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">%rd8</span><span class="pl-s1">+</span><span class="pl-c1">8</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mul</span><span class="pl-en">.rn.f64      %fd6</span><span class="pl-s1">,</span><span class="pl-en"> %fd38</span><span class="pl-s1">,</span><span class="pl-en"> %fd38</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd25</span><span class="pl-s1">,</span><span class="pl-en"> %fd23</span><span class="pl-s1">,</span><span class="pl-en"> %fd6</span><span class="pl-s1">,</span><span class="pl-en"> %fd24</span><span class="pl-c">;</span>
+<span class="pl-en">        ld.</span><span class="pl-c1">global</span><span class="pl-en">.nc.f64        %fd26</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">%rd8</span><span class="pl-s1">+</span><span class="pl-c1">16</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd27</span><span class="pl-s1">,</span><span class="pl-en"> %fd25</span><span class="pl-s1">,</span><span class="pl-en"> %fd6</span><span class="pl-s1">,</span><span class="pl-en"> %fd26</span><span class="pl-c">;</span>
+<span class="pl-en">        ld.</span><span class="pl-c1">global</span><span class="pl-en">.nc.f64        %fd28</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">%rd8</span><span class="pl-s1">+</span><span class="pl-c1">24</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd29</span><span class="pl-s1">,</span><span class="pl-en"> %fd27</span><span class="pl-s1">,</span><span class="pl-en"> %fd6</span><span class="pl-s1">,</span><span class="pl-en"> %fd28</span><span class="pl-c">;</span>
+<span class="pl-en">        ld.</span><span class="pl-c1">global</span><span class="pl-en">.nc.f64        %fd30</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">%rd8</span><span class="pl-s1">+</span><span class="pl-c1">32</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd31</span><span class="pl-s1">,</span><span class="pl-en"> %fd29</span><span class="pl-s1">,</span><span class="pl-en"> %fd6</span><span class="pl-s1">,</span><span class="pl-en"> %fd30</span><span class="pl-c">;</span>
+<span class="pl-en">        ld.</span><span class="pl-c1">global</span><span class="pl-en">.nc.f64        %fd32</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">%rd8</span><span class="pl-s1">+</span><span class="pl-c1">40</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd33</span><span class="pl-s1">,</span><span class="pl-en"> %fd31</span><span class="pl-s1">,</span><span class="pl-en"> %fd6</span><span class="pl-s1">,</span><span class="pl-en"> %fd32</span><span class="pl-c">;</span>
+<span class="pl-en">        ld.</span><span class="pl-c1">global</span><span class="pl-en">.nc.f64        %fd34</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">%rd8</span><span class="pl-s1">+</span><span class="pl-c1">48</span><span class="pl-s1">]</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd7</span><span class="pl-s1">,</span><span class="pl-en"> %fd33</span><span class="pl-s1">,</span><span class="pl-en"> %fd6</span><span class="pl-s1">,</span><span class="pl-en"> %fd34</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd40</span><span class="pl-s1">,</span><span class="pl-en"> %fd7</span><span class="pl-s1">,</span><span class="pl-en"> %fd38</span><span class="pl-s1">,</span><span class="pl-en"> %fd38</span><span class="pl-c">;</span>
+<span class="pl-en">        @%p5 bra</span>        <span class="pl-c1">$</span><span class="pl-en">L__BB4_6</span><span class="pl-c">;</span>
 
-        mov.f64         %fd35, 0d3FF0000000000000;
-        fma.rn.f64      %fd40, %fd7, %fd6, %fd35;
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f64         %fd35</span><span class="pl-s1">,</span><span class="pl-en"> 0d3FF0000000000000</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd40</span><span class="pl-s1">,</span><span class="pl-en"> %fd7</span><span class="pl-s1">,</span><span class="pl-en"> %fd6</span><span class="pl-s1">,</span><span class="pl-en"> %fd35</span><span class="pl-c">;</span>
 
-$L__BB4_6:
-        and.b32         %r11, %r12, 2;
-        setp.eq.s32     %p6, %r11, 0;
-        @%p6 bra        $L__BB4_8;
+<span class="pl-c1">$</span><span class="pl-en">L__BB4_6:</span>
+<span class="pl-en">        </span><span class="pl-k">and</span><span class="pl-en">.b32         %</span><span class="pl-v">r11</span><span class="pl-s1">,</span><span class="pl-en"> %</span><span class="pl-v">r12</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">2</span><span class="pl-c">;</span>
+<span class="pl-en">        setp.eq.s32     %p6</span><span class="pl-s1">,</span><span class="pl-en"> %</span><span class="pl-v">r11</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0</span><span class="pl-c">;</span>
+<span class="pl-en">        @%p6 bra</span>        <span class="pl-c1">$</span><span class="pl-en">L__BB4_8</span><span class="pl-c">;</span>
 
-        mov.f64         %fd36, 0d0000000000000000;
-        mov.f64         %fd37, 0dBFF0000000000000;
-        fma.rn.f64      %fd40, %fd40, %fd37, %fd36;
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f64         %fd36</span><span class="pl-s1">,</span><span class="pl-en"> 0d0000000000000000</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">mov</span><span class="pl-en">.f64         %fd37</span><span class="pl-s1">,</span><span class="pl-en"> 0dBFF0000000000000</span><span class="pl-c">;</span>
+<span class="pl-en">        fma.rn.f64      %fd40</span><span class="pl-s1">,</span><span class="pl-en"> %fd40</span><span class="pl-s1">,</span><span class="pl-en"> %fd37</span><span class="pl-s1">,</span><span class="pl-en"> %fd36</span><span class="pl-c">;</span>
 
-$L__BB4_8:
-        st.global.f64   [%rd1], %fd40;
-        ret;
+<span class="pl-c1">$</span><span class="pl-en">L__BB4_8:</span>
+<span class="pl-en">        st.</span><span class="pl-c1">global</span><span class="pl-en">.f64   </span><span class="pl-s1">[</span><span class="pl-en">%rd1</span><span class="pl-s1">],</span><span class="pl-en"> %fd40</span><span class="pl-c">;</span>
+<span class="pl-en">        </span><span class="pl-k">ret</span><span class="pl-c">;</span>
 
-}
-</code></pre>
+<span class="pl-en">}</span></pre></div>
 <p>sass实现不负重望地又搞出来一个slowpath函数：</p>
-<pre lang="asm" class="notranslate"><code class="notranslate">testSin(double&amp;):
- LDC R1, c[0x0][0x28] 
- LDC.64 R12, c[0x0][0x210] 
- ULDC.64 UR4, c[0x0][0x208] 
- IADD3 R1, R1, -0x30, RZ 
- LDG.E.64 R10, desc[UR4][R12.64] 
- ULDC UR6, c[0x0][0x20] 
- IADD3 R14, R1, UR6, RZ 
- LOP3.LUT R0, R11, 0x7fffffff, RZ, 0xc0, !PT 
- ISETP.EQ.AND P1, PT, R10, RZ, PT 
- ISETP.NE.AND P0, PT, R0, 0x7ff00000, PT 
- @!P0 BRA P1, `(.L_x_0) 
- UMOV UR6, 0x6dc9c883 
- UMOV UR7, 0x3fe45f30 
- DSETP.GE.AND P0, PT, |R10|.reuse, 2.14748364800000000000e+09, PT 
- DMUL R4, R10, UR6 
- UMOV UR6, 0x54442d18 
- UMOV UR7, 0x3ff921fb 
- F2I.F64 R0, R4 
- I2F.F64 R6, R0 
- STL [R1], R0 
- DFMA R2, -R6, UR6, R10 
- UMOV UR6, 0x33145c00 
- UMOV UR7, 0x3c91a626 
- DFMA R2, -R6, UR6, R2 
- UMOV UR6, 0x252049c0 
- UMOV UR7, 0x397b839a 
- DFMA R2, -R6, UR6, R2 
- @!P0 BRA `(.L_x_1) 
- MOV R16, 0x1e0 
- CALL.REL.NOINC `($testSin(double&amp;)$__internal_trig_reduction_slowpathd) 
- LDL R0, [R1] 
- BRA `(.L_x_1) 
-.L_x_0:
- DMUL R2, RZ, R10 
- IMAD.MOV.U32 R0, RZ, RZ, RZ 
-.L_x_1:
- IMAD.SHL.U32 R6, R0, 0x8, RZ 
- MOV R4, 32@lo(__cudart_sin_cos_coeffs) 
- MOV R5, 32@hi(__cudart_sin_cos_coeffs) 
- LOP3.LUT R19, R6, 0x8, RZ, 0xc0, !PT 
- IMAD.WIDE R18, R19, 0x8, R4 
- LDG.E.64.CONSTANT R20, desc[UR4][R18.64+0x8] 
- LDG.E.64.CONSTANT R16, desc[UR4][R18.64+0x10] 
- LDG.E.64.CONSTANT R14, desc[UR4][R18.64+0x18] 
- LDG.E.64.CONSTANT R10, desc[UR4][R18.64+0x20] 
- LDG.E.64.CONSTANT R4, desc[UR4][R18.64+0x28] 
- LDG.E.64.CONSTANT R6, desc[UR4][R18.64+0x30] 
- R2P PR, R0, 0x3 
- IMAD.MOV.U32 R22, RZ, RZ, 0x79785eba 
- DMUL R8, R2, R2 
- IMAD.MOV.U32 R0, RZ, RZ, 0x3de5db65 
- FSEL R22, -R22, 4.2945490664224492434e-19, !P0 
- FSEL R23, R0, -0.082518599927425384521, !P0 
- DFMA R20, R8, R22, R20 
- DFMA R16, R8, R20, R16 
- DFMA R14, R8, R16, R14 
- DFMA R10, R8, R14, R10 
- DFMA R4, R8, R10, R4 
- DFMA R4, R8, R4, R6 
- DFMA R2, R4, R2, R2 
- @P0 DFMA R2, R8, R4, 1 
- @P1 DFMA R2, R2, -1, RZ 
- STG.E.64 desc[UR4][R12.64], R2 
- EXIT 
-$testSin(double&amp;)$__internal_trig_reduction_slowpathd:
- SHF.R.U32.HI R0, RZ, 0x14, R11.reuse 
- IMAD.MOV.U32 R2, RZ, RZ, R10 
- IMAD.MOV.U32 R17, RZ, RZ, R11 
- LOP3.LUT R0, R0, 0x7ff, RZ, 0xc0, !PT 
- ISETP.NE.AND P0, PT, R0, 0x7ff, PT 
- @!P0 BRA `(.L_x_2) 
- IADD3 R0, R0, -0x400, RZ 
- CS2R R18, SRZ 
- IADD3 R7, R1, 0x8, RZ 
- SHF.R.U32.HI R3, RZ, 0x6, R0 
- LOP3.LUT P2, R15, R0, 0x3f, RZ, 0xc0, !PT 
- IADD3 R5, -R3, 0x10, RZ 
- IADD3 R4, -R3, 0x13, RZ 
- ISETP.GT.AND P0, PT, R5, 0xe, PT 
- IADD3 R6, -R3, 0xf, RZ 
- SEL R4, R4, 0x12, !P0 
- IMAD.MOV.U32 R9, RZ, RZ, R6 
- ISETP.GT.AND P0, PT, R5, R4, PT 
- @P0 BRA `(.L_x_3) 
- MOV R8, 32@lo(__cudart_i2opi_d) 
- IMAD.MOV R3, RZ, RZ, -R3 
- MOV R9, 32@hi(__cudart_i2opi_d) 
- IMAD.SHL.U32 R5, R2.reuse, 0x800, RZ 
- SHF.L.U64.HI R17, R2, 0xb, R17 
- IMAD.MOV.U32 R21, RZ, RZ, R7 
- ULDC.64 UR6, c[0x0][0x208] 
- IMAD.WIDE R8, R3, 0x8, R8 
- LOP3.LUT R17, R17, 0x80000000, RZ, 0xfc, !PT 
- IADD3 R0, P0, R8, 0x78, RZ 
- IMAD.X R23, RZ, RZ, R9, P0 
- IMAD.MOV.U32 R9, RZ, RZ, R6 
-.L_x_4:
- IMAD.MOV.U32 R2, RZ, RZ, R0 
- IMAD.MOV.U32 R3, RZ, RZ, R23 
- LDG.E.64.CONSTANT R2, desc[UR6][R2.64] 
- IADD3 R9, R9, 0x1, RZ 
- IMAD.WIDE.U32 R18, P3, R2, R5, R18 
- IMAD R25, R2.reuse, R17.reuse, RZ 
- IMAD.HI.U32 R8, R2, R17, RZ 
- IADD3 R19, P0, R25, R19, RZ 
- IMAD R20, R3.reuse, R5.reuse, RZ 
- IMAD.HI.U32 R25, R3, R5, RZ 
- IADD3 R19, P1, R20, R19, RZ 
- IMAD.X R8, RZ, RZ, R8, P3 
- ISETP.GE.AND P3, PT, R9, R4, PT 
- IMAD.HI.U32 R2, R3, R17.reuse, RZ 
- STL.64 [R21], R18 
- IADD3.X R8, P0, R25, R8, RZ, P0, !PT 
- IMAD R3, R3, R17, RZ 
- IMAD.X R2, RZ, RZ, R2, P0 
- IADD3.X R8, P1, R3, R8, RZ, P1, !PT 
- IADD3 R0, P0, R0, 0x8, RZ 
- IMAD.X R3, RZ, RZ, R2, P1 
- IADD3 R21, R21, 0x8, RZ 
- IMAD.X R23, RZ, RZ, R23, P0 
- IMAD.MOV.U32 R18, RZ, RZ, R8 
- IMAD.MOV.U32 R19, RZ, RZ, R3 
- @!P3 BRA `(.L_x_4) 
-.L_x_3:
- IMAD.IADD R6, R9, 0x1, -R6 
- IMAD R17, R6, 0x8, R7 
- STL.64 [R17], R18 
- LDL.64 R2, [R1+0x18] 
- @P2 LDL.64 R6, [R1+0x10] 
- LDL.64 R4, [R1+0x20] 
- @P2 IADD3 R0, -R15, 0x40, RZ 
- ULDC UR6, c[0x0][0x20] 
- @P2 SHF.L.U32 R9, R2, R15, RZ 
- @P2 SHF.R.U64 R10, R2, R0.reuse, R3 
- @P2 SHF.R.U64 R6, R6, R0.reuse, R7 
- @P2 SHF.L.U64.HI R8, R2, R15, R3 
- @P2 LOP3.LUT R2, R6, R9, RZ, 0xfc, !PT 
- @P2 SHF.L.U32 R9, R4, R15.reuse, RZ 
- @P2 SHF.R.U32.HI R7, RZ, R0, R7 
- IMAD.SHL.U32 R6, R2, 0x4, RZ 
- @P2 SHF.L.U64.HI R15, R4, R15, R5 
- @P2 SHF.R.U32.HI R0, RZ, R0, R3 
- @P2 LOP3.LUT R4, R9, R10, RZ, 0xfc, !PT 
- @P2 LOP3.LUT R3, R7, R8, RZ, 0xfc, !PT 
- @P2 LOP3.LUT R5, R15, R0, RZ, 0xfc, !PT 
- IMAD.SHL.U32 R17, R4, 0x4, RZ 
- SHF.L.U64.HI R7, R2, 0x2, R3.reuse 
- SHF.R.U32.HI R2, RZ, 0x1e, R3 
- IADD3 RZ, P0, RZ, -R6, RZ 
- LOP3.LUT R0, RZ, R7, RZ, 0x33, !PT 
- LOP3.LUT R17, R2, R17, RZ, 0xfc, !PT 
- SHF.L.U64.HI R8, R4, 0x2, R5 
- IADD3.X R4, P0, RZ, R0, RZ, P0, !PT 
- LOP3.LUT R2, RZ, R17, RZ, 0x33, !PT 
- LOP3.LUT R3, RZ, R8, RZ, 0x33, !PT 
- IADD3.X R2, P0, RZ, R2, RZ, P0, !PT 
- SHF.R.U32.HI R0, RZ, 0x1d, R5 
- IMAD.X R3, RZ, RZ, R3, P0 
- LOP3.LUT P1, RZ, R0.reuse, 0x1, RZ, 0xc0, !PT 
- LOP3.LUT R0, R0, 0x1, RZ, 0xc0, !PT 
- SEL R3, R8, R3, !P1 
- SEL R17, R17, R2, !P1 
- ISETP.NE.U32.AND P0, PT, R3, RZ, PT 
- SEL R4, R7, R4, !P1 
- SEL R8, R17, R3, !P0 
- @P1 IMAD.MOV R6, RZ, RZ, -R6 
- LEA.HI R0, R5, R0, RZ, 0x2 
- FLO.U32 R8, R8 
- IMAD.MOV R5, RZ, RZ, -R0 
- IADD3 R9, -R8.reuse, 0x1f, RZ 
- IADD3 R2, -R8, 0x3f, RZ 
- @P0 IMAD.MOV R2, RZ, RZ, R9 
- ISETP.NE.U32.AND P0, PT, R2.reuse, RZ, PT 
- IADD3 R7, -R2, 0x40, RZ 
- ISETP.NE.AND.EX P0, PT, RZ, RZ, PT, P0 
- SHF.L.U32 R9, R17.reuse, R2.reuse, RZ 
- SHF.R.U64 R6, R6, R7, R4 
- SHF.L.U64.HI R15, R17, R2, R3 
- SHF.R.U32.HI R4, RZ, R7, R4 
- IMAD.MOV.U32 R7, RZ, RZ, RZ 
- @P0 LOP3.LUT R17, R6, R9, RZ, 0xfc, !PT 
- @P0 LOP3.LUT R3, R4, R15, RZ, 0xfc, !PT 
- IMAD.WIDE.U32 R8, R17, 0x2168c235, RZ 
- IMAD.MOV.U32 R6, RZ, RZ, R9 
- IADD3 RZ, P0, R8, R8, RZ 
- IMAD.HI.U32 R4, R3, -0x36f0255e, RZ 
- IMAD.WIDE.U32 R6, R17, -0x36f0255e, R6 
- IMAD R9, R3.reuse, -0x36f0255e, RZ 
- IMAD.WIDE.U32 R6, P2, R3, 0x2168c235, R6 
- IMAD.X R3, RZ, RZ, R4, P2 
- IADD3 R4, P2, R9, R7, RZ 
- IADD3.X RZ, P0, R6, R6, RZ, P0, !PT 
- ISETP.GT.U32.AND P3, PT, R4.reuse, RZ, PT 
- IMAD.X R3, RZ, RZ, R3, P2 
- IADD3.X R7, P2, R4, R4, RZ, P0, !PT 
- ISETP.GT.AND.EX P0, PT, R3.reuse, RZ, PT, P3 
- IMAD.X R6, R3, 0x1, R3, P2 
- LOP3.LUT P2, RZ, R11, 0x80000000, RZ, 0xc0, !PT 
- SEL R7, R7, R4, P0 
- SEL R4, R6, R3, P0 
- IMAD.MOV.U32 R6, RZ, RZ, RZ 
- IADD3 R3, P3, R7, 0x1, RZ 
- IADD3 R7, R14, -UR6, RZ 
- LOP3.LUT R11, R11, 0x80000000, RZ, 0xc0, !PT 
- IMAD.X R4, RZ, RZ, R4, P3 
- @P2 IMAD.MOV.U32 R0, RZ, RZ, R5 
- SEL R5, RZ, 0x1, !P0 
- SHF.R.U64 R3, R3, 0xa, R4 
- STL [R7], R0 
- IMAD.IADD R5, R5, 0x1, R2 
- IADD3 R3, P2, R3, 0x1, RZ 
- @P1 LOP3.LUT R11, R11, 0x80000000, RZ, 0x3c, !PT 
- LEA.HI.X R4, R4, RZ, RZ, 0x16, P2 
- SHF.R.U64 R3, R3, 0x1, R4.reuse 
- SHF.R.U32.HI R4, RZ, 0x1, R4 
- IADD3 R2, P0, P2, R3, RZ, -R6 
- IMAD.SHL.U32 R3, R5, 0x100000, RZ 
- IADD3.X R4, R4, 0x3fe00000, ~R3, P0, P2 
- LOP3.LUT R17, R4, R11, RZ, 0xfc, !PT 
-.L_x_2:
- IMAD.MOV.U32 R3, RZ, RZ, R17 
- IMAD.MOV.U32 R17, RZ, RZ, 0x0 
- RET.REL.NODEC R16 `(testSin(double&amp;)) 
-</code></pre></div>
+<div class="highlight highlight-source-assembly"><pre class="notranslate"><span class="pl-en">testSin(double&amp;):</span>
+<span class="pl-en"> LDC R1</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x28</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> LDC.</span><span class="pl-c1">64</span><span class="pl-en"> </span><span class="pl-v">R12</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x210</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> ULDC.</span><span class="pl-c1">64</span><span class="pl-en"> UR4</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x208</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> IADD3 R1</span><span class="pl-s1">,</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0x30</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> LDG.E.</span><span class="pl-c1">64</span><span class="pl-en"> </span><span class="pl-v">R10</span><span class="pl-s1">,</span><span class="pl-en"> desc</span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">][</span><span class="pl-v">R12</span><span class="pl-en">.</span><span class="pl-c1">64</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> ULDC UR6</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x20</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> IADD3 </span><span class="pl-v">R14</span><span class="pl-s1">,</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> UR6</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> LOP3.LUT R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R11</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x7fffffff</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xc0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> ISETP.EQ.</span><span class="pl-k">AND</span><span class="pl-en"> P1</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R10</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> ISETP.NE.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x7ff00000</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> @!P0 BRA P1</span><span class="pl-s1">,</span><span class="pl-en"> `(.L_x_0) </span>
+<span class="pl-en"> UMOV UR6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x6dc9c883</span><span class="pl-en"> </span>
+<span class="pl-en"> UMOV UR7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x3fe45f30</span><span class="pl-en"> </span>
+<span class="pl-en"> DSETP.GE.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> |</span><span class="pl-v">R10</span><span class="pl-en">|.reuse</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">2</span><span class="pl-en">.14748364800000000000e</span><span class="pl-s1">+</span><span class="pl-c1">09</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> DMUL R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R10</span><span class="pl-s1">,</span><span class="pl-en"> UR6 </span>
+<span class="pl-en"> UMOV UR6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x54442d18</span><span class="pl-en"> </span>
+<span class="pl-en"> UMOV UR7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x3ff921fb</span><span class="pl-en"> </span>
+<span class="pl-en"> F2I.F64 R0</span><span class="pl-s1">,</span><span class="pl-en"> R4 </span>
+<span class="pl-en"> I2F.F64 R6</span><span class="pl-s1">,</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> STL </span><span class="pl-s1">[</span><span class="pl-en">R1</span><span class="pl-s1">],</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> DFMA R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R6</span><span class="pl-s1">,</span><span class="pl-en"> UR6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R10</span><span class="pl-en"> </span>
+<span class="pl-en"> UMOV UR6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x33145c00</span><span class="pl-en"> </span>
+<span class="pl-en"> UMOV UR7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x3c91a626</span><span class="pl-en"> </span>
+<span class="pl-en"> DFMA R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R6</span><span class="pl-s1">,</span><span class="pl-en"> UR6</span><span class="pl-s1">,</span><span class="pl-en"> R2 </span>
+<span class="pl-en"> UMOV UR6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x252049c0</span><span class="pl-en"> </span>
+<span class="pl-en"> UMOV UR7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x397b839a</span><span class="pl-en"> </span>
+<span class="pl-en"> DFMA R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R6</span><span class="pl-s1">,</span><span class="pl-en"> UR6</span><span class="pl-s1">,</span><span class="pl-en"> R2 </span>
+<span class="pl-en"> @!P0 BRA `(.L_x_1) </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R16</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1e0</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">CALL</span><span class="pl-en">.REL.NOINC `(</span><span class="pl-c1">$</span><span class="pl-en">testSin(double&amp;)</span><span class="pl-c1">$</span><span class="pl-en">__internal_trig_reduction_slowpathd) </span>
+<span class="pl-en"> LDL R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">R1</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> BRA `(.L_x_1) </span>
+<span class="pl-en">.L_x_0:</span>
+<span class="pl-en"> DMUL R2</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R10</span><span class="pl-en"> </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en">.L_x_1:</span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">SHL</span><span class="pl-en">.U32 R6</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x8</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">32</span><span class="pl-en">@lo(__cudart_sin_cos_coeffs) </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">32</span><span class="pl-en">@hi(__cudart_sin_cos_coeffs) </span>
+<span class="pl-en"> LOP3.LUT R19</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x8</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xc0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> IMAD.WIDE R18</span><span class="pl-s1">,</span><span class="pl-en"> R19</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x8</span><span class="pl-s1">,</span><span class="pl-en"> R4 </span>
+<span class="pl-en"> LDG.E.</span><span class="pl-c1">64</span><span class="pl-en">.CONSTANT R20</span><span class="pl-s1">,</span><span class="pl-en"> desc</span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">][</span><span class="pl-en">R18.</span><span class="pl-c1">64</span><span class="pl-s1">+</span><span class="pl-c1">0x8</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> LDG.E.</span><span class="pl-c1">64</span><span class="pl-en">.CONSTANT R16</span><span class="pl-s1">,</span><span class="pl-en"> desc</span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">][</span><span class="pl-en">R18.</span><span class="pl-c1">64</span><span class="pl-s1">+</span><span class="pl-c1">0x10</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> LDG.E.</span><span class="pl-c1">64</span><span class="pl-en">.CONSTANT </span><span class="pl-v">R14</span><span class="pl-s1">,</span><span class="pl-en"> desc</span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">][</span><span class="pl-en">R18.</span><span class="pl-c1">64</span><span class="pl-s1">+</span><span class="pl-c1">0x18</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> LDG.E.</span><span class="pl-c1">64</span><span class="pl-en">.CONSTANT </span><span class="pl-v">R10</span><span class="pl-s1">,</span><span class="pl-en"> desc</span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">][</span><span class="pl-en">R18.</span><span class="pl-c1">64</span><span class="pl-s1">+</span><span class="pl-c1">0x20</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> LDG.E.</span><span class="pl-c1">64</span><span class="pl-en">.CONSTANT R4</span><span class="pl-s1">,</span><span class="pl-en"> desc</span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">][</span><span class="pl-en">R18.</span><span class="pl-c1">64</span><span class="pl-s1">+</span><span class="pl-c1">0x28</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> LDG.E.</span><span class="pl-c1">64</span><span class="pl-en">.CONSTANT R6</span><span class="pl-s1">,</span><span class="pl-en"> desc</span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">][</span><span class="pl-en">R18.</span><span class="pl-c1">64</span><span class="pl-s1">+</span><span class="pl-c1">0x30</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> R2P PR</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x3</span><span class="pl-en"> </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R22</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x79785eba</span><span class="pl-en"> </span>
+<span class="pl-en"> DMUL </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> R2 </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x3de5db65</span><span class="pl-en"> </span>
+<span class="pl-en"> FSEL R22</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R22</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">4</span><span class="pl-en">.2945490664224492434e</span><span class="pl-s1">-</span><span class="pl-c1">19</span><span class="pl-s1">,</span><span class="pl-en"> !P0 </span>
+<span class="pl-en"> FSEL R23</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0</span><span class="pl-en">.</span><span class="pl-c1">082518599927425384521</span><span class="pl-s1">,</span><span class="pl-en"> !P0 </span>
+<span class="pl-en"> DFMA R20</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R22</span><span class="pl-s1">,</span><span class="pl-en"> R20 </span>
+<span class="pl-en"> DFMA R16</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R20</span><span class="pl-s1">,</span><span class="pl-en"> R16 </span>
+<span class="pl-en"> DFMA </span><span class="pl-v">R14</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R16</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R14</span><span class="pl-en"> </span>
+<span class="pl-en"> DFMA </span><span class="pl-v">R10</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R14</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R10</span><span class="pl-en"> </span>
+<span class="pl-en"> DFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R10</span><span class="pl-s1">,</span><span class="pl-en"> R4 </span>
+<span class="pl-en"> DFMA R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> R6 </span>
+<span class="pl-en"> DFMA R2</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> R2 </span>
+<span class="pl-en"> @P0 DFMA R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">1</span><span class="pl-en"> </span>
+<span class="pl-en"> @P1 DFMA R2</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">1</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> STG.E.</span><span class="pl-c1">64</span><span class="pl-en"> desc</span><span class="pl-s1">[</span><span class="pl-en">UR4</span><span class="pl-s1">][</span><span class="pl-v">R12</span><span class="pl-en">.</span><span class="pl-c1">64</span><span class="pl-s1">],</span><span class="pl-en"> R2 </span>
+<span class="pl-en"> EXIT </span>
+<span class="pl-c1">$</span><span class="pl-en">testSin(double&amp;)</span><span class="pl-c1">$</span><span class="pl-en">__internal_trig_reduction_slowpathd:</span>
+<span class="pl-en"> SHF.R.U32.HI R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x14</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R11</span><span class="pl-en">.reuse </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R2</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R10</span><span class="pl-en"> </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R17</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R11</span><span class="pl-en"> </span>
+<span class="pl-en"> LOP3.LUT R0</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x7ff</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xc0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> ISETP.NE.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x7ff</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> @!P0 BRA `(.L_x_2) </span>
+<span class="pl-en"> IADD3 R0</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0x400</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> CS2R R18</span><span class="pl-s1">,</span><span class="pl-en"> SRZ </span>
+<span class="pl-en"> IADD3 R7</span><span class="pl-s1">,</span><span class="pl-en"> R1</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x8</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> SHF.R.U32.HI R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x6</span><span class="pl-s1">,</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> LOP3.LUT P2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R15</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x3f</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xc0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> IADD3 R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x10</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IADD3 R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x13</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> ISETP.GT.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xe</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> IADD3 R6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xf</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> SEL R4</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x12</span><span class="pl-s1">,</span><span class="pl-en"> !P0 </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R6 </span>
+<span class="pl-en"> ISETP.GT.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> @P0 BRA `(.L_x_3) </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">32</span><span class="pl-en">@lo(__cudart_i2opi_d) </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R3 </span>
+<span class="pl-en"> </span><span class="pl-k">MOV</span><span class="pl-en"> </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">32</span><span class="pl-en">@hi(__cudart_i2opi_d) </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">SHL</span><span class="pl-en">.U32 R5</span><span class="pl-s1">,</span><span class="pl-en"> R2.reuse</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x800</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> SHF.L.U64.HI R17</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xb</span><span class="pl-s1">,</span><span class="pl-en"> R17 </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R21</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R7 </span>
+<span class="pl-en"> ULDC.</span><span class="pl-c1">64</span><span class="pl-en"> UR6</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x208</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> IMAD.WIDE </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x8</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-en"> </span>
+<span class="pl-en"> LOP3.LUT R17</span><span class="pl-s1">,</span><span class="pl-en"> R17</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x80000000</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xfc</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> IADD3 R0</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x78</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.X R23</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> P0 </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R6 </span>
+<span class="pl-en">.L_x_4:</span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R2</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R23 </span>
+<span class="pl-en"> LDG.E.</span><span class="pl-c1">64</span><span class="pl-en">.CONSTANT R2</span><span class="pl-s1">,</span><span class="pl-en"> desc</span><span class="pl-s1">[</span><span class="pl-en">UR6</span><span class="pl-s1">][</span><span class="pl-en">R2.</span><span class="pl-c1">64</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> IADD3 </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.WIDE.U32 R18</span><span class="pl-s1">,</span><span class="pl-en"> P3</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> R18 </span>
+<span class="pl-en"> IMAD R25</span><span class="pl-s1">,</span><span class="pl-en"> R2.reuse</span><span class="pl-s1">,</span><span class="pl-en"> R17.reuse</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.HI.U32 </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> R17</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IADD3 R19</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> R25</span><span class="pl-s1">,</span><span class="pl-en"> R19</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD R20</span><span class="pl-s1">,</span><span class="pl-en"> R3.reuse</span><span class="pl-s1">,</span><span class="pl-en"> R5.reuse</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.HI.U32 R25</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IADD3 R19</span><span class="pl-s1">,</span><span class="pl-en"> P1</span><span class="pl-s1">,</span><span class="pl-en"> R20</span><span class="pl-s1">,</span><span class="pl-en"> R19</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.X </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> P3 </span>
+<span class="pl-en"> ISETP.GE.</span><span class="pl-k">AND</span><span class="pl-en"> P3</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> IMAD.HI.U32 R2</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> R17.reuse</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> STL.</span><span class="pl-c1">64</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">R21</span><span class="pl-s1">],</span><span class="pl-en"> R18 </span>
+<span class="pl-en"> IADD3.X </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> R25</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> IMAD R3</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> R17</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.X R2</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> P0 </span>
+<span class="pl-en"> IADD3.X </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> P1</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> P1</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> IADD3 R0</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x8</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.X R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> P1 </span>
+<span class="pl-en"> IADD3 R21</span><span class="pl-s1">,</span><span class="pl-en"> R21</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x8</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.X R23</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R23</span><span class="pl-s1">,</span><span class="pl-en"> P0 </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R18</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-en"> </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R19</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R3 </span>
+<span class="pl-en"> @!P3 BRA `(.L_x_4) </span>
+<span class="pl-en">.L_x_3:</span>
+<span class="pl-en"> IMAD.IADD R6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R6 </span>
+<span class="pl-en"> IMAD R17</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x8</span><span class="pl-s1">,</span><span class="pl-en"> R7 </span>
+<span class="pl-en"> STL.</span><span class="pl-c1">64</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">R17</span><span class="pl-s1">],</span><span class="pl-en"> R18 </span>
+<span class="pl-en"> LDL.</span><span class="pl-c1">64</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">R1</span><span class="pl-s1">+</span><span class="pl-c1">0x18</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> @P2 LDL.</span><span class="pl-c1">64</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">R1</span><span class="pl-s1">+</span><span class="pl-c1">0x10</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> LDL.</span><span class="pl-c1">64</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">[</span><span class="pl-en">R1</span><span class="pl-s1">+</span><span class="pl-c1">0x20</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> @P2 IADD3 R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-v">R15</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x40</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> ULDC UR6</span><span class="pl-s1">,</span><span class="pl-en"> c</span><span class="pl-s1">[</span><span class="pl-c1">0x0</span><span class="pl-s1">][</span><span class="pl-c1">0x20</span><span class="pl-s1">]</span><span class="pl-en"> </span>
+<span class="pl-en"> @P2 SHF.L.U32 </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R15</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> @P2 SHF.R.U64 </span><span class="pl-v">R10</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> R0.reuse</span><span class="pl-s1">,</span><span class="pl-en"> R3 </span>
+<span class="pl-en"> @P2 SHF.R.U64 R6</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R0.reuse</span><span class="pl-s1">,</span><span class="pl-en"> R7 </span>
+<span class="pl-en"> @P2 SHF.L.U64.HI </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R15</span><span class="pl-s1">,</span><span class="pl-en"> R3 </span>
+<span class="pl-en"> @P2 LOP3.LUT R2</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xfc</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> @P2 SHF.L.U32 </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R15</span><span class="pl-en">.reuse</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> @P2 SHF.R.U32.HI R7</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> R7 </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">SHL</span><span class="pl-en">.U32 R6</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x4</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> @P2 SHF.L.U64.HI </span><span class="pl-v">R15</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R15</span><span class="pl-s1">,</span><span class="pl-en"> R5 </span>
+<span class="pl-en"> @P2 SHF.R.U32.HI R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> R3 </span>
+<span class="pl-en"> @P2 LOP3.LUT R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R10</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xfc</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> @P2 LOP3.LUT R3</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xfc</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> @P2 LOP3.LUT R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R15</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xfc</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">SHL</span><span class="pl-en">.U32 R17</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x4</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> SHF.L.U64.HI R7</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x2</span><span class="pl-s1">,</span><span class="pl-en"> R3.reuse </span>
+<span class="pl-en"> SHF.R.U32.HI R2</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1e</span><span class="pl-s1">,</span><span class="pl-en"> R3 </span>
+<span class="pl-en"> IADD3 RZ</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R6</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> LOP3.LUT R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x33</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> LOP3.LUT R17</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> R17</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xfc</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> SHF.L.U64.HI </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x2</span><span class="pl-s1">,</span><span class="pl-en"> R5 </span>
+<span class="pl-en"> IADD3.X R4</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> LOP3.LUT R2</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R17</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x33</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> LOP3.LUT R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x33</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> IADD3.X R2</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> SHF.R.U32.HI R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1d</span><span class="pl-s1">,</span><span class="pl-en"> R5 </span>
+<span class="pl-en"> IMAD.X R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> P0 </span>
+<span class="pl-en"> LOP3.LUT P1</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R0.reuse</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xc0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> LOP3.LUT R0</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xc0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> SEL R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> !P1 </span>
+<span class="pl-en"> SEL R17</span><span class="pl-s1">,</span><span class="pl-en"> R17</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> !P1 </span>
+<span class="pl-en"> ISETP.NE.U32.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> SEL R4</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> !P1 </span>
+<span class="pl-en"> SEL </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R17</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> !P0 </span>
+<span class="pl-en"> @P1 IMAD.</span><span class="pl-k">MOV</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R6 </span>
+<span class="pl-en"> </span><span class="pl-k">LEA</span><span class="pl-en">.HI R0</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x2</span><span class="pl-en"> </span>
+<span class="pl-en"> FLO.U32 </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-en"> </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R0 </span>
+<span class="pl-en"> IADD3 </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-v">R8</span><span class="pl-en">.reuse</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1f</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IADD3 R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x3f</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> @P0 IMAD.</span><span class="pl-k">MOV</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R9</span><span class="pl-en"> </span>
+<span class="pl-en"> ISETP.NE.U32.</span><span class="pl-k">AND</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R2.reuse</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> IADD3 R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x40</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> ISETP.NE.</span><span class="pl-k">AND</span><span class="pl-en">.EX P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> P0 </span>
+<span class="pl-en"> SHF.L.U32 </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> R17.reuse</span><span class="pl-s1">,</span><span class="pl-en"> R2.reuse</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> SHF.R.U64 R6</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> R4 </span>
+<span class="pl-en"> SHF.L.U64.HI </span><span class="pl-v">R15</span><span class="pl-s1">,</span><span class="pl-en"> R17</span><span class="pl-s1">,</span><span class="pl-en"> R2</span><span class="pl-s1">,</span><span class="pl-en"> R3 </span>
+<span class="pl-en"> SHF.R.U32.HI R4</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> R4 </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R7</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> @P0 LOP3.LUT R17</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xfc</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> @P0 LOP3.LUT R3</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R15</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xfc</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> IMAD.WIDE.U32 </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> R17</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x2168c235</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R6</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R9</span><span class="pl-en"> </span>
+<span class="pl-en"> IADD3 RZ</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R8</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.HI.U32 R4</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0x36f0255e</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.WIDE.U32 R6</span><span class="pl-s1">,</span><span class="pl-en"> R17</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0x36f0255e</span><span class="pl-s1">,</span><span class="pl-en"> R6 </span>
+<span class="pl-en"> IMAD </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> R3.reuse</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-c1">0x36f0255e</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IMAD.WIDE.U32 R6</span><span class="pl-s1">,</span><span class="pl-en"> P2</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x2168c235</span><span class="pl-s1">,</span><span class="pl-en"> R6 </span>
+<span class="pl-en"> IMAD.X R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> P2 </span>
+<span class="pl-en"> IADD3 R4</span><span class="pl-s1">,</span><span class="pl-en"> P2</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R9</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IADD3.X RZ</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> ISETP.GT.U32.</span><span class="pl-k">AND</span><span class="pl-en"> P3</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R4.reuse</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> PT </span>
+<span class="pl-en"> IMAD.X R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> P2 </span>
+<span class="pl-en"> IADD3.X R7</span><span class="pl-s1">,</span><span class="pl-en"> P2</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> ISETP.GT.</span><span class="pl-k">AND</span><span class="pl-en">.EX P0</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> R3.reuse</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> PT</span><span class="pl-s1">,</span><span class="pl-en"> P3 </span>
+<span class="pl-en"> IMAD.X R6</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> P2 </span>
+<span class="pl-en"> LOP3.LUT P2</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R11</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x80000000</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xc0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> SEL R7</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> P0 </span>
+<span class="pl-en"> SEL R4</span><span class="pl-s1">,</span><span class="pl-en"> R6</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> P0 </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R6</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IADD3 R3</span><span class="pl-s1">,</span><span class="pl-en"> P3</span><span class="pl-s1">,</span><span class="pl-en"> R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IADD3 R7</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R14</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">UR6</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> LOP3.LUT </span><span class="pl-v">R11</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R11</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x80000000</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xc0</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> IMAD.X R4</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> P3 </span>
+<span class="pl-en"> @P2 IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R0</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R5 </span>
+<span class="pl-en"> SEL R5</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> !P0 </span>
+<span class="pl-en"> SHF.R.U64 R3</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xa</span><span class="pl-s1">,</span><span class="pl-en"> R4 </span>
+<span class="pl-en"> STL </span><span class="pl-s1">[</span><span class="pl-en">R7</span><span class="pl-s1">],</span><span class="pl-en"> R0 </span>
+<span class="pl-en"> IMAD.IADD R5</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> R2 </span>
+<span class="pl-en"> IADD3 R3</span><span class="pl-s1">,</span><span class="pl-en"> P2</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> @P1 LOP3.LUT </span><span class="pl-v">R11</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R11</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x80000000</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x3c</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en"> </span><span class="pl-k">LEA</span><span class="pl-en">.HI.X R4</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x16</span><span class="pl-s1">,</span><span class="pl-en"> P2 </span>
+<span class="pl-en"> SHF.R.U64 R3</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> R4.reuse </span>
+<span class="pl-en"> SHF.R.U32.HI R4</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x1</span><span class="pl-s1">,</span><span class="pl-en"> R4 </span>
+<span class="pl-en"> IADD3 R2</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> P2</span><span class="pl-s1">,</span><span class="pl-en"> R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-s1">-</span><span class="pl-en">R6 </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">SHL</span><span class="pl-en">.U32 R3</span><span class="pl-s1">,</span><span class="pl-en"> R5</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x100000</span><span class="pl-s1">,</span><span class="pl-en"> RZ </span>
+<span class="pl-en"> IADD3.X R4</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x3fe00000</span><span class="pl-s1">,</span><span class="pl-en"> ~R3</span><span class="pl-s1">,</span><span class="pl-en"> P0</span><span class="pl-s1">,</span><span class="pl-en"> P2 </span>
+<span class="pl-en"> LOP3.LUT R17</span><span class="pl-s1">,</span><span class="pl-en"> R4</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-v">R11</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0xfc</span><span class="pl-s1">,</span><span class="pl-en"> !PT </span>
+<span class="pl-en">.L_x_2:</span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R3</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> R17 </span>
+<span class="pl-en"> IMAD.</span><span class="pl-k">MOV</span><span class="pl-en">.U32 R17</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> RZ</span><span class="pl-s1">,</span><span class="pl-en"> </span><span class="pl-c1">0x0</span><span class="pl-en"> </span>
+<span class="pl-en"> </span><span class="pl-k">RET</span><span class="pl-en">.REL.NODEC R16 `(testSin(double&amp;)) </span></pre></div></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
@@ -915,7 +898,7 @@ if("05/28/2024"!=""){
 </script></div>
 </body>
 <script>
-var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
 var utterancesLoad=0;
 
 let themeSettings={
@@ -989,7 +972,70 @@ function iFrameLoading(){
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
 
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
 
 </script>
 
