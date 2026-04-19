@@ -180,7 +180,7 @@ LayerNorm 是在 特征维度上做归一化，不像 BatchNorm 依赖 batch 统
 </blockquote>
 <p>❌：LN 不是 顺着句子长度（Sequence Length）把所有词揉在一起算均值；而是针对每一个词（Token），把它自己的特征向量（Hidden Dim）“抹平”。</p>
 <p>Layer Norm 公式：</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/1461b3a6-345a-4215-bd8a-c2fda103ac7a"><img width="641" height="260" alt="Image" src="https://github.com/user-attachments/assets/1461b3a6-345a-4215-bd8a-c2fda103ac7a" style="max-width: 100%; height: auto; max-height: 260px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/1461b3a6-345a-4215-bd8a-c2fda103ac7a"><img width="641" height="260" alt="Image" src="https://github.com/user-attachments/assets/1461b3a6-345a-4215-bd8a-c2fda103ac7a" style="max-width: 100%; height: auto; max-height: 260px;; aspect-ratio: 641 / 260; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <markdown-accessiblity-table><table role="table">
 <thead>
 <tr>
@@ -214,12 +214,12 @@ $C$ 组</td>
 </tr>
 </tbody>
 </table></markdown-accessiblity-table>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/47fcef9a-7a89-4149-8f6d-9a2a496b50ba"><img width="532" height="366" alt="Image" src="https://github.com/user-attachments/assets/47fcef9a-7a89-4149-8f6d-9a2a496b50ba" style="max-width: 100%; height: auto; max-height: 366px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/47fcef9a-7a89-4149-8f6d-9a2a496b50ba"><img width="532" height="366" alt="Image" src="https://github.com/user-attachments/assets/47fcef9a-7a89-4149-8f6d-9a2a496b50ba" style="max-width: 100%; height: auto; max-height: 366px;; aspect-ratio: 532 / 366; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <ul>
 <li>为了激活函数 (ReLU/GELU) 和 Softmax： 神经网络的非线性函数对输入数值范围非常敏感。如果某个词的特征值飙升到 100，经过 Softmax 后梯度就会消失（Vanishing Gradient），网络就学不动了。LayerNorm 强行把特征值拉回 $[-1, 1]$ 左右的“舒适区”，保证梯度能正常流动。</li>
 <li>各向同性： 它假设 Hidden Dim 里的各个维度在初始状态下应该有相同的贡献机会，不让某一个巨大的特征值主导整个计算。</li>
 </ul>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/c61d3299-0e96-48e8-a06b-b9d7d00c98d7"><img width="773" height="254" alt="Image" src="https://github.com/user-attachments/assets/c61d3299-0e96-48e8-a06b-b9d7d00c98d7" style="max-width: 100%; height: auto; max-height: 254px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/c61d3299-0e96-48e8-a06b-b9d7d00c98d7"><img width="773" height="254" alt="Image" src="https://github.com/user-attachments/assets/c61d3299-0e96-48e8-a06b-b9d7d00c98d7" style="max-width: 100%; height: auto; max-height: 254px;; aspect-ratio: 773 / 254; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <hr>
 <ol start="4">
 <li>norm有哪几种？</li>
@@ -239,7 +239,7 @@ $C$ 组</td>
 <li>常用于 <strong>RNN / Transformer</strong></li>
 <li>训练和推理行为一致</li>
 </ul>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/064f6b27-866c-4c1b-ac6f-825f5f13c039"><img width="548" height="532" alt="Image" src="https://github.com/user-attachments/assets/064f6b27-866c-4c1b-ac6f-825f5f13c039" style="max-width: 100%; height: auto; max-height: 532px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/064f6b27-866c-4c1b-ac6f-825f5f13c039"><img width="548" height="532" alt="Image" src="https://github.com/user-attachments/assets/064f6b27-866c-4c1b-ac6f-825f5f13c039" style="max-width: 100%; height: auto; max-height: 532px;; aspect-ratio: 548 / 532; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>**Instance Normalization（IN） **</p>
 <ul>
 <li>对 <strong>单个样本、单个通道</strong> 做归一化</li>
@@ -258,7 +258,7 @@ $C$ 组</td>
 <li>计算更简单</li>
 <li>常用于 <strong>LLM（LLaMA、Qwen 等）</strong></li>
 </ul>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/a896b230-3987-4cba-864a-900da59d44e3"><img width="563" height="569" alt="Image" src="https://github.com/user-attachments/assets/a896b230-3987-4cba-864a-900da59d44e3" style="max-width: 100%; height: auto; max-height: 569px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/a896b230-3987-4cba-864a-900da59d44e3"><img width="563" height="569" alt="Image" src="https://github.com/user-attachments/assets/a896b230-3987-4cba-864a-900da59d44e3" style="max-width: 100%; height: auto; max-height: 569px;; aspect-ratio: 563 / 569; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <blockquote>
 <p><strong>CNN 更多用 BN / GN，<br>
 Transformer 更多用 LN / RMSNorm。</strong></p>
@@ -893,12 +893,12 @@ Warp 的执行： GPU 的一个 Warp 有 32 个线程，它们像是一个旅行
 冲突情况 (Serialized Access)： 如果其中有 2 个（或更多）线程，非要挤到同一个窗口去办不同的业务（访问不同的地址），这个窗口就忙不过来了。它必须先给第一个人办完，再给第二个人办。这就是“串行化”，也就是 Bank Conflict。</p>
 <p>内存地址是如何映射到 Bank 的？<br>
 Shared Memory 是按 4-Byte (32-bit) 为单位切分的。映射规则非常简单：按序轮询。地址 0 -&gt; Bank 0地址 1 -&gt; Bank 1...地址 31 -&gt; Bank 31地址 32 -&gt; Bank 0 (回到开头)地址 33 -&gt; Bank 1公式： Bank ID = (Address_Word_Index) % 32</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/0f6e5042-f74a-4dc4-9d78-1c765cfe5026"><img width="723" height="692" alt="Image" src="https://github.com/user-attachments/assets/0f6e5042-f74a-4dc4-9d78-1c765cfe5026" style="max-width: 100%; height: auto; max-height: 692px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/db5126c6-2647-4099-98e5-6216da0fefe3"><img width="799" height="636" alt="Image" src="https://github.com/user-attachments/assets/db5126c6-2647-4099-98e5-6216da0fefe3" style="max-width: 100%; height: auto; max-height: 636px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/0f6e5042-f74a-4dc4-9d78-1c765cfe5026"><img width="723" height="692" alt="Image" src="https://github.com/user-attachments/assets/0f6e5042-f74a-4dc4-9d78-1c765cfe5026" style="max-width: 100%; height: auto; max-height: 692px;; aspect-ratio: 723 / 692; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/db5126c6-2647-4099-98e5-6216da0fefe3"><img width="799" height="636" alt="Image" src="https://github.com/user-attachments/assets/db5126c6-2647-4099-98e5-6216da0fefe3" style="max-width: 100%; height: auto; max-height: 636px;; aspect-ratio: 799 / 636; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>只有“读”才可以。</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/8417887c-a654-49f8-b43a-d0f0d73e50bb"><img width="790" height="717" alt="Image" src="https://github.com/user-attachments/assets/8417887c-a654-49f8-b43a-d0f0d73e50bb" style="max-width: 100%; height: auto; max-height: 717px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/7dc81584-3a44-45bf-ab86-40eeaad054a7"><img width="769" height="585" alt="Image" src="https://github.com/user-attachments/assets/7dc81584-3a44-45bf-ab86-40eeaad054a7" style="max-width: 100%; height: auto; max-height: 585px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/59b29012-254a-48ac-bc04-3d2049c1466d"><img width="487" height="724" alt="Image" src="https://github.com/user-attachments/assets/59b29012-254a-48ac-bc04-3d2049c1466d" style="max-width: 100%; height: auto; max-height: 724px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/8417887c-a654-49f8-b43a-d0f0d73e50bb"><img width="790" height="717" alt="Image" src="https://github.com/user-attachments/assets/8417887c-a654-49f8-b43a-d0f0d73e50bb" style="max-width: 100%; height: auto; max-height: 717px;; aspect-ratio: 790 / 717; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/7dc81584-3a44-45bf-ab86-40eeaad054a7"><img width="769" height="585" alt="Image" src="https://github.com/user-attachments/assets/7dc81584-3a44-45bf-ab86-40eeaad054a7" style="max-width: 100%; height: auto; max-height: 585px;; aspect-ratio: 769 / 585; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/59b29012-254a-48ac-bc04-3d2049c1466d"><img width="487" height="724" alt="Image" src="https://github.com/user-attachments/assets/59b29012-254a-48ac-bc04-3d2049c1466d" style="max-width: 100%; height: auto; max-height: 724px;; aspect-ratio: 487 / 724; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>bank conflict 可以通过 +1 和 xor swizzie 等方式避免：</p>
 <div class="highlight highlight-source-cuda-c++"><pre class="notranslate"><span class="pl-k">int</span> swz = lane ^ (lane &gt;&gt; <span class="pl-c1">1</span>);
 <span class="pl-k">float</span> x = smem[swz * <span class="pl-c1">32</span>];</pre></div>
@@ -941,7 +941,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">my_kernel</span>(.
 <ol start="32">
 <li>DeepSeek 用了 MoE，什么是 MoE，结构是什么样的？</li>
 </ol>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/7035b88a-8a6d-4bd5-bded-b59b117496ca"><img width="794" height="687" alt="Image" src="https://github.com/user-attachments/assets/7035b88a-8a6d-4bd5-bded-b59b117496ca" style="max-width: 100%; height: auto; max-height: 687px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/7035b88a-8a6d-4bd5-bded-b59b117496ca"><img width="794" height="687" alt="Image" src="https://github.com/user-attachments/assets/7035b88a-8a6d-4bd5-bded-b59b117496ca" style="max-width: 100%; height: auto; max-height: 687px;; aspect-ratio: 794 / 687; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <hr>
 <ol start="33">
 <li>用线性层实现简单的 MoE？<br>
@@ -1028,24 +1028,24 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">my_kernel</span>(.
 <ol start="34">
 <li>如何实现 Expert 并行 (Expert Parallelism/EP)？</li>
 </ol>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/2d97f954-f547-4a61-afc6-00236292a1fe"><img width="781" height="715" alt="Image" src="https://github.com/user-attachments/assets/2d97f954-f547-4a61-afc6-00236292a1fe" style="max-width: 100%; height: auto; max-height: 715px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/2d97f954-f547-4a61-afc6-00236292a1fe"><img width="781" height="715" alt="Image" src="https://github.com/user-attachments/assets/2d97f954-f547-4a61-afc6-00236292a1fe" style="max-width: 100%; height: auto; max-height: 715px;; aspect-ratio: 781 / 715; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <hr>
 <ol start="35">
 <li>为什么要做 Residual 连接，Residual 连接解决了什么问题？</li>
 </ol>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/5fc55534-2127-431f-88ed-01f4bab1b7ed"><img width="765" height="497" alt="Image" src="https://github.com/user-attachments/assets/5fc55534-2127-431f-88ed-01f4bab1b7ed" style="max-width: 100%; height: auto; max-height: 497px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/5fc55534-2127-431f-88ed-01f4bab1b7ed"><img width="765" height="497" alt="Image" src="https://github.com/user-attachments/assets/5fc55534-2127-431f-88ed-01f4bab1b7ed" style="max-width: 100%; height: auto; max-height: 497px;; aspect-ratio: 765 / 497; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <hr>
 <ol start="36">
 <li>expert ffn 是怎样实现的，当我经过 Attention 层之后，有一个 [b,s,h] 的张量，接下来如何实现 MoE？</li>
 </ol>
 <p>理解的核心在于：如何将稀疏的逻辑（每个 Token 找不同的专家）转化为密集的矩阵乘法（GEMM）以利用 GPU 算力。</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/97463f64-2b1f-4839-a6c9-fcff841e4033"><img width="679" height="672" alt="Image" src="https://github.com/user-attachments/assets/97463f64-2b1f-4839-a6c9-fcff841e4033" style="max-width: 100%; height: auto; max-height: 672px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/97463f64-2b1f-4839-a6c9-fcff841e4033"><img width="679" height="672" alt="Image" src="https://github.com/user-attachments/assets/97463f64-2b1f-4839-a6c9-fcff841e4033" style="max-width: 100%; height: auto; max-height: 672px;; aspect-ratio: 679 / 672; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>这里输出两个张量，然后准备重排：</p>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-s1">expert_idx</span>  ∈ [<span class="pl-s1">n</span>, <span class="pl-s1">k</span>]   <span class="pl-c1">//</span> <span class="pl-s1">第</span> <span class="pl-s1">i</span> <span class="pl-s1">个</span> <span class="pl-s1">token</span> <span class="pl-s1">选中的</span> <span class="pl-s1">k</span> <span class="pl-s1">个</span> <span class="pl-s1">expert</span>
 <span class="pl-s1">gate_score</span> ∈ [<span class="pl-s1">n</span>, <span class="pl-s1">k</span>]   <span class="pl-c1">//</span> <span class="pl-s1">对应权重</span>（<span class="pl-s1">softmax</span> <span class="pl-c1">/</span> <span class="pl-s1">normalized</span>）</pre></div>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/9f1f088e-36bf-44c7-89be-19c7cdcf7e61"><img width="773" height="561" alt="Image" src="https://github.com/user-attachments/assets/9f1f088e-36bf-44c7-89be-19c7cdcf7e61" style="max-width: 100%; height: auto; max-height: 561px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/152b96a2-9e56-4182-8476-ffa4fcc9a8a7"><img width="768" height="719" alt="Image" src="https://github.com/user-attachments/assets/152b96a2-9e56-4182-8476-ffa4fcc9a8a7" style="max-width: 100%; height: auto; max-height: 719px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/60aa0d3d-7a54-4318-b656-aeeb57107f35"><img width="772" height="527" alt="Image" src="https://github.com/user-attachments/assets/60aa0d3d-7a54-4318-b656-aeeb57107f35" style="max-width: 100%; height: auto; max-height: 527px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/9f1f088e-36bf-44c7-89be-19c7cdcf7e61"><img width="773" height="561" alt="Image" src="https://github.com/user-attachments/assets/9f1f088e-36bf-44c7-89be-19c7cdcf7e61" style="max-width: 100%; height: auto; max-height: 561px;; aspect-ratio: 773 / 561; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/152b96a2-9e56-4182-8476-ffa4fcc9a8a7"><img width="768" height="719" alt="Image" src="https://github.com/user-attachments/assets/152b96a2-9e56-4182-8476-ffa4fcc9a8a7" style="max-width: 100%; height: auto; max-height: 719px;; aspect-ratio: 768 / 719; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/60aa0d3d-7a54-4318-b656-aeeb57107f35"><img width="772" height="527" alt="Image" src="https://github.com/user-attachments/assets/60aa0d3d-7a54-4318-b656-aeeb57107f35" style="max-width: 100%; height: auto; max-height: 527px;; aspect-ratio: 772 / 527; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <div class="highlight highlight-source-python"><pre class="notranslate"><span class="pl-c"># 输入 x: [batch * seq_len, hidden_dim]</span>
 
 <span class="pl-c"># 1. Router</span>
@@ -1085,7 +1085,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">my_kernel</span>(.
 
 <span class="pl-c"># 4. Reshape back</span>
 <span class="pl-k">return</span> <span class="pl-s1">final_output</span>.<span class="pl-c1">view</span>(<span class="pl-s1">b</span>, <span class="pl-s1">s</span>, <span class="pl-s1">h</span>)</pre></div>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/d37ab647-096e-4767-8cf3-10d2693b5bf8"><img width="786" height="690" alt="Image" src="https://github.com/user-attachments/assets/d37ab647-096e-4767-8cf3-10d2693b5bf8" style="max-width: 100%; height: auto; max-height: 690px;"></a></p></div>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/d37ab647-096e-4767-8cf3-10d2693b5bf8"><img width="786" height="690" alt="Image" src="https://github.com/user-attachments/assets/d37ab647-096e-4767-8cf3-10d2693b5bf8" style="max-width: 100%; height: auto; max-height: 690px;; aspect-ratio: 786 / 690; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>

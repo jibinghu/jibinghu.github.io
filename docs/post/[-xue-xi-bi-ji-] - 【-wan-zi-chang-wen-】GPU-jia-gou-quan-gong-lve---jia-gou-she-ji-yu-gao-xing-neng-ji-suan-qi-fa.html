@@ -87,13 +87,13 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
 </div>
     <div id="content">
-<div class="markdown-body" id="postBody"><p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/0ecad7b4-9570-4c32-b09d-6317afd382f5"><img width="1398" height="1870" alt="Image" src="https://github.com/user-attachments/assets/0ecad7b4-9570-4c32-b09d-6317afd382f5" style="max-width: 100%; height: auto; max-height: 1870px;"></a></p>
+<div class="markdown-body" id="postBody"><p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/0ecad7b4-9570-4c32-b09d-6317afd382f5"><img width="1398" height="1870" alt="Image" src="https://github.com/user-attachments/assets/0ecad7b4-9570-4c32-b09d-6317afd382f5" style="max-width: 100%; height: auto; max-height: 1870px;; aspect-ratio: 1398 / 1870; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>如上图 Hopper 的 GPU 架构，每个 SM 中有多个warp scheduler，每个 scheduler 每个周期可以发送一个访存指令或一个计算指令。在上图中，对于不同的数据类型有不同的计算单元，另外还有 Tensor Core，每个 SM 最下侧是访存单元以及一个 SFU，特殊函数单元用于 sin/cos/tanh 等函数的硬件实现。</p>
 <blockquote>
 <p>从上图可以看出来，每个 SM 中有 4 个 warp scheduler，事实上从 volta 到 blackwell 都是每个 SM 中有 4 个 warp scheduler。每个 block 在运行时会分配到一个 SM 中，每个 SM  的 Shared Memory 是在 block 内同步de，另外可以看到Nvidia在 SM 内 L1 Cache 和 Shared Memory 是在一块的，所以如果数据的局部性足够好，是可以将 L1 Cache 的效果发挥好的，即使不用 Shared Memory。但是对比 AMD 的 Rocm 架构：L1 Cache 和 Shared Memory 是在物理上是分开的，所以一定要用 Shared Memory 才能提高程序效果。</p>
 </blockquote>
 <p>在 warp-unit 中需要dispatch 大于 32 个线程(1个 warp) 才能实现延迟隐藏，GPU 能高效运行的本质就是通过频繁低开销地切换 warp 来实现延迟隐藏。</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/f69f82a9-3cc3-47cd-b098-84c1ea2ea72d"><img width="580" height="211" alt="Image" src="https://github.com/user-attachments/assets/f69f82a9-3cc3-47cd-b098-84c1ea2ea72d" style="max-width: 100%; height: auto; max-height: 211px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/f69f82a9-3cc3-47cd-b098-84c1ea2ea72d"><img width="580" height="211" alt="Image" src="https://github.com/user-attachments/assets/f69f82a9-3cc3-47cd-b098-84c1ea2ea72d" style="max-width: 100%; height: auto; max-height: 211px;; aspect-ratio: 580 / 211; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>Cycle0： WARP0: INST0<br>
 Cycle1： WARP0: INST1<br>
 Cycle2: WARP0: INST2<br>

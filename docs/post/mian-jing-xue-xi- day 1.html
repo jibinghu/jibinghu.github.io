@@ -98,11 +98,11 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </ul>
 </li>
 </ul>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/354cf422-cdda-4bf9-9082-7fc4d926e27e"><img width="589" height="176" alt="Image" src="https://github.com/user-attachments/assets/354cf422-cdda-4bf9-9082-7fc4d926e27e" style="max-width: 100%; height: auto; max-height: 176px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/354cf422-cdda-4bf9-9082-7fc4d926e27e"><img width="589" height="176" alt="Image" src="https://github.com/user-attachments/assets/354cf422-cdda-4bf9-9082-7fc4d926e27e" style="max-width: 100%; height: auto; max-height: 176px;; aspect-ratio: 589 / 176; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <ul>
 <li>总结下来就是 BGF16 用同样的存储位数，表示了更大的动态范围，但是损失了一定的精度表示。在 softmax、matmul、reduction 中 BF16 避免了溢出/下溢。比如 exp(12) = $1.63×10^5$ ，已经超过指数位 5 位可表示的最大范围 $6.55×10^4$ 。</li>
 </ul>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/0ea7b30f-8d28-4037-9636-943024977d4c"><img width="316" height="40" alt="Image" src="https://github.com/user-attachments/assets/0ea7b30f-8d28-4037-9636-943024977d4c" style="max-width: 100%; height: auto; max-height: 40px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/0ea7b30f-8d28-4037-9636-943024977d4c"><img width="316" height="40" alt="Image" src="https://github.com/user-attachments/assets/0ea7b30f-8d28-4037-9636-943024977d4c" style="max-width: 100%; height: auto; max-height: 40px;; aspect-ratio: 316 / 40; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <ul>
 <li>
 <p>反向传播时也更适合 BF16 来避免梯度消失/爆炸</p>
@@ -158,7 +158,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 - GPT = 基于 Transformer Decoder 的 单向生成模型</p>
 </li>
 </ul>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/b85a1a72-e3e4-4b43-b30d-d8c507adac35"><img width="614" height="636" alt="Image" src="https://github.com/user-attachments/assets/b85a1a72-e3e4-4b43-b30d-d8c507adac35" style="max-width: 100%; height: auto; max-height: 636px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/b85a1a72-e3e4-4b43-b30d-d8c507adac35"><img width="614" height="636" alt="Image" src="https://github.com/user-attachments/assets/b85a1a72-e3e4-4b43-b30d-d8c507adac35" style="max-width: 100%; height: auto; max-height: 636px;; aspect-ratio: 614 / 636; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <ul>
 <li>
 <p>再问点量化吧，Weight only int4量化和fp8量化，你觉得二者有什么应用上的区别</p>
@@ -177,12 +177,12 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 <p>什么时候适合动态量化，什么时候适合静态量化？</p>
 </li>
 </ul>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/cf6b98cd-19e7-40c7-b8bf-e8205a6a727e"><img width="602" height="327" alt="Image" src="https://github.com/user-attachments/assets/cf6b98cd-19e7-40c7-b8bf-e8205a6a727e" style="max-width: 100%; height: auto; max-height: 327px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/1bdcb5ec-f9c5-48ee-8701-b82f5c4f9f4a"><img width="572" height="244" alt="Image" src="https://github.com/user-attachments/assets/1bdcb5ec-f9c5-48ee-8701-b82f5c4f9f4a" style="max-width: 100%; height: auto; max-height: 244px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/bb551410-6819-449d-9414-0a24366ff342"><img width="740" height="383" alt="Image" src="https://github.com/user-attachments/assets/bb551410-6819-449d-9414-0a24366ff342" style="max-width: 100%; height: auto; max-height: 383px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/cf6b98cd-19e7-40c7-b8bf-e8205a6a727e"><img width="602" height="327" alt="Image" src="https://github.com/user-attachments/assets/cf6b98cd-19e7-40c7-b8bf-e8205a6a727e" style="max-width: 100%; height: auto; max-height: 327px;; aspect-ratio: 602 / 327; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/1bdcb5ec-f9c5-48ee-8701-b82f5c4f9f4a"><img width="572" height="244" alt="Image" src="https://github.com/user-attachments/assets/1bdcb5ec-f9c5-48ee-8701-b82f5c4f9f4a" style="max-width: 100%; height: auto; max-height: 244px;; aspect-ratio: 572 / 244; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/bb551410-6819-449d-9414-0a24366ff342"><img width="740" height="383" alt="Image" src="https://github.com/user-attachments/assets/bb551410-6819-449d-9414-0a24366ff342" style="max-width: 100%; height: auto; max-height: 383px;; aspect-ratio: 740 / 383; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>补充，对称量化/非对称量化：</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/ea9c764d-6c5c-4e56-97c1-0a3d1b7bf332"><img width="609" height="338" alt="Image" src="https://github.com/user-attachments/assets/ea9c764d-6c5c-4e56-97c1-0a3d1b7bf332" style="max-width: 100%; height: auto; max-height: 338px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/2aa16344-70d2-4795-9665-e4a84fe1e04a"><img width="602" height="305" alt="Image" src="https://github.com/user-attachments/assets/2aa16344-70d2-4795-9665-e4a84fe1e04a" style="max-width: 100%; height: auto; max-height: 305px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/ea9c764d-6c5c-4e56-97c1-0a3d1b7bf332"><img width="609" height="338" alt="Image" src="https://github.com/user-attachments/assets/ea9c764d-6c5c-4e56-97c1-0a3d1b7bf332" style="max-width: 100%; height: auto; max-height: 338px;; aspect-ratio: 609 / 338; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/2aa16344-70d2-4795-9665-e4a84fe1e04a"><img width="602" height="305" alt="Image" src="https://github.com/user-attachments/assets/2aa16344-70d2-4795-9665-e4a84fe1e04a" style="max-width: 100%; height: auto; max-height: 305px;; aspect-ratio: 602 / 305; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>注意，动态量化在实际工程中只存在于激活量化中，因为实际推理时权重是常量矩阵。</p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 

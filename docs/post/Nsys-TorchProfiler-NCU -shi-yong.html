@@ -235,7 +235,7 @@ Memory (内存操作)：绿色的条块，代表 GPU 与显存之间的数据传
 <p>cudaLaunchKernel - 启动计算核心<br>
 cudaMemcpy - 拷贝内存<br>
 cudaStreamSynchronize - 等待 GPU 完成任务 关键观察点：长条块的 cudaStreamSynchronize 意味着 CPU 必须停下来等待 GPU 完成队列里所有的任务，这会严重影响性能。</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/a5c1ecf0-7084-4e12-8c71-be0d05d90568"><img width="1357" height="291" alt="Image" src="https://github.com/user-attachments/assets/a5c1ecf0-7084-4e12-8c71-be0d05d90568" style="max-width: 100%; height: auto; max-height: 291px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/a5c1ecf0-7084-4e12-8c71-be0d05d90568"><img width="1357" height="291" alt="Image" src="https://github.com/user-attachments/assets/a5c1ecf0-7084-4e12-8c71-be0d05d90568" style="max-width: 100%; height: auto; max-height: 291px;; aspect-ratio: 1357 / 291; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>通常显示为各种不同颜色的条块，每个都对应一个 CUDA API 调用，例如 cudaLaunchKernel (启动一个计算核心), cudaMemcpy (拷贝内存), cudaStreamSynchronize (等待 GPU 完成任务)。</p>
 <p>CUDA API 行显示的是 CPU 的行为，而不是 GPU 的行为。CPU 调用 cudaLaunchKernel 只是把一个任务“扔”进了 GPU 的指令队列，GPU 可能稍后才会真正执行它。即异步执行。<br>
 长条块的 cudaStreamSynchronize: 这是一个强烈的“同步点”信号，意味着 CPU 必须停下来，等待 GPU 完成队列里所有的任务。频繁或长时间的同步会严重影响性能，因为它破坏了 CPU 和 GPU 的并行性。<br>
@@ -245,9 +245,9 @@ cudaStreamSynchronize - 等待 GPU 完成任务 关键观察点：长条块的 c
 <p>NVTX (NVIDIA Tools Extension) - 自定义应用标记</p>
 </blockquote>
 <p>NVTX (NVIDIA Tools Extension) 允许<a href="https://zhida.zhihu.com/search?content_id=262463237&amp;content_type=Article&amp;match_order=1&amp;q=%E5%BC%80%E5%8F%91%E8%80%85&amp;zhida_source=entity" rel="nofollow">开发者</a>在代码中插入自定义的范围 (Ranges) 和标记 (Markers)，是关联代码逻辑与时间线活动的关键桥梁。 如下方例子在训练过程中 前向传播 (forward)，反向传播 (backward)，优化器更新 (opt)使用 nvxt 进行标记。 简单的用@nvxt 装饰器语法装饰函数，或者用 with nvtx 进行管理上下文管理。</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/7e54fd79-fa19-45d6-90f9-d647d1b7ee22"><img width="633" height="162" alt="Image" src="https://github.com/user-attachments/assets/7e54fd79-fa19-45d6-90f9-d647d1b7ee22" style="max-width: 100%; height: auto; max-height: 162px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/105e0d5f-3c2f-4786-a7d5-5f282a2790b3"><img width="1440" height="109" alt="Image" src="https://github.com/user-attachments/assets/105e0d5f-3c2f-4786-a7d5-5f282a2790b3" style="max-width: 100%; height: auto; max-height: 109px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/75311d0c-ed46-488f-b8bb-94fe5018513e"><img width="678" height="234" alt="Image" src="https://github.com/user-attachments/assets/75311d0c-ed46-488f-b8bb-94fe5018513e" style="max-width: 100%; height: auto; max-height: 234px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/7e54fd79-fa19-45d6-90f9-d647d1b7ee22"><img width="633" height="162" alt="Image" src="https://github.com/user-attachments/assets/7e54fd79-fa19-45d6-90f9-d647d1b7ee22" style="max-width: 100%; height: auto; max-height: 162px;; aspect-ratio: 633 / 162; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/105e0d5f-3c2f-4786-a7d5-5f282a2790b3"><img width="1440" height="109" alt="Image" src="https://github.com/user-attachments/assets/105e0d5f-3c2f-4786-a7d5-5f282a2790b3" style="max-width: 100%; height: auto; max-height: 109px;; aspect-ratio: 1440 / 109; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/75311d0c-ed46-488f-b8bb-94fe5018513e"><img width="678" height="234" alt="Image" src="https://github.com/user-attachments/assets/75311d0c-ed46-488f-b8bb-94fe5018513e" style="max-width: 100%; height: auto; max-height: 234px;; aspect-ratio: 678 / 234; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <blockquote>
 <p>一些公式化的场景时间线解读：<br>
 “阶梯状”的 CUDA HW: 代表 GPU 在等待 CPU 提交任务，可能是 CPU 瓶颈或 API 调用开销。<br>

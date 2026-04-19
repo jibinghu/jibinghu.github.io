@@ -168,7 +168,7 @@ $$</p>
 </tr>
 </tbody>
 </table></markdown-accessiblity-table>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/4fc1ddc5-0adf-4d4e-90c8-6f9f1b8b7ea3"><img width="2000" height="783" alt="Image" src="https://github.com/user-attachments/assets/4fc1ddc5-0adf-4d4e-90c8-6f9f1b8b7ea3" style="max-width: 100%; height: auto; max-height: 783px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/4fc1ddc5-0adf-4d4e-90c8-6f9f1b8b7ea3"><img width="2000" height="783" alt="Image" src="https://github.com/user-attachments/assets/4fc1ddc5-0adf-4d4e-90c8-6f9f1b8b7ea3" style="max-width: 100%; height: auto; max-height: 783px;; aspect-ratio: 2000 / 783; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>这个经典的 FA 图，左边就是多级显存的访存效率，右边的图说明了以 GPT-2为例，pyTorch 原生实现的 Attention 和 FlashAttention 进行 Kernel Fusion后的时间对比。</p>
 <p>而中间的图说明了 FA 的计算架构。最关键的一点是，对于 Softmax 后生成的注意力分数进行 Kernel fuse，不去显式地实现注意力分数。这样在显存中就不会出现完整的分数的传输。</p>
 <p>而在反向传播中，需要注意力分数的时候就进行重算，来避免当 sequence length 很大时的 $O(n^2)$ 的数据传输。</p>
@@ -198,7 +198,7 @@ O = P V</li>
 <li>再用 GEMM：<code class="notranslate">(N×N) × (N×d) → (N×d)</code></li>
 </ul>
 <p>对于多个 Kernel 可以想到的第一个思路就是 fuse，把 “S 计算 + softmax” 融合成一个大 kernel：块状加载 Q、K 到 shared memory，直接算 logits，立刻 softmax，减少一次写 S 的开销。</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/062546de-a6db-48f0-8453-bef803da565b"><img width="1000" height="491" alt="Image" src="https://github.com/user-attachments/assets/062546de-a6db-48f0-8453-bef803da565b" style="max-width: 100%; height: auto; max-height: 491px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/062546de-a6db-48f0-8453-bef803da565b"><img width="1000" height="491" alt="Image" src="https://github.com/user-attachments/assets/062546de-a6db-48f0-8453-bef803da565b" style="max-width: 100%; height: auto; max-height: 491px;; aspect-ratio: 1000 / 491; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>而 FA1 实现思路：完全不要显式存整个 S/P 矩阵到 HBM，改成“分块算 attention + 在线 softmax + 累积输出”。</p>
 <p>最主要的是 Softmax 的实现，他每次要看整行的数据来进行归一化，所以要用递推公式保证数值稳定和正确：</p>
 <p>3.2 在线 softmax（Online Softmax）：支持“分块 / 多次看到同一行”的 softmax</p>
@@ -208,8 +208,8 @@ p_{i,j} = \frac{e^{s_{i,j}}}{\sum_j e^{s_{i,j}}}
 $$</p>
 <p>但在 FA1 中，一行 ( s_i ) 的全部元素 ( s_{i,*} ) 是通过多个 K block 才“分段看到”的，<br>
 所以要用一个递推公式来保持 <strong>数值稳定性与结果正确性</strong>。</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/16b7d53f-e51b-481d-875e-83779167fe62"><img width="431" height="83" alt="Image" src="https://github.com/user-attachments/assets/16b7d53f-e51b-481d-875e-83779167fe62" style="max-width: 100%; height: auto; max-height: 83px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/6f787684-0a4b-483d-a8f4-907b4486a84d"><img width="178" height="79" alt="Image" src="https://github.com/user-attachments/assets/6f787684-0a4b-483d-a8f4-907b4486a84d" style="max-width: 100%; height: auto; max-height: 79px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/16b7d53f-e51b-481d-875e-83779167fe62"><img width="431" height="83" alt="Image" src="https://github.com/user-attachments/assets/16b7d53f-e51b-481d-875e-83779167fe62" style="max-width: 100%; height: auto; max-height: 83px;; aspect-ratio: 431 / 83; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/6f787684-0a4b-483d-a8f4-907b4486a84d"><img width="178" height="79" alt="Image" src="https://github.com/user-attachments/assets/6f787684-0a4b-483d-a8f4-907b4486a84d" style="max-width: 100%; height: auto; max-height: 79px;; aspect-ratio: 178 / 79; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>对每一行 ( i )，维护三个量：</p>
 <ul>
 <li>( m_i )：当前见过的所有 logits 的最大值</li>
@@ -234,7 +234,7 @@ $$</p>
 O_i = \frac{acc_i}{l_i}
 $$</p>
 <p>等价于下面的公式：</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/18dd783f-c540-414a-9355-0d169b3c02fe"><img width="737" height="358" alt="Image" src="https://github.com/user-attachments/assets/18dd783f-c540-414a-9355-0d169b3c02fe" style="max-width: 100%; height: auto; max-height: 358px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/18dd783f-c540-414a-9355-0d169b3c02fe"><img width="737" height="358" alt="Image" src="https://github.com/user-attachments/assets/18dd783f-c540-414a-9355-0d169b3c02fe" style="max-width: 100%; height: auto; max-height: 358px;; aspect-ratio: 737 / 358; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <hr>
 <p>上述即 FA1 的原理实现，下面用 Triton 进行实现：</p>
 <hr>
@@ -332,14 +332,14 @@ $$</p>
 <p>以A100为例，其FP16/BF16 tensorcore的理论峰值吞吐量为312 TFLOPS，但FP32非矩阵乘法在CUDA core上仅有19.5 TFLOPS.</p>
 </blockquote>
 <p>这里引入 diag，左乘就是对矩阵每行都进行相同的处理(矩阵的常规处理居然忘了)</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/45664faa-0851-451f-a9d2-f48df2bf0b7d"><img width="1063" height="841" alt="Image" src="https://github.com/user-attachments/assets/45664faa-0851-451f-a9d2-f48df2bf0b7d" style="max-width: 100%; height: auto; max-height: 841px;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/45664faa-0851-451f-a9d2-f48df2bf0b7d"><img width="1063" height="841" alt="Image" src="https://github.com/user-attachments/assets/45664faa-0851-451f-a9d2-f48df2bf0b7d" style="max-width: 100%; height: auto; max-height: 841px;; aspect-ratio: 1063 / 841; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
 <p>上图中FA1 其实隐含了 Tile，但是没有显式提出来。</p>
 <p>fa2 的话，为了尽可能减少非矩阵乘的计算量，做了改进：省略了每次的分母的更新，在上图中的第二点，才是真正分块实现时候的表示，FA1 加入了调整因子；FA2 不需要对分母调整，只需要对分子调整即可，注意这里的 diag 也没有了 ^{-1}，而 FA2 在最后再进行全局的 $diag(l)^{-1}$ .</p>
 <p>上边说到，将Q 和 KV 的循环顺序进行修改能够得到性能提升，我有点不解，在这里解释：其实 Q 和 KV 循环调换我没理解透，但是 /l 来避免全局的同步点会有很大提升。</p>
 <p>对seqlen维度充分并行：这一点主要考虑到batchsize*numheads小于SM个数的情况下，无法打满SM算力，此时seqlen一般都很大，需要对seqlen维度充分并行。主要的实现就是在于FlashAttention-2将Q移到了外循环，KV移到了内循环，由于改进了算法使得warps之间不再需要相互通信去处理Q，所以外循环可以放在不同的block上。这个交换的优化方法是由Triton的作者提出并实现的。如下图，左图需要各个warp之间做reduce才能算出一行的结果，右图则不需要，它每个warp都可以独立计算出一整块softmax和一整块O结果。</p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/ec0ab3e0-610e-4f9d-8b6d-68ba0244e0e2"><img width="1020" height="385" alt="Image" src="https://github.com/user-attachments/assets/ec0ab3e0-610e-4f9d-8b6d-68ba0244e0e2" style="max-width: 100%; height: auto; max-height: 385px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/0a9708c1-68b8-4950-82d0-6f903ac4245e"><img width="1080" height="516" alt="Image" src="https://github.com/user-attachments/assets/0a9708c1-68b8-4950-82d0-6f903ac4245e" style="max-width: 100%; height: auto; max-height: 516px;"></a></p>
-<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/ba1db24a-a9f5-45e0-987f-e18e22ad29d8"><img width="1080" height="615" alt="Image" src="https://github.com/user-attachments/assets/ba1db24a-a9f5-45e0-987f-e18e22ad29d8" style="max-width: 100%; height: auto; max-height: 615px;"></a></p></div>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/ec0ab3e0-610e-4f9d-8b6d-68ba0244e0e2"><img width="1020" height="385" alt="Image" src="https://github.com/user-attachments/assets/ec0ab3e0-610e-4f9d-8b6d-68ba0244e0e2" style="max-width: 100%; height: auto; max-height: 385px;; aspect-ratio: 1020 / 385; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/0a9708c1-68b8-4950-82d0-6f903ac4245e"><img width="1080" height="516" alt="Image" src="https://github.com/user-attachments/assets/0a9708c1-68b8-4950-82d0-6f903ac4245e" style="max-width: 100%; height: auto; max-height: 516px;; aspect-ratio: 1080 / 516; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="https://github.com/user-attachments/assets/ba1db24a-a9f5-45e0-987f-e18e22ad29d8"><img width="1080" height="615" alt="Image" src="https://github.com/user-attachments/assets/ba1db24a-a9f5-45e0-987f-e18e22ad29d8" style="max-width: 100%; height: auto; max-height: 615px;; aspect-ratio: 1080 / 615; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a></p></div>
 <div style="font-size:small;margin-top:8px;float:right;"></div>
 
 <button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
