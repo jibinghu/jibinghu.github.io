@@ -1,0 +1,14 @@
+如何生成python项目需要的最小requirements.txt文件？ - 程序员coding的回答 - 知乎
+https://www.zhihu.com/question/463332914/answer/3433457082
+
+作者：程序员coding
+链接：https://www.zhihu.com/question/463332914/answer/3433457082
+来源：知乎
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+
+在把自己写好的 Python 代码发给别人时，对方可能会缺少代码运行所需要的第三方库，一个个去 [pip ](https://zhida.zhihu.com/search?content_id=654339380&content_type=Answer&match_order=1&q=pip+&zhida_source=entity)安装比较麻烦。这时候，就可以把项目所需要的第三方库导出为一个[requirements](https://zhida.zhihu.com/search?content_id=654339380&content_type=Answer&match_order=1&q=requirements&zhida_source=entity).txt文件，放在项目文件夹里一起给到对方，对方可以一键安装所需要的库。那么，怎样生成这个requirements.txt文件呢？方法一：pip freeze方法（不推荐）1、查看包[pip freeze](https://zhida.zhihu.com/search?content_id=654339380&content_type=Answer&match_order=2&q=pip+freeze&zhida_source=entity) 是一个 Python 命令，用于列出当前[虚拟环境](https://zhida.zhihu.com/search?content_id=654339380&content_type=Answer&match_order=1&q=%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83&zhida_source=entity)（virtual environment）中安装的所有 Python 包及其版本。这个命令在创建项目的依赖清单（requirements.txt）时非常有用，以便在其他环境中重新安装相同的依赖包。使用 [Pycharm ](https://zhida.zhihu.com/search?content_id=654339380&content_type=Answer&match_order=1&q=Pycharm+&zhida_source=entity)打开工程，在下方中打开Terminal终端，输入pip freeze ，可查看项目所安装的所有第三方库。pip freeze
+2、生成requirements.txt在终端中输入pip freeze > requirements.txt，可在工程目录下生成requirements.txt文件，其中包含当前虚拟环境中安装的所有 Python 包及其版本。pip freeze > requirements.txt
+requirements.txt 文件如下，这个方法会将目前 [pycharm ](https://zhida.zhihu.com/search?content_id=654339380&content_type=Answer&match_order=1&q=pycharm+&zhida_source=entity)中已下载的所有包都导入到 requirements.txt 文件中，不推荐使用。方法二：使用第三方库pipreqs（推荐）使用第三方库pipreqs生成项目的 requirements.txt 文件，pipreqs会分析项目中的 Python [源代码](https://zhida.zhihu.com/search?content_id=654339380&content_type=Answer&match_order=1&q=%E6%BA%90%E4%BB%A3%E7%A0%81&zhida_source=entity)文件，找出所有依赖的包，并将它们及其版本写入 requirements.txt 文件。pipreqs可以只将用到的库生成到requirements.txt文件。1、先安装pipreqs库在终端中使用 pip 命令方法安装 ：pip install pipreqs
+2、生成requirements.txt在当前目录使用pipreqs命令：pipreqs ./ --encoding=utf8  --force
+ –encoding=utf8 ：为使用utf8编码 –force ：[强制执行](https://zhida.zhihu.com/search?content_id=654339380&content_type=Answer&match_order=1&q=%E5%BC%BA%E5%88%B6%E6%89%A7%E8%A1%8C&zhida_source=entity)，当 生成目录下的requirements.txt存在时覆盖 . /: 在哪个文件生成requirements.txt 文件 在终端中看到，已经成功生成了requirements.txt 文件。打开requirements.txt文件，可以看到只包含本项目用到的库。至此，已经将项目需要的库导出到 requirements.txt 文件了，可以把 requirements.txt 文件与项目一起分享给对方。对方只需要pip install -r requirements.txt 一条命令，就可以在他们的环境中安装相同的依赖包。一键安装需要的库pip install -r requirements.txt
+总结本文介绍了如何生成 requirements.txt 文件，以便在其他环境中安装相同的依赖包。首先介绍了使用 pip freeze 命令的方法，然后介绍了使用第三方库 pipreqs 的方法。使用 pip freeze 方法的优点是它简单易用，但它会包含虚拟环境中所有已安装的包，而不仅仅是项目所需的包。这可能会导致 requirements.txt 文件中包含不必要的依赖项。相比之下，pipreqs 是一个更精确的方法，因为它会分析项目中的 Python 源代码文件，找出所有依赖的包，并将它们及其版本写入 requirements.txt 文件。这样，生成的 requirements.txt 文件只包含项目所需的依赖项，更加干净和易于管理。

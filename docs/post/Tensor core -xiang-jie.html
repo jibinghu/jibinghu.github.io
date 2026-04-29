@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark_high_contrast" data-light-theme="light_high_contrast" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="## Tensor core 详解
+
+---
+
+#### Tensor Core剖析
+
+> 在 NVIDIA 的通用 GPU 架构中，存在三种主要的核心类型：CUDA Core、Tensor Core 以及 RT Core。">
+<meta property="og:title" content="Tensor core 详解">
+<meta property="og:description" content="## Tensor core 详解
+
+---
+
+#### Tensor Core剖析
+
+> 在 NVIDIA 的通用 GPU 架构中，存在三种主要的核心类型：CUDA Core、Tensor Core 以及 RT Core。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://jibinghu.github.io/post/Tensor%20core%20-xiang-jie.html">
+<meta property="og:image" content="https://q6.itc.cn/q_70/images01/20240415/2cdb0abd9b724802baff3b9199d3fbc4.jpeg">
+<title>Tensor core 详解</title>
+<link href="//unpkg.com/@wooorm/starry-night@2.1.1/style/both.css" rel="stylesheet" />
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+.copy-feedback {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 50px;
+    color: var(--color-fg-on-emphasis);
+    background-color: var(--color-fg-muted);
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+</style>
+<style>.markdown-alert{padding:0.5rem 1rem;margin-bottom:1rem;border-left:.25em solid var(--borderColor-default,var(--color-border-default));}.markdown-alert .markdown-alert-title {display:flex;font-weight:var(--base-text-weight-medium,500);align-items:center;line-height:1;}.markdown-alert>:first-child {margin-top:0;}.markdown-alert>:last-child {margin-bottom:0;}</style><style>.markdown-alert.markdown-alert-note {border-left-color:var(--borderColor-accent-emphasis, var(--color-accent-emphasis));background-color:var(--color-accent-subtle);}.markdown-alert.markdown-alert-note .markdown-alert-title {color: var(--fgColor-accent,var(--color-accent-fg));}</style><style>.markdown-alert.markdown-alert-caution {border-left-color:var(--borderColor-danger-emphasis, var(--color-danger-emphasis));background-color:var(--color-danger-subtle);}.markdown-alert.markdown-alert-caution .markdown-alert-title {color: var(--fgColor-danger,var(--color-danger-fg));}</style>
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">Tensor core 详解</h1>
+<div class="title-right">
+    <a href="https://jibinghu.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/jibinghu/jibinghu.github.io/issues/6" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><h2>Tensor core 详解</h2>
+<hr>
+<h4>Tensor Core剖析</h4>
+<blockquote>
+<p>在 NVIDIA 的通用 GPU 架构中，存在三种主要的核心类型：CUDA Core、Tensor Core 以及 RT Core。NVIDIA 显卡从 Tesla 架构开始，所有 GPU 都带有有 CUDA Core，但 Tensor Core 和 RT Core 确并非都具有。在 Fermi 架构之前，GPU 的处理核心一直被叫做 Processor core(SPs)，随着 GPU 中处理核心的增加，直到 2010 年 NVIDIA 的 Fermi 架构它被换了一个新名字 CUDA Core。</p>
+</blockquote>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/f4a488d8e74ccfb73f0cf4b32232e44a316f28c552988dbbf4572f3f8c94d0b1/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f696d675f636f6e766572742f65336334326462306333333666373830323337303636376465633064643233362e706e67"><img src="https://camo.githubusercontent.com/f4a488d8e74ccfb73f0cf4b32232e44a316f28c552988dbbf4572f3f8c94d0b1/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f696d675f636f6e766572742f65336334326462306333333666373830323337303636376465633064643233362e706e67" width="700" height="250" data-canonical-src="https://img-blog.csdnimg.cn/img_convert/e3c42db0c336f7802370667dec0dd236.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 700 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>NVIDIA架构变迁图</p>
+</div>
+<p>CUDA Core在执行矩阵乘时把乘和加分开执行，把数据放到寄存器，执行乘操作，得到的结果再放到寄存器，执行加操作，再将得到的结果放到寄存器；</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/fdaf0dacc39b2d4ab7c9e915db6809a554ee87d01d8807c7e31ccc50a0a9dfb4/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66663734653464393534366134343536626630316336636631396535613162632e706e67"><img src="https://camo.githubusercontent.com/fdaf0dacc39b2d4ab7c9e915db6809a554ee87d01d8807c7e31ccc50a0a9dfb4/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66663734653464393534366134343536626630316336636631396535613162632e706e67" width="450" height="250" data-canonical-src="https://img-blog.csdnimg.cn/ff74e4d9546a4456bf01c6cf19e5a1bc.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 450 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>CUDA Core与Tensor Core</p>
+</div>
+<p>而Tensor Core 是 NVIDIA 推出的专门用于加速深度学习和高性能计算任务的硬件单元。它们最早在 NVIDIA 的 Volta 架构中引入，随后在 Turing 和 Ampere 架构中得到进一步改进和广泛应用。ensor Core 是针对深度学习和 AI 工作负载而设计的专用核心，可以实现混合精度计算并加速矩阵运算，尤其擅长处理半精度（FP16）和全精度（FP32）的矩阵乘法和累加操作。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/e61d5092fbc5a704e347b60a2fb24dae83a1decca0e1f3d43cfd71427f5d2c2b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32393536303134326265336134333463383630643833663963643633316435662e706e67"><img src="https://camo.githubusercontent.com/e61d5092fbc5a704e347b60a2fb24dae83a1decca0e1f3d43cfd71427f5d2c2b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32393536303134326265336134333463383630643833663963643633316435662e706e67" width="450" height="250" data-canonical-src="https://img-blog.csdnimg.cn/29560142be3a434c860d83f9cd631d5f.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 450 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>Tensor Core</p>
+</div>
+<ul>
+<li><strong>加速矩阵计算：</strong><br>
+Tensor Core 主要用于加速矩阵乘法运算，这是深度学习中的基础操作。它们能够执行混合精度计算，其输入使用 FP16 精度，接着使用 FP16 进行计算，并使用 FP32 进行累加，从而大大提高计算效率和速度。</li>
+</ul>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/a539e7d20720f335a25df30f8305bef5095cbe877738187b147475e5169906b9/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630343231333532353730312d3335343734333331302e706e67"><img src="https://camo.githubusercontent.com/a539e7d20720f335a25df30f8305bef5095cbe877738187b147475e5169906b9/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630343231333532353730312d3335343734333331302e706e67" width="450" height="250" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240604213525701-354743310.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 450 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>Tensor Core</p>
+</div>
+<ul>
+<li><strong>优化深度学习模型训练和推理：</strong><br>
+Tensor Core 可以显著缩短深度学习模型的训练时间。在推理阶段，它们可以加速模型的前向传播过程，提高实时应用的性能。</li>
+</ul>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/b161c53e3b0681fed81f6f26d3566a82ed1050fd94eba600a78184cec61991e1/68747470733a2f2f706963322e7a68696d672e636f6d2f38302f76322d38643061373866636165643832643063386631343161316537326133313336395f373230772e77656270"><img src="https://camo.githubusercontent.com/b161c53e3b0681fed81f6f26d3566a82ed1050fd94eba600a78184cec61991e1/68747470733a2f2f706963322e7a68696d672e636f6d2f38302f76322d38643061373866636165643832643063386631343161316537326133313336395f373230772e77656270" width="450" height="250" data-canonical-src="https://pic2.zhimg.com/80/v2-8d0a78fcaed82d0c8f141a1e72a31369_720w.webp" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 450 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>Volta架构</p>
+</div>
+<blockquote>
+<p>如上图所示，在NV的Volta架构中，一个SM中有4个Sub-core，而每个Sub-core里面除了执行标量运算的多个CUDA Core以外，还有两个Tensor Core，他们共享一套Register File，每个Sub-Core中有一个Warp Scheduler，即同一时刻每个Sub-Core的资源只能分配给1个线程束（Warp）。</p>
+</blockquote>
+<blockquote>
+<p>而在实际编程中，CUDA开放了WMMA的一系列API来使用户可以对tensor core进行编程，而且其中的矩阵乘法API wmma.mma.sync实际上每次接收的是16<em>16矩阵乘加运算D = A * B + C，这好像与tensor core定义的每周期4</em>4矩阵乘不一致，实际上这里调用的mma API不是在一个周期内完成的，准确地说，这是给一个warp分配了16*16的矩阵乘的运算量，在若干个周期内完成。</p>
+</blockquote>
+<div class="markdown-alert markdown-alert-caution"><p class="markdown-alert-title"><svg class="octicon octicon-stop mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M4.47.22A.749.749 0 0 1 5 0h6c.199 0 .389.079.53.22l4.25 4.25c.141.14.22.331.22.53v6a.749.749 0 0 1-.22.53l-4.25 4.25A.749.749 0 0 1 11 16H5a.749.749 0 0 1-.53-.22L.22 11.53A.749.749 0 0 1 0 11V5c0-.199.079-.389.22-.53Zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5ZM8 4a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4Zm0 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Caution</p><p>TODO: （1）16<em>16的矩阵乘法所需的数据A,B,C是如何分配给1个warp内的32个线程的？<br>
+（2）Tensor Core具体是按照什么顺序来分步执行完这个16</em>16的矩阵乘法的，耗费了多少个周期？<br>
+<a href="https://zhuanlan.zhihu.com/p/660531822" rel="nofollow">https://zhuanlan.zhihu.com/p/660531822</a><br>
+<a href="https://arxiv.org/pdf/1811.08309" rel="nofollow">https://arxiv.org/pdf/1811.08309</a></p>
+</div>
+<p>在CUDA程序中，CUDA将Tensor Core 硬件执行 4*4 的矩阵通过warp线程束打包为 16*16 的矩阵。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/988fadf857e76390f92871886ce0b19c9656df1fe9c83edfb70b449d6924c32b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f37383761643235353338313434343363396333613837636531366662653236382e706e67"><img src="https://camo.githubusercontent.com/988fadf857e76390f92871886ce0b19c9656df1fe9c83edfb70b449d6924c32b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f37383761643235353338313434343363396333613837636531366662653236382e706e67" width="500" height="250" data-canonical-src="https://img-blog.csdnimg.cn/787ad2553814443c9c3a87ce16fbe268.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 500 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>Tensor Core_CUDA</p>
+</div>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/19b214d572d7b832ebe8b8dc224449753e1b0ebf6a59ee080837e376d2843106/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630343231333130303230382d3536373738393735312e706e67"><img src="https://camo.githubusercontent.com/19b214d572d7b832ebe8b8dc224449753e1b0ebf6a59ee080837e376d2843106/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630343231333130303230382d3536373738393735312e706e67" width="400" height="250" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240604213100208-567789751.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 400 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>TC线程处理细节</p>
+</div>
+<p>从概念上讲，Tensor Core在4*4子矩阵上运行，以计算更大的16*16矩阵。warp线程被分成8组，每组4个线程，每个线程组连续计算一个8*4块，总共要经过4组的过程，每一个线程组都处理了目标矩阵的1/8。</p>
+<p>CUDA在线程束层面的操作通过CUDA C++WMMA API接口实现，直接对于Tensorcore进行操作的话，颗粒度太小，所以把多个Tensorcore聚集起来放到一个wrap level的层面进行调度：</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/4f0d767302d11d3e87f79f92ec1f6a190f9d196c8b02b96ab01c8fbfbf2f418e/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33386131353961623231653634663263626362343165356163383464653261362e706e67"><img src="https://camo.githubusercontent.com/4f0d767302d11d3e87f79f92ec1f6a190f9d196c8b02b96ab01c8fbfbf2f418e/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33386131353961623231653634663263626362343165356163383464653261362e706e67" width="500" height="250" data-canonical-src="https://img-blog.csdnimg.cn/38a159ab21e64f2cbcb41e5ac84de2a6.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 500 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>Tensor Core_编程</p>
+</div>
+<p>🌰：</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> 包含 NVIDIA CUDA 的矩阵乘法和累加（WMMA）库，并使用 nvcuda 命名空间，以便访问 WMMA 接口。</span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>mma.h<span class="pl-pds">&gt;</span></span>
+<span class="pl-k">using</span> <span class="pl-k">namespace</span> <span class="pl-en">nvcuda</span><span class="pl-k">;</span>
+
+<span class="pl-c"><span class="pl-c">//</span> 核函数定义，用于执行矩阵乘法</span>
+__global__ <span class="pl-k">void</span> <span class="pl-en">wmma_ker</span>(half *a, half *b, <span class="pl-k">float</span> *c) {
+    <span class="pl-c"><span class="pl-c">//</span> 声明片段，用于存储矩阵数据</span>
+    wmma::fragment&lt;wmma::matrix_a, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, half, wmma::col_major&gt; a_frag; <span class="pl-c"><span class="pl-c">//</span> 矩阵A的片段，列主序</span>
+    wmma::fragment&lt;wmma::matrix_b, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, half, wmma::row_major&gt; b_frag; <span class="pl-c"><span class="pl-c">//</span> 矩阵B的片段，行主序</span>
+    wmma::fragment&lt;wmma::accumulator, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-k">float</span>&gt; c_frag; <span class="pl-c"><span class="pl-c">//</span> 用于累加的片段</span>
+
+    <span class="pl-c"><span class="pl-c">//</span> 初始化输出片段c_frag为零</span>
+    <span class="pl-c1">wmma::fill_fragment</span>(c_frag, <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>);
+
+    <span class="pl-c"><span class="pl-c">//</span> 加载输入矩阵数据到片段中</span>
+    <span class="pl-c1">wmma::load_matrix_sync</span>(a_frag, a, <span class="pl-c1">16</span>);
+    <span class="pl-c1">wmma::load_matrix_sync</span>(b_frag, b, <span class="pl-c1">16</span>);
+
+    <span class="pl-c"><span class="pl-c">//</span> 执行矩阵乘法</span>
+    <span class="pl-c1">wmma::mma_sync</span>(c_frag, a_frag, b_frag, c_frag);
+
+    <span class="pl-c"><span class="pl-c">//</span> 将结果存储到输出矩阵中</span>
+    <span class="pl-c1">wmma::store_matrix_sync</span>(c, c_frag, <span class="pl-c1">16</span>, wmma::mem_row_major);
+}</pre></div>
+<div class="markdown-alert markdown-alert-note"><p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p><p>该程序通过数据片段化、混合精度计算、同步计算、高效存储和加载以及利用 Tensor Core 等多种优化手段来提高矩阵乘法运算的效率。矩阵被分解成小块（片段）存储在专用寄存器中，以减少内存访问延迟；输入矩阵 A 和 B 使用半精度（FP16）表示，累加结果使用单精度（FP32）表示，从而在保证计算精度的同时提高计算速度和效率；mma_sync 操作确保所有线程同步执行矩阵乘法并将结果累加到累加片段中，保证了计算的一致性和准确性；load_matrix_sync 和 store_matrix_sync 操作高效地加载和存储数据，最大限度地减少数据传输延迟；程序通过 WMMA 接口直接利用 NVIDIA GPU 中的 Tensor Core，这些专用硬件单元能够以极高的吞吐量执行矩阵运算，从而大幅提高深度学习和高性能计算任务的效率。</p>
+</div>
+<hr>
+<h4>GEMM在Tensor Core上的加速实现：</h4>
+<p><strong>GEMM(通用矩阵乘)</strong>：GEMM通常指的矩阵乘法的优化，针对不同的硬件架构和计算需求，有多种优化的GEMM实现，如基于CPU的优化、基于GPU的优化（使用CUDA、OpenCL等编程模型），以及专用的张量处理单元（TPU、NPU）等。这些优化方法通常利用并行计算、向量化指令和数据局部性等技术，以提高矩阵乘法的计算性能。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/580884f6e6b176a1a686b7b613c5a6ff7d7691ec80a79a22231ef00aadd7a8dc/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66366630323435383234653334653565393331303738366665633434383930612e706e67"><img src="https://camo.githubusercontent.com/580884f6e6b176a1a686b7b613c5a6ff7d7691ec80a79a22231ef00aadd7a8dc/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66366630323435383234653334653565393331303738366665633434383930612e706e67" width="450" height="250" data-canonical-src="https://img-blog.csdnimg.cn/f6f0245824e34e5e9310786fec44890a.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 450 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>GEMM</p>
+</div>
+<p>如上图所示，可以将CNN卷积操作通过im2col展开感受野等一系列操作形成大型矩阵乘，从而使用GEMM进行优化加速。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/ea52e2fca9109e4c345c504804d7be6bc11da60a0b1113e15bcf2e83d2352984/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32653765643966366638303734333036623234303133623835323939376634642e706e67"><img src="https://camo.githubusercontent.com/ea52e2fca9109e4c345c504804d7be6bc11da60a0b1113e15bcf2e83d2352984/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f32653765643966366638303734333036623234303133623835323939376634642e706e67" width="450" height="250" data-canonical-src="https://img-blog.csdnimg.cn/2e7ed9f6f8074306b24013b852997f4d.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 450 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>GEMM CUDA</p>
+</div>
+<p>以下例子说明了GEMM矩阵相乘的具体执行过程，其会将大的矩阵块划分成一个个的fragment,每一个fragment的矩阵相乘对应一个thread block，每一个thread block又可以划分成多个wrap,每一个wrap下面可以执行多个thread,每一个thread里面循环执行Tensor core 4*4的矩阵操作：</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/bc5cee51be2353c523a4dbd1758ec6323a8791538193ac2c57523c970ecbd190/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65656235633865356466313434326331626336623533643239343431646562352e706e67"><img src="https://camo.githubusercontent.com/bc5cee51be2353c523a4dbd1758ec6323a8791538193ac2c57523c970ecbd190/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f65656235633865356466313434326331626336623533643239343431646562352e706e67" width="500" height="250" data-canonical-src="https://img-blog.csdnimg.cn/eeb5c8e5df1442c1bc6b53d29441deb5.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 500 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>通用矩阵乘</p>
+</div>
+<p>首先通用的矩阵乘是将A B矩阵对应位置fragment矩阵进行相乘，通过两层矩阵素质乘实现。</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/6be075b95db655f3e3db5d44cf24fd5db8eea2885870ed78d51b2c821ac0b77d/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f35323534393932643133346334656263626464393761643965353564623337642e706e67"><img src="https://camo.githubusercontent.com/6be075b95db655f3e3db5d44cf24fd5db8eea2885870ed78d51b2c821ac0b77d/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f35323534393932643133346334656263626464393761643965353564623337642e706e67" width="500" height="250" data-canonical-src="https://img-blog.csdnimg.cn/5254992d134c4ebcbdd97ad9e55db37d.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 500 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>通用矩阵乘CUDA实现_Block级</p>
+</div>
+<p>结合在CUDA中，首先将通用矩阵乘中的每个fragment分配给每个block；</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/47f00d2b3ff005b6eb70eb50388757e328f7cd48304886954f9d821f300e5892/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66336465656438366164623034343962393132633130363762633032643630382e706e67"><img src="https://camo.githubusercontent.com/47f00d2b3ff005b6eb70eb50388757e328f7cd48304886954f9d821f300e5892/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f66336465656438366164623034343962393132633130363762633032643630382e706e67" width="500" height="250" data-canonical-src="https://img-blog.csdnimg.cn/f3deed86adb0449b912c1067bc02d608.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 500 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>通用矩阵乘CUDA实现_Warp级</p>
+</div>
+<p>在Block中，每个Warp执行一个独立的矩阵乘；</p>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/2892a9be2faee07ac477026872cdbf8fe9df5df948135f5ddc76b1ccb1b20cbd/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f31323630383861623031346534333132393533313830353762653234383836352e706e67"><img src="https://camo.githubusercontent.com/2892a9be2faee07ac477026872cdbf8fe9df5df948135f5ddc76b1ccb1b20cbd/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f31323630383861623031346534333132393533313830353762653234383836352e706e67" width="500" height="250" data-canonical-src="https://img-blog.csdnimg.cn/126088ab014e431295318057be248865.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 500 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>通用矩阵乘CUDA实现_Warp-level</p>
+</div>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/1967450dafe1b8278a82399c3263eab6634e49ade16a16c326aba4390d32dfd7/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33616230656538336630353534383062393233646636373231646461363837342e706e67"><img src="https://camo.githubusercontent.com/1967450dafe1b8278a82399c3263eab6634e49ade16a16c326aba4390d32dfd7/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f33616230656538336630353534383062393233646636373231646461363837342e706e67" width="500" height="250" data-canonical-src="https://img-blog.csdnimg.cn/3ab0ee83f055480b923df6721dda6874.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 500 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>通用矩阵乘CUDA实现_Thread-level</p>
+</div>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/b5f4c8eb99fc299c90552591660c23e0692aba6f7df6322500315be23e43677b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f61373332336632386531343334333865626463666563303637363361383932612e706e67"><img src="https://camo.githubusercontent.com/b5f4c8eb99fc299c90552591660c23e0692aba6f7df6322500315be23e43677b/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f61373332336632386531343334333865626463666563303637363361383932612e706e67" width="500" height="250" data-canonical-src="https://img-blog.csdnimg.cn/a7323f28e143438ebdcfec06763a892a.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 500 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>通用矩阵乘CUDA实现_软硬件分层</p>
+</div>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/19162129d1711bdde531bb4e069c22efd5c45b61d8d6da72415e8d78b78b20d5/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f62643961343637623164626134356136626234346334643934393361636139612e706e67"><img src="https://camo.githubusercontent.com/19162129d1711bdde531bb4e069c22efd5c45b61d8d6da72415e8d78b78b20d5/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f62643961343637623164626134356136626234346334643934393361636139612e706e67" width="500" height="250" data-canonical-src="https://img-blog.csdnimg.cn/bd9a467b1dba45a6bb44c4d9493aca9a.png" style="max-width: 100%; height: auto; max-height: 250px;; aspect-ratio: 500 / 250; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>通用矩阵乘CUDA实现_结果回传</p>
+</div>
+<div>
+    <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/a78cf0266e2777ebc37c526466894d64dbc7dbe5674461b4054eb4cce2da2160/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f31313466653238306136663834653037613336343939313264656533303335342e706e67"><img src="https://camo.githubusercontent.com/a78cf0266e2777ebc37c526466894d64dbc7dbe5674461b4054eb4cce2da2160/68747470733a2f2f696d672d626c6f672e6373646e696d672e636e2f31313466653238306136663834653037613336343939313264656533303335342e706e67" width="500" height="230" data-canonical-src="https://img-blog.csdnimg.cn/114fe280a6f84e07a3649912dee30354.png" style="max-width: 100%; height: auto; max-height: 230px;; aspect-ratio: 500 / 230; background-color: var(--bgColor-muted); border-radius: 6px; display: block" class="js-gh-image-fallback"></a>
+    <p>通用矩阵乘CUDA实现_总体结构</p>
+</div>
+<p>Tensor Core 具体实现GEMM（General Matrix Multiply）的过程如下：</p>
+<pre class="notranslate"><code class="notranslate">Blocked GEMM：
+矩阵首先从全局内存加载到共享内存。这个过程涉及将大矩阵划分为较小的子块（称为Tile）。这些Tile被分配到CUDA线程块中。
+
+Thread Block Tile：
+每个线程块负责处理一个矩阵块。这些线程块会将数据从全局内存读取到共享内存中。在这个阶段，数据准备就绪，等待进一步处理。
+
+Warp Tile：
+共享内存中的数据被分配给不同的warp。warp是CUDA编程模型中的基本执行单元，通常由32个线程组成。在这个阶段，每个warp从共享内存中读取相应的矩阵块数据。
+
+Thread Tile：
+每个线程在warp中处理一个更小的矩阵子块。这些子块的大小通常是与Tensor Core硬件匹配的16x16或更小的尺寸。这里，矩阵片段被加载到寄存器文件中。
+
+SM CUDA Cores：
+Tensor Core执行矩阵乘法累加操作（WMMA::mma_sync）。在这个过程中，片段（fragments）被利用，硬件执行高效的矩阵乘法操作，将结果存储到累加器中。
+
+Epilogue Tile：
+完成矩阵乘法操作后，结果被存储回共享内存。在这个阶段，Epilogue Functor可以应用到结果上，这可能包括非线性激活函数或其他后处理操作。
+
+Modify：
+最后的结果从共享内存写回全局内存。在写回之前，可能会有一些修改操作，确保数据正确性和完整性.
+</code></pre>
+<blockquote>
+<p><strong>数据流详细分析</strong><br>
+&gt;    Global Memory to Shared Memory：大块数据从全局内存<br>
+Shared Memory to Register File：共享内存中的数据被分配到寄存器文件（Register File），这一步骤主要由warp和线程来执行，以确保每个线程都有其需要的数据。<br>
+Register File to SM CUDA Cores：寄存器文件中的数据被Tensor Cores使用，执行高效的矩阵乘法操作。WMMA API（例如wmma::mma_sync）在这个阶段起作用。<br>
+Shared Memory for Epilogue Tile：执行完矩阵乘法后，结果被存储在共享内存中，等待进一步处理或直接写回全局内存。<br>
+Global Memory Write-back：最终结果从共享内存写回到全局内存，完成整个GEMM操作。</p>
+</blockquote>
+<p>上图的GEMM过程演示了在Tensor Core上的经过，下面用代码进行说明：</p>
+<p>🌰：</p>
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c"><span class="pl-c">//</span> 详细注释说明以便理解</span>
+
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>mma.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cuda_runtime.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
+
+<span class="pl-k">using</span> <span class="pl-k">namespace</span> <span class="pl-en">nvcuda</span><span class="pl-k">;</span>
+
+#<span class="pl-k">define</span> <span class="pl-en">M</span> <span class="pl-c1">1024</span>
+#<span class="pl-k">define</span> <span class="pl-en">N</span> <span class="pl-c1">1024</span>
+#<span class="pl-k">define</span> <span class="pl-en">K</span> <span class="pl-c1">1024</span>
+
+__global__ <span class="pl-k">void</span> <span class="pl-en">matrixMulKernel</span>(<span class="pl-k">const</span> half* __restrict__ A, <span class="pl-k">const</span> half* __restrict__ B, <span class="pl-k">float</span>* __restrict__ C, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N, <span class="pl-k">int</span> K) {
+    <span class="pl-c"><span class="pl-c">//</span> Declare shared memory to hold the tiles of A and B</span>
+    <span class="pl-c"><span class="pl-c">//</span> 声明存储矩阵A和B片段的共享内存区域</span>
+    __shared__ half shared_A[<span class="pl-c1">16</span>][<span class="pl-c1">16</span>];
+    __shared__ half shared_B[<span class="pl-c1">16</span>][<span class="pl-c1">16</span>];
+
+    <span class="pl-c"><span class="pl-c">//</span> Declare the fragments</span>
+    <span class="pl-c"><span class="pl-c">//</span> 使用 WMMA 声明矩阵片段，a_frag 和 b_frag 分别用于存储矩阵 A 和 B 的片段，c_frag 用于累加结果。</span>
+    wmma::fragment&lt;wmma::matrix_a, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, half, wmma::col_major&gt; a_frag;
+    wmma::fragment&lt;wmma::matrix_b, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, half, wmma::row_major&gt; b_frag;
+    wmma::fragment&lt;wmma::accumulator, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-c1">16</span>, <span class="pl-k">float</span>&gt; c_frag;
+
+    <span class="pl-c"><span class="pl-c">//</span> 计算 warp 的位置</span>
+    
+    <span class="pl-k">int</span> warpM = (blockIdx.<span class="pl-smi">y</span> * blockDim.<span class="pl-smi">y</span> + threadIdx.<span class="pl-smi">y</span>) / <span class="pl-c1">16</span>;
+    <span class="pl-k">int</span> warpN = (blockIdx.<span class="pl-smi">x</span> * blockDim.<span class="pl-smi">x</span> + threadIdx.<span class="pl-smi">x</span>) / <span class="pl-c1">16</span>;
+
+    <span class="pl-c1">wmma::fill_fragment</span>(c_frag, <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>);
+
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; K; i += <span class="pl-c1">16</span>) {
+        <span class="pl-k">int</span> aRow = warpM * <span class="pl-c1">16</span> + threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>;
+        <span class="pl-k">int</span> aCol = i + threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>;
+        <span class="pl-k">int</span> bRow = i + threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>;
+        <span class="pl-k">int</span> bCol = warpN * <span class="pl-c1">16</span> + threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>;
+
+        <span class="pl-c"><span class="pl-c">//</span> 计算共享内存中的行和列索引，并将矩阵 A 和 B 的数据加载到共享内存中</span>
+        <span class="pl-k">if</span> (aRow &lt; M &amp;&amp; aCol &lt; K) {
+            shared_A[threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>][threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>] = A[aRow * K + aCol];
+        } <span class="pl-k">else</span> {
+            shared_A[threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>][threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>] = <span class="pl-c1">0.0</span>;
+        }
+
+        <span class="pl-k">if</span> (bRow &lt; K &amp;&amp; bCol &lt; N) {
+            shared_B[threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>][threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>] = B[bRow * N + bCol];
+        } <span class="pl-k">else</span> {
+            shared_B[threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>][threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>] = <span class="pl-c1">0.0</span>;
+        }
+
+        <span class="pl-c1">__syncthreads</span>();
+
+        <span class="pl-c1">wmma::load_matrix_sync</span>(a_frag, shared_A[<span class="pl-c1">0</span>], <span class="pl-c1">16</span>);
+        <span class="pl-c1">wmma::load_matrix_sync</span>(b_frag, shared_B[<span class="pl-c1">0</span>], <span class="pl-c1">16</span>);
+
+        <span class="pl-c1">wmma::mma_sync</span>(c_frag, a_frag, b_frag, c_frag);
+
+        <span class="pl-c1">__syncthreads</span>();
+    }
+    <span class="pl-c"><span class="pl-c">//</span> 计算输出矩阵 C 的行和列索引并将累加结果从 c_frag 存储到全局内存中的矩阵C</span>
+    <span class="pl-k">int</span> cRow = warpM * <span class="pl-c1">16</span> + threadIdx.<span class="pl-smi">y</span> % <span class="pl-c1">16</span>;
+    <span class="pl-k">int</span> cCol = warpN * <span class="pl-c1">16</span> + threadIdx.<span class="pl-smi">x</span> % <span class="pl-c1">16</span>;
+
+    <span class="pl-k">if</span> (cRow &lt; M &amp;&amp; cCol &lt; N) {
+        <span class="pl-c1">wmma::store_matrix_sync</span>(C + cRow * N + cCol, c_frag, N,  wmma::mem_row_major);
+    }
+}
+
+<span class="pl-k">void</span> <span class="pl-en">matrixMultiply</span>(<span class="pl-k">const</span> half* A, <span class="pl-k">const</span> half* B, <span class="pl-k">float</span>* C, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N, <span class="pl-k">int</span> K) {
+    dim3 <span class="pl-smi">threadsPerBlock</span>(<span class="pl-c1">16</span>, <span class="pl-c1">16</span>);
+    dim3 <span class="pl-smi">blocksPerGrid</span>((N + <span class="pl-c1">15</span>) / <span class="pl-c1">16</span>, (M + <span class="pl-c1">15</span>) / <span class="pl-c1">16</span>);
+
+    matrixMulKernel&lt;&lt;&lt;blocksPerGrid, threadsPerBlock&gt;&gt;&gt;(A, B, C, M, N, K);
+    <span class="pl-c1">cudaDeviceSynchronize</span>();
+}
+
+<span class="pl-k">int</span> <span class="pl-en">main</span>() {
+    <span class="pl-c"><span class="pl-c">//</span> Allocate and initialize host matrices</span>
+    half *h_A, *h_B;
+    <span class="pl-k">float</span> *h_C;
+    <span class="pl-c1">cudaMallocHost</span>(&amp;h_A, M * K * <span class="pl-k">sizeof</span>(half));
+    <span class="pl-c1">cudaMallocHost</span>(&amp;h_B, K * N * <span class="pl-k">sizeof</span>(half));
+    <span class="pl-c1">cudaMallocHost</span>(&amp;h_C, M * N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>));
+
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; M * K; i++) h_A[i] = <span class="pl-c1">__float2half</span>(<span class="pl-c1">1</span>.<span class="pl-c1">0f</span>);
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; K * N; i++) h_B[i] = <span class="pl-c1">__float2half</span>(<span class="pl-c1">1</span>.<span class="pl-c1">0f</span>);
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; M * N; i++) h_C[i] = <span class="pl-c1">0</span>.<span class="pl-c1">0f</span>;
+
+    <span class="pl-c"><span class="pl-c">//</span> Allocate and initialize device matrices</span>
+    half *d_A, *d_B;
+    <span class="pl-k">float</span> *d_C;
+    <span class="pl-c1">cudaMalloc</span>(&amp;d_A, M * K * <span class="pl-k">sizeof</span>(half));
+    <span class="pl-c1">cudaMalloc</span>(&amp;d_B, K * N * <span class="pl-k">sizeof</span>(half));
+    <span class="pl-c1">cudaMalloc</span>(&amp;d_C, M * N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>));
+
+    <span class="pl-c1">cudaMemcpy</span>(d_A, h_A, M * K * <span class="pl-k">sizeof</span>(half), cudaMemcpyHostToDevice);
+    <span class="pl-c1">cudaMemcpy</span>(d_B, h_B, K * N * <span class="pl-k">sizeof</span>(half), cudaMemcpyHostToDevice);
+
+    <span class="pl-c"><span class="pl-c">//</span> Perform matrix multiplication on the device</span>
+    <span class="pl-c1">matrixMultiply</span>(d_A, d_B, d_C, M, N, K);
+
+    <span class="pl-c"><span class="pl-c">//</span> Copy the result back to host</span>
+    <span class="pl-c1">cudaMemcpy</span>(h_C, d_C, M * N * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>), cudaMemcpyDeviceToHost);
+
+    <span class="pl-c"><span class="pl-c">//</span> Print the result</span>
+    std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Result: <span class="pl-pds">"</span></span> &lt;&lt; std::endl;
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">10</span>; i++) {
+        <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">10</span>; j++) {
+            std::cout &lt;&lt; h_C[i * N + j] &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span> <span class="pl-pds">"</span></span>;
+        }
+        std::cout &lt;&lt; std::endl;
+    }
+
+    <span class="pl-c"><span class="pl-c">//</span> Cleanup</span>
+    <span class="pl-c1">cudaFree</span>(d_A);
+    <span class="pl-c1">cudaFree</span>(d_B);
+    <span class="pl-c1">cudaFree</span>(d_C);
+    <span class="pl-c1">cudaFreeHost</span>(h_A);
+    <span class="pl-c1">cudaFreeHost</span>(h_B);
+    <span class="pl-c1">cudaFreeHost</span>(h_C);
+
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+}</pre></div>
+<p>从上述程序中可以看出，在使用wmma::mma_sync函数 <em>WMMA (Warp Matrix Multiply Accumulate))</em> 时，需要将矩阵划分为适合Tensor Cores处理的块。具体来说，矩阵需要划分为16x16的子矩阵，以便与Tensor Cores的工作方式匹配。如果矩阵的尺寸不是16的倍数，则需要填充或对矩阵进行分块处理，以使其适应Tensor Cores的操作。</p>
+<p>在调用wmma::mma_sync时，确保以下几点：</p>
+<ul>
+<li>矩阵的维度应为16的倍数。</li>
+<li>使用wmma::fragment来定义输入和输出的片段。</li>
+<li>通过wmma::load_matrix_sync将矩阵数据加载到片段中。</li>
+<li>使用wmma::mma_sync执行矩阵乘法。</li>
+<li>通过wmma::store_matrix_sync将结果存储回全局内存。</li>
+</ul>
+<p>而在平时的CUDA编程中，使用cuBLAS库或深度学习框架等即可自动使用Tensor Core进行加速。</p>
+<p><strong>THANKS FOR REFERENCE</strong>：</p>
+<p><a href="https://blog.csdn.net/xiaoxiaowenqiang/article/details/138278795" rel="nofollow">Tensor Core 基本原理 CUDA Core Tensor Core RT CoreAI 工作负载 线程束（Warp） CNN GEMM 混合精度训练</a></p>
+<p><a href="https://cloud.tencent.com/developer/article/1346083" rel="nofollow">深度 | 英伟达深度学习Tensor Core全面解析</a></p>
+<p><a href="https://cloud.tencent.com/developer/article/1346083" rel="nofollow">NVIDIA Tensor Core微架构解析</a></p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://jibinghu.github.io">ZOMBIE_</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if("05/28/2024"!=""){
+    var startSite=new Date("05/28/2024");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行 "+diffDay+" 天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z', 'copy': 'M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z', 'check': 'M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.disabled=true;
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","jibinghu/jibinghu.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createClipboardHTML = (codeContent, additionalClasses = '') => `
+        <pre class="notranslate"><code class="notranslate">${codeContent}</code></pre>
+        <div class="clipboard-container position-absolute right-0 top-0 ${additionalClasses}">
+            <clipboard-copy class="ClipboardButton btn m-2 p-0" role="button" style="display: inherit;">
+                <svg height="16" width="16" class="octicon octicon-copy m-2"><path d="${IconList["copy"]}"></path></svg>
+                <svg height="16" width="16" class="octicon octicon-check color-fg-success m-2 d-none"><path d="${IconList["check"]}"></path></svg>
+            </clipboard-copy>
+            <div class="copy-feedback">Copied!</div>
+        </div>
+    `;
+
+    const handleCodeElements = (selector = '') => {
+        document.querySelectorAll(selector).forEach(codeElement => {
+            const codeContent = codeElement.innerHTML;
+            const newStructure = document.createElement('div');
+            newStructure.className = 'snippet-clipboard-content position-relative overflow-auto';
+            newStructure.innerHTML = createClipboardHTML(codeContent);
+
+            const parentElement = codeElement.parentElement;
+            if (selector.includes('highlight')) {
+                parentElement.insertBefore(newStructure, codeElement.nextSibling);
+                parentElement.removeChild(codeElement);
+            } else {
+                parentElement.parentElement.replaceChild(newStructure, parentElement);
+            }
+        });
+    };
+
+    handleCodeElements('pre.notranslate > code.notranslate');
+    handleCodeElements('div.highlight > pre.notranslate');
+
+    let currentFeedback = null;
+    document.querySelectorAll('clipboard-copy').forEach(copyButton => {
+        copyButton.addEventListener('click', () => {
+            const codeContent = copyButton.closest('.snippet-clipboard-content').innerText;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = codeContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const copyIcon = copyButton.querySelector('.octicon-copy');
+            const checkIcon = copyButton.querySelector('.octicon-check');
+            const copyFeedback = copyButton.nextElementSibling;
+
+            if (currentFeedback && currentFeedback !== copyFeedback) {currentFeedback.style.display = 'none';}
+            currentFeedback = copyFeedback;
+
+            copyIcon.classList.add('d-none');
+            checkIcon.classList.remove('d-none');
+            copyFeedback.style.display = 'block';
+            copyButton.style.borderColor = 'var(--color-success-fg)';
+
+            setTimeout(() => {
+                copyIcon.classList.remove('d-none');
+                checkIcon.classList.add('d-none');
+                copyFeedback.style.display = 'none';
+                copyButton.style.borderColor = '';
+            }, 2000);
+        });
+    });
+});
+
+</script>
+
+
+</html>
