@@ -156,9 +156,9 @@ Transposed matrix:
 
 
 <span class="pl-k">void</span> <span class="pl-en">mat_transpose_v0</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
-    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> BLOCK_SZ = <span class="pl-c1">16</span>;
-    dim3 <span class="pl-smi">block</span>(BLOCK_SZ, BLOCK_SZ);
-    dim3 <span class="pl-smi">grid</span>((N + BLOCK_SZ - <span class="pl-c1">1</span>) / BLOCK_SZ, (M + BLOCK_SZ - <span class="pl-c1">1</span>) / BLOCK_SZ));
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> <span class="pl-c1">BLOCK_SZ</span> = <span class="pl-c1">16</span>;
+    dim3 <span class="pl-smi">block</span>(<span class="pl-c1">BLOCK_SZ</span>, <span class="pl-c1">BLOCK_SZ</span>);
+    dim3 <span class="pl-smi">grid</span>((N + <span class="pl-c1">BLOCK_SZ</span> - <span class="pl-c1">1</span>) / <span class="pl-c1">BLOCK_SZ</span>, (M + <span class="pl-c1">BLOCK_SZ</span> - <span class="pl-c1">1</span>) / <span class="pl-c1">BLOCK_SZ</span>));
     mat_transpose_kernel_v0&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
 }</pre></div>
 <blockquote>
@@ -168,33 +168,33 @@ Transposed matrix:
 <p>结合矩阵转置的逻辑以及 Nsight Compute 容易判断出, 矩阵转置本身是一个 memory-bound 的 kernel, 因为其核心是完成矩阵内存排布的转换, 这个过程基本不涉及计算, 因此对该 kernel 优化很重要的一点就是提高访存性能.</p>
 <p><em>朴素实现直接操作矩阵所在的 GMEM, 直观看来, 矩阵转置不会涉及数据的重用, 直接操作 GMEM 本身没有问题, 但此时应该注意 GMEM 的访存特性, 其中很重要的即 GMEM 的访存合并, 即连续线程访问的 GMEM 中的数据地址是连续的, 可以将多个线程的内存访问合并为一个(或多个)内存访问, 从而减少访存次数, 提高带宽利用率. 在 Version 0 的 kernel 中, 容易看出读取时 idata[y * N + x] 是访存合并的, 因为连续线程对应的 x 是连续的, 即访问矩阵同一行连续的列; 但是写入时 odata[x * M + y] 并不是访存合并的, 因为转置后连续线程写入的是同一列连续的行, 但由于内存布局是行主序的, 因此此时每个线程访问的地址实际上并不连续, 地址差 N, 因此对 GMEM 访存性能有很大影响.</em></p>
 <h5>利用共享内存合并访存： {#sector_2}</h5>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template </span>&lt;<span class="pl-k">int</span> BLOCK_SZ&gt;
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template </span>&lt;<span class="pl-k">int</span> <span class="pl-c1">BLOCK_SZ</span>&gt;
 __global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kernel_v1</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
     <span class="pl-k">const</span> <span class="pl-k">int</span> bx = blockIdx.<span class="pl-smi">x</span>, by = blockIdx.<span class="pl-smi">y</span>;
     <span class="pl-k">const</span> <span class="pl-k">int</span> tx = threadIdx.<span class="pl-smi">x</span>, ty = threadIdx.<span class="pl-smi">y</span>;
 
-    __shared__ <span class="pl-k">float</span> sdata[BLOCK_SZ][BLOCK_SZ];
+    __shared__ <span class="pl-k">float</span> sdata[<span class="pl-c1">BLOCK_SZ</span>][<span class="pl-c1">BLOCK_SZ</span>];
 
-    <span class="pl-k">int</span> x = bx * BLOCK_SZ + tx;
-    <span class="pl-k">int</span> y = by * BLOCK_SZ + ty;
+    <span class="pl-k">int</span> x = bx * <span class="pl-c1">BLOCK_SZ</span> + tx;
+    <span class="pl-k">int</span> y = by * <span class="pl-c1">BLOCK_SZ</span> + ty;
 
     <span class="pl-k">if</span> (y &lt; M &amp;&amp; x &lt; N) {
         sdata[ty][tx] = idata[y * N + x];
     }
     <span class="pl-c1">__syncthreads</span>();
 
-    x = by * BLOCK_SZ + tx;
-    y = bx * BLOCK_SZ + ty;
+    x = by * <span class="pl-c1">BLOCK_SZ</span> + tx;
+    y = bx * <span class="pl-c1">BLOCK_SZ</span> + ty;
     <span class="pl-k">if</span> (y &lt; N &amp;&amp; x &lt; M) {
         odata[y * M + x] = sdata[tx][ty];
     }
 }
 
 <span class="pl-k">void</span> <span class="pl-en">mat_transpose_v1</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
-    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> BLOCK_SZ = <span class="pl-c1">16</span>;
-    dim3 <span class="pl-smi">block</span>(BLOCK_SZ, BLOCK_SZ);
-    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, BLOCK_SZ), <span class="pl-c1">Ceil</span>(M, BLOCK_SZ));
-    mat_transpose_kernel_v1&lt;BLOCK_SZ&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> <span class="pl-c1">BLOCK_SZ</span> = <span class="pl-c1">16</span>;
+    dim3 <span class="pl-smi">block</span>(<span class="pl-c1">BLOCK_SZ</span>, <span class="pl-c1">BLOCK_SZ</span>);
+    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, <span class="pl-c1">BLOCK_SZ</span>), <span class="pl-c1">Ceil</span>(M, <span class="pl-c1">BLOCK_SZ</span>));
+    mat_transpose_kernel_v1&lt;<span class="pl-c1">BLOCK_SZ</span>&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
 }</pre></div>
 <p>利用共享内存进行合并访存时，实现了读出和写入时的访存合并 (Memory Coalesce).但此时在共享内存中会出现由于读入和写出时数据操作不一致导致的 <code class="notranslate">odata[y * M + x] = sdata[tx][ty]; </code> 出现每两行出现 Bank Conflict 冲突,从而造成了 <strong>16路的内存冲突</strong>；</p>
 <div>
@@ -206,33 +206,33 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kern
 在读取矩阵阶段, 操作与 Version 0 一致, 区别在于将数据直接写入 SMEM 中, 对应上图橙色部分. 接着通过设置 x = by * BLOCK_SZ + tx; y = bx * BLOCK_SZ + ty; 两条语句进行了索引的重计算, 进行了线程块索引 bx 和 by 交换, 对应上图右上角的数据分片转置后成为了左下角的数据分片. 由于此时 tx 和 ty 并没有交换, 因此按照 odata[y * M + x] 写入 GMEM 时, 访存是合并的, 但需要读取 SMEM 时 tx 与 ty 进行交换, 实现数据分片内的转置, 对应上图绿色部分.</p>
 </blockquote>
 <h5>利用 padding 解决 bank conflict： {#sector_3}</h5>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template </span>&lt;<span class="pl-k">int</span> BLOCK_SZ&gt;
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template </span>&lt;<span class="pl-k">int</span> <span class="pl-c1">BLOCK_SZ</span>&gt;
 __global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kernel_v2</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
     <span class="pl-k">const</span> <span class="pl-k">int</span> bx = blockIdx.<span class="pl-smi">x</span>, by = blockIdx.<span class="pl-smi">y</span>;
     <span class="pl-k">const</span> <span class="pl-k">int</span> tx = threadIdx.<span class="pl-smi">x</span>, ty = threadIdx.<span class="pl-smi">y</span>;
 
-    __shared__ <span class="pl-k">float</span> sdata[BLOCK_SZ][BLOCK_SZ+<span class="pl-c1">1</span>];    <span class="pl-c"><span class="pl-c">//</span> padding</span>
+    __shared__ <span class="pl-k">float</span> sdata[<span class="pl-c1">BLOCK_SZ</span>][<span class="pl-c1">BLOCK_SZ</span>+<span class="pl-c1">1</span>];    <span class="pl-c"><span class="pl-c">//</span> padding</span>
 
-    <span class="pl-k">int</span> x = bx * BLOCK_SZ + tx;
-    <span class="pl-k">int</span> y = by * BLOCK_SZ + ty;
+    <span class="pl-k">int</span> x = bx * <span class="pl-c1">BLOCK_SZ</span> + tx;
+    <span class="pl-k">int</span> y = by * <span class="pl-c1">BLOCK_SZ</span> + ty;
 
     <span class="pl-k">if</span> (y &lt; M &amp;&amp; x &lt; N) {
         sdata[ty][tx] = idata[y * N + x];
     }
     <span class="pl-c1">__syncthreads</span>();
 
-    x = by * BLOCK_SZ + tx;
-    y = bx * BLOCK_SZ + ty;
+    x = by * <span class="pl-c1">BLOCK_SZ</span> + tx;
+    y = bx * <span class="pl-c1">BLOCK_SZ</span> + ty;
     <span class="pl-k">if</span> (y &lt; N &amp;&amp; x &lt; M) {
         odata[y * M + x] = sdata[tx][ty];
     }
 }
 
 <span class="pl-k">void</span> <span class="pl-en">mat_transpose_v2</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
-    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> BLOCK_SZ = <span class="pl-c1">16</span>;
-    dim3 <span class="pl-smi">block</span>(BLOCK_SZ, BLOCK_SZ);
-    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, BLOCK_SZ), <span class="pl-c1">Ceil</span>(M, BLOCK_SZ));
-    mat_transpose_kernel_v2&lt;BLOCK_SZ&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> <span class="pl-c1">BLOCK_SZ</span> = <span class="pl-c1">16</span>;
+    dim3 <span class="pl-smi">block</span>(<span class="pl-c1">BLOCK_SZ</span>, <span class="pl-c1">BLOCK_SZ</span>);
+    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, <span class="pl-c1">BLOCK_SZ</span>), <span class="pl-c1">Ceil</span>(M, <span class="pl-c1">BLOCK_SZ</span>));
+    mat_transpose_kernel_v2&lt;<span class="pl-c1">BLOCK_SZ</span>&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
 }</pre></div>
 <div>
     <a target="_blank" rel="noopener noreferrer nofollow" href="https://camo.githubusercontent.com/4d92203000babcef542881da0cd09da5173436c40189f4569ae063e1885b95e0/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130303730383330332d37303733333831372e706e67"><img src="https://camo.githubusercontent.com/4d92203000babcef542881da0cd09da5173436c40189f4569ae063e1885b95e0/68747470733a2f2f696d67323032342e636e626c6f67732e636f6d2f626c6f672f333335383138322f3230323430362f333335383138322d32303234303630333130303730383330332d37303733333831372e706e67" height="200" data-canonical-src="https://img2024.cnblogs.com/blog/3358182/202406/3358182-20240603100708303-70733817.png" style="max-width: 100%; height: auto; max-height: 200px;"></a>
@@ -247,21 +247,21 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kern
 此时, 对于读取 SMEM 的 sdata[tx][ty], threadIdx 差 1 的线程访问的数据差 BLOCK_SZ+1, 即 17, 由于 17 与 32 互质, 因此不会有 bank conflict. 值得一提的是, 对于写入 SMEM 的 sdata[ty][tx], 由于有 1 个 padding, warp 中 lane 31 与 lane 0 访问的元素恰好差 31+1=32 个元素, 会有 1 个 bank conflict.</p>
 </blockquote>
 <h5>增加每个线程的处理元素个数： {#sector_4}</h5>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template </span>&lt;<span class="pl-k">int</span> BLOCK_SZ, <span class="pl-k">int</span> NUM_PER_THREAD&gt;
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-k">template </span>&lt;<span class="pl-k">int</span> <span class="pl-c1">BLOCK_SZ</span>, <span class="pl-k">int</span> <span class="pl-c1">NUM_PER_THREAD</span>&gt;
 __global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kernel_v3</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
     <span class="pl-k">const</span> <span class="pl-k">int</span> bx = blockIdx.<span class="pl-smi">x</span>, by = blockIdx.<span class="pl-smi">y</span>;
     <span class="pl-k">const</span> <span class="pl-k">int</span> tx = threadIdx.<span class="pl-smi">x</span>, ty = threadIdx.<span class="pl-smi">y</span>;
 
-    __shared__ <span class="pl-k">float</span> sdata[BLOCK_SZ][BLOCK_SZ+<span class="pl-c1">1</span>];
+    __shared__ <span class="pl-k">float</span> sdata[<span class="pl-c1">BLOCK_SZ</span>][<span class="pl-c1">BLOCK_SZ</span>+<span class="pl-c1">1</span>];
 
-    <span class="pl-k">int</span> x = bx * BLOCK_SZ + tx;
-    <span class="pl-k">int</span> y = by * BLOCK_SZ + ty;
+    <span class="pl-k">int</span> x = bx * <span class="pl-c1">BLOCK_SZ</span> + tx;
+    <span class="pl-k">int</span> y = by * <span class="pl-c1">BLOCK_SZ</span> + ty;
 
-    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> ROW_STRIDE = BLOCK_SZ / NUM_PER_THREAD;
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> <span class="pl-c1">ROW_STRIDE</span> = <span class="pl-c1">BLOCK_SZ</span> / <span class="pl-c1">NUM_PER_THREAD</span>;
 
     <span class="pl-k">if</span> (x &lt; N) {
         #<span class="pl-k">pragma</span> unroll
-        <span class="pl-k">for</span> (<span class="pl-k">int</span> y_off = <span class="pl-c1">0</span>; y_off &lt; BLOCK_SZ; y_off += ROW_STRIDE) {
+        <span class="pl-k">for</span> (<span class="pl-k">int</span> y_off = <span class="pl-c1">0</span>; y_off &lt; <span class="pl-c1">BLOCK_SZ</span>; y_off += <span class="pl-c1">ROW_STRIDE</span>) {
             <span class="pl-k">if</span> (y + y_off &lt; M) {
                 sdata[ty + y_off][tx] = idata[(y + y_off) * N + x]; 
             }
@@ -269,10 +269,10 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kern
     }
     <span class="pl-c1">__syncthreads</span>();
 
-    x = by * BLOCK_SZ + tx;
-    y = bx * BLOCK_SZ + ty;
+    x = by * <span class="pl-c1">BLOCK_SZ</span> + tx;
+    y = bx * <span class="pl-c1">BLOCK_SZ</span> + ty;
     <span class="pl-k">if</span> (x &lt; M) {
-        <span class="pl-k">for</span> (<span class="pl-k">int</span> y_off = <span class="pl-c1">0</span>; y_off &lt; BLOCK_SZ; y_off += ROW_STRIDE) {
+        <span class="pl-k">for</span> (<span class="pl-k">int</span> y_off = <span class="pl-c1">0</span>; y_off &lt; <span class="pl-c1">BLOCK_SZ</span>; y_off += <span class="pl-c1">ROW_STRIDE</span>) {
             <span class="pl-k">if</span> (y + y_off &lt; N) {
                 odata[(y + y_off) * M + x] = sdata[tx][ty + y_off];
             }
@@ -281,11 +281,11 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kern
 }
 
 <span class="pl-k">void</span> <span class="pl-en">mat_transpose_v3</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
-    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> BLOCK_SZ = <span class="pl-c1">32</span>;
-    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> NUM_PER_THREAD = <span class="pl-c1">4</span>;
-    dim3 <span class="pl-smi">block</span>(BLOCK_SZ, BLOCK_SZ/NUM_PER_THREAD);
-    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, BLOCK_SZ), <span class="pl-c1">Ceil</span>(M, BLOCK_SZ));
-    mat_transpose_kernel_v3&lt;BLOCK_SZ, NUM_PER_THREAD&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> <span class="pl-c1">BLOCK_SZ</span> = <span class="pl-c1">32</span>;
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> <span class="pl-c1">NUM_PER_THREAD</span> = <span class="pl-c1">4</span>;
+    dim3 <span class="pl-smi">block</span>(<span class="pl-c1">BLOCK_SZ</span>, <span class="pl-c1">BLOCK_SZ</span>/<span class="pl-c1">NUM_PER_THREAD</span>);
+    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, <span class="pl-c1">BLOCK_SZ</span>), <span class="pl-c1">Ceil</span>(M, <span class="pl-c1">BLOCK_SZ</span>));
+    mat_transpose_kernel_v3&lt;<span class="pl-c1">BLOCK_SZ</span>, <span class="pl-c1">NUM_PER_THREAD</span>&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
 }</pre></div>
 <p>对于增加线程计算元素个数，使用了更少的线程来进行转置从而提高计算访存比(广义上的计算，因为矩阵转置实质上不进行计算，仅仅是访存及位置的互换)，实现了在列维度上的线程数量的减少。在这时，sdata[ty + y_off][tx] 的 bank 实现了无冲突 (这时其实由于共享内存的bank是32路，其实也没有冲突)。</p>
 <div>
@@ -311,23 +311,23 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kern
 <div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">define</span> <span class="pl-en">FETCH_CFLOAT4</span>(<span class="pl-v">p</span>) (<span class="pl-k">reinterpret_cast</span>&lt;<span class="pl-k">const</span> float4*&gt;(&amp;(p))[<span class="pl-c1">0</span>])
 #<span class="pl-k">define</span> <span class="pl-en">FETCH_FLOAT4</span>(<span class="pl-v">p</span>) (<span class="pl-k">reinterpret_cast</span>&lt;float4*&gt;(&amp;(p))[<span class="pl-c1">0</span>])
 
-<span class="pl-k">template </span>&lt;<span class="pl-k">int</span> BLOCK_SZ&gt;
+<span class="pl-k">template </span>&lt;<span class="pl-k">int</span> <span class="pl-c1">BLOCK_SZ</span>&gt;
 __global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kernel_v3_5</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
     <span class="pl-k">const</span> <span class="pl-k">int</span> bx = blockIdx.<span class="pl-smi">x</span>, by = blockIdx.<span class="pl-smi">y</span>;
     <span class="pl-k">const</span> <span class="pl-k">int</span> tx = threadIdx.<span class="pl-smi">x</span>, ty = threadIdx.<span class="pl-smi">y</span>;
 
-    __shared__ <span class="pl-k">float</span> sdata[BLOCK_SZ][BLOCK_SZ];
+    __shared__ <span class="pl-k">float</span> sdata[<span class="pl-c1">BLOCK_SZ</span>][<span class="pl-c1">BLOCK_SZ</span>];
 
-    <span class="pl-k">int</span> x = bx * BLOCK_SZ + tx * <span class="pl-c1">4</span>;
-    <span class="pl-k">int</span> y = by * BLOCK_SZ + ty;
+    <span class="pl-k">int</span> x = bx * <span class="pl-c1">BLOCK_SZ</span> + tx * <span class="pl-c1">4</span>;
+    <span class="pl-k">int</span> y = by * <span class="pl-c1">BLOCK_SZ</span> + ty;
 
     <span class="pl-k">if</span> (x &lt; N &amp;&amp; y &lt; M) {
         <span class="pl-c1">FETCH_FLOAT4</span>(sdata[ty][tx * <span class="pl-c1">4</span>]) = <span class="pl-c1">FETCH_CFLOAT4</span>(idata[y * N + x]);
     }
     <span class="pl-c1">__syncthreads</span>();
 
-    x = by * BLOCK_SZ + tx * <span class="pl-c1">4</span>;
-    y = bx * BLOCK_SZ + ty;
+    x = by * <span class="pl-c1">BLOCK_SZ</span> + tx * <span class="pl-c1">4</span>;
+    y = bx * <span class="pl-c1">BLOCK_SZ</span> + ty;
     <span class="pl-k">float</span> tmp[<span class="pl-c1">4</span>];
     <span class="pl-k">if</span> (x &lt; M &amp;&amp; y &lt; N) {
         #<span class="pl-k">pragma</span> unroll
@@ -339,10 +339,10 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">mat_transpose_kern
 }
 
 <span class="pl-k">void</span> <span class="pl-en">mat_transpose_v3_5</span>(<span class="pl-k">const</span> <span class="pl-k">float</span>* idata, <span class="pl-k">float</span>* odata, <span class="pl-k">int</span> M, <span class="pl-k">int</span> N) {
-    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> BLOCK_SZ = <span class="pl-c1">32</span>;
-    dim3 <span class="pl-smi">block</span>(BLOCK_SZ / <span class="pl-c1">4</span>, BLOCK_SZ);
-    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, BLOCK_SZ), <span class="pl-c1">Ceil</span>(M, BLOCK_SZ));
-    mat_transpose_kernel_v3_5&lt;BLOCK_SZ&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
+    <span class="pl-k">constexpr</span> <span class="pl-k">int</span> <span class="pl-c1">BLOCK_SZ</span> = <span class="pl-c1">32</span>;
+    dim3 <span class="pl-smi">block</span>(<span class="pl-c1">BLOCK_SZ</span> / <span class="pl-c1">4</span>, <span class="pl-c1">BLOCK_SZ</span>);
+    dim3 <span class="pl-smi">grid</span>(<span class="pl-c1">Ceil</span>(N, <span class="pl-c1">BLOCK_SZ</span>), <span class="pl-c1">Ceil</span>(M, <span class="pl-c1">BLOCK_SZ</span>));
+    mat_transpose_kernel_v3_5&lt;<span class="pl-c1">BLOCK_SZ</span>&gt;&lt;&lt;&lt;grid, block&gt;&gt;&gt;(idata, odata, M, N);
 }</pre></div>
 <p>此时利用向量化访存的效率是比单纯利用共享内存高的，但是由于无法避免bank conflict，运行时间还是有较大延迟。</p>
 <hr>
@@ -392,10 +392,10 @@ cudaError_t <span class="pl-en">checkCuda</span>(cudaError_t result)
   <span class="pl-k">return</span> result;
 }
 
-<span class="pl-k">const</span> <span class="pl-k">int</span> TILE_DIM = <span class="pl-c1">32</span>;
-<span class="pl-k">const</span> <span class="pl-k">int</span> BLOCK_ROWS = <span class="pl-c1">8</span>;
+<span class="pl-k">const</span> <span class="pl-k">int</span> <span class="pl-c1">TILE_DIM</span> = <span class="pl-c1">32</span>;
+<span class="pl-k">const</span> <span class="pl-k">int</span> <span class="pl-c1">BLOCK_ROWS</span> = <span class="pl-c1">8</span>;
 <span class="pl-c"><span class="pl-c">//</span> 内核重复执行次数</span>
-<span class="pl-k">const</span> <span class="pl-k">int</span> NUM_REPS = <span class="pl-c1">5</span>;
+<span class="pl-k">const</span> <span class="pl-k">int</span> <span class="pl-c1">NUM_REPS</span> = <span class="pl-c1">5</span>;
 
 <span class="pl-c"><span class="pl-c">//</span> 检查错误并打印GB/s</span>
 <span class="pl-k">void</span> <span class="pl-en">postprocess</span>(<span class="pl-k">const</span> <span class="pl-k">float</span> *ref, <span class="pl-k">const</span> <span class="pl-k">float</span> *res, <span class="pl-k">int</span> n, <span class="pl-k">float</span> ms)
@@ -409,18 +409,18 @@ cudaError_t <span class="pl-en">checkCuda</span>(cudaError_t result)
       <span class="pl-k">break</span>;
     }
   <span class="pl-k">if</span> (passed)
-    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%20.2f<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-c1">2</span> * n * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>) * <span class="pl-c1">1e-6</span> * NUM_REPS / ms );
+    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%20.2f<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-c1">2</span> * n * <span class="pl-k">sizeof</span>(<span class="pl-k">float</span>) * <span class="pl-c1">1e-6</span> * <span class="pl-c1">NUM_REPS</span> / ms );
 }
 
 <span class="pl-c"><span class="pl-c">//</span> 简单复制内核</span>
 <span class="pl-c"><span class="pl-c">//</span> 作为基准案例，表示最佳有效带宽。</span>
 __global__ <span class="pl-k">void</span> <span class="pl-en">copy</span>(<span class="pl-k">float</span> *odata, <span class="pl-k">const</span> <span class="pl-k">float</span> *idata)
 {
-  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
-  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
-  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j+= BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j+= <span class="pl-c1">BLOCK_ROWS</span>)
     odata[(y+j)*width + x] = idata[(y+j)*width + x];
 }
 
@@ -428,19 +428,19 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">copy</span>(<span 
 <span class="pl-c"><span class="pl-c">//</span> 也是基准案例，展示了使用共享内存的效果。</span>
 __global__ <span class="pl-k">void</span> <span class="pl-en">copySharedMem</span>(<span class="pl-k">float</span> *odata, <span class="pl-k">const</span> <span class="pl-k">float</span> *idata)
 {
-  __shared__ <span class="pl-k">float</span> tile[TILE_DIM * TILE_DIM];
+  __shared__ <span class="pl-k">float</span> tile[<span class="pl-c1">TILE_DIM</span> * <span class="pl-c1">TILE_DIM</span>];
   
-  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
-  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
-  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
-     tile[(threadIdx.<span class="pl-smi">y</span>+j)*TILE_DIM + threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
+     tile[(threadIdx.<span class="pl-smi">y</span>+j)*<span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
 
   <span class="pl-c1">__syncthreads</span>();
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
-     odata[(y+j)*width + x] = tile[(threadIdx.<span class="pl-smi">y</span>+j)*TILE_DIM + threadIdx.<span class="pl-smi">x</span>];          
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
+     odata[(y+j)*width + x] = tile[(threadIdx.<span class="pl-smi">y</span>+j)*<span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>];          
 }
 
 <span class="pl-c"><span class="pl-c">//</span> 简单转置</span>
@@ -448,11 +448,11 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">copySharedMem</spa
 <span class="pl-c"><span class="pl-c">//</span> 全局内存读取是合并的，但写入不是。</span>
 __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNaive</span>(<span class="pl-k">float</span> *odata, <span class="pl-k">const</span> <span class="pl-k">float</span> *idata)
 {
-  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
-  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
-  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j+= BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j+= <span class="pl-c1">BLOCK_ROWS</span>)
     odata[x*width + (y+j)] = idata[(y+j)*width + x];
 }
 
@@ -461,21 +461,21 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNaive</sp
 <span class="pl-c"><span class="pl-c">//</span> tile宽度==bank数量会导致共享内存bank冲突。</span>
 __global__ <span class="pl-k">void</span> <span class="pl-en">transposeCoalesced</span>(<span class="pl-k">float</span> *odata, <span class="pl-k">const</span> <span class="pl-k">float</span> *idata)
 {
-  __shared__ <span class="pl-k">float</span> tile[TILE_DIM][TILE_DIM];
+  __shared__ <span class="pl-k">float</span> tile[<span class="pl-c1">TILE_DIM</span>][<span class="pl-c1">TILE_DIM</span>];
     
-  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
-  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
-  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
      tile[threadIdx.<span class="pl-smi">y</span>+j][threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
 
   <span class="pl-c1">__syncthreads</span>();
 
-  x = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
-  y = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  x = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
+  y = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
      odata[(y+j)*width + x] = tile[threadIdx.<span class="pl-smi">x</span>][threadIdx.<span class="pl-smi">y</span> + j];
 }
 
@@ -484,21 +484,21 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeCoalesced
 <span class="pl-c"><span class="pl-c">//</span> 以避免共享内存bank冲突。</span>
 __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankConflicts</span>(<span class="pl-k">float</span> *odata, <span class="pl-k">const</span> <span class="pl-k">float</span> *idata)
 {
-  __shared__ <span class="pl-k">float</span> tile[TILE_DIM][TILE_DIM+<span class="pl-c1">1</span>];
+  __shared__ <span class="pl-k">float</span> tile[<span class="pl-c1">TILE_DIM</span>][<span class="pl-c1">TILE_DIM</span>+<span class="pl-c1">1</span>];
     
-  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
-  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
-  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
      tile[threadIdx.<span class="pl-smi">y</span>+j][threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
 
   <span class="pl-c1">__syncthreads</span>();
 
-  x = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
-  y = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  x = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
+  y = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
      odata[(y+j)*width + x] = tile[threadIdx.<span class="pl-smi">x</span>][threadIdx.<span class="pl-smi">y</span> + j];
 }
 
@@ -508,8 +508,8 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-k">const</span> <span class="pl-k">int</span> ny = <span class="pl-c1">2048</span>;
   <span class="pl-k">const</span> <span class="pl-k">int</span> mem_size = nx*ny*<span class="pl-k">sizeof</span>(<span class="pl-k">float</span>);
 
-  dim3 <span class="pl-smi">dimGrid</span>(nx/TILE_DIM, ny/TILE_DIM, <span class="pl-c1">1</span>);
-  dim3 <span class="pl-smi">dimBlock</span>(TILE_DIM, BLOCK_ROWS, <span class="pl-c1">1</span>);
+  dim3 <span class="pl-smi">dimGrid</span>(nx/<span class="pl-c1">TILE_DIM</span>, ny/<span class="pl-c1">TILE_DIM</span>, <span class="pl-c1">1</span>);
+  dim3 <span class="pl-smi">dimBlock</span>(<span class="pl-c1">TILE_DIM</span>, <span class="pl-c1">BLOCK_ROWS</span>, <span class="pl-c1">1</span>);
 
   <span class="pl-k">int</span> devId = <span class="pl-c1">0</span>;
   <span class="pl-k">if</span> (argc &gt; <span class="pl-c1">1</span>) devId = <span class="pl-c1">atoi</span>(argv[<span class="pl-c1">1</span>]);
@@ -518,7 +518,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaGetDeviceProperties</span>(&amp;prop, devId));
   <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\n</span>Device : %s<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, prop.<span class="pl-smi">name</span>);
   <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>Matrix size: %d %d, Block size: %d %d, Tile size: %d %d<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, 
-         nx, ny, TILE_DIM, BLOCK_ROWS, TILE_DIM, TILE_DIM);
+         nx, ny, <span class="pl-c1">TILE_DIM</span>, <span class="pl-c1">BLOCK_ROWS</span>, <span class="pl-c1">TILE_DIM</span>, <span class="pl-c1">TILE_DIM</span>);
   <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>dimGrid: %d %d %d. dimBlock: %d %d %d<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>,
          dimGrid.<span class="pl-smi">x</span>, dimGrid.<span class="pl-smi">y</span>, dimGrid.<span class="pl-smi">z</span>, dimBlock.<span class="pl-smi">x</span>, dimBlock.<span class="pl-smi">y</span>, dimBlock.<span class="pl-smi">z</span>);
   
@@ -535,12 +535,12 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMalloc</span>(&amp;d_tdata, mem_size) );
 
   <span class="pl-c"><span class="pl-c">//</span> 检查参数并计算执行配置</span>
-  <span class="pl-k">if</span> (nx % TILE_DIM || ny % TILE_DIM) {
+  <span class="pl-k">if</span> (nx % <span class="pl-c1">TILE_DIM</span> || ny % <span class="pl-c1">TILE_DIM</span>) {
     <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>nx 和 ny 必须是 TILE_DIM 的倍数<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
     <span class="pl-k">goto</span> error_exit;
   }
 
-  <span class="pl-k">if</span> (TILE_DIM % BLOCK_ROWS) {
+  <span class="pl-k">if</span> (<span class="pl-c1">TILE_DIM</span> % <span class="pl-c1">BLOCK_ROWS</span>) {
     <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>TILE_DIM 必须是 BLOCK_ROWS 的倍数<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
     <span class="pl-k">goto</span> error_exit;
   }
@@ -577,7 +577,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c"><span class="pl-c">//</span> 预热</span>
   copy&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">NUM_REPS</span>; i++)
      copy&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
@@ -593,7 +593,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c"><span class="pl-c">//</span> 预热</span>
   copySharedMem&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">NUM_REPS</span>; i++)
      copySharedMem&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
@@ -609,7 +609,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c"><span class="pl-c">//</span> 预热</span>
   transposeNaive&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">NUM_REPS</span>; i++)
      transposeNaive&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
@@ -625,7 +625,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c"><span class="pl-c">//</span> 预热</span>
   transposeCoalesced&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">NUM_REPS</span>; i++)
      transposeCoalesced&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
@@ -641,7 +641,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c"><span class="pl-c">//</span> 预热</span>
   transposeNoBankConflicts&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">NUM_REPS</span>; i++)
      transposeNoBankConflicts&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
@@ -714,9 +714,9 @@ cudaError_t <span class="pl-en">checkCuda</span>(cudaError_t result)
 }
 
 <span class="pl-c"><span class="pl-c">//</span> 定义常量</span>
-<span class="pl-k">const</span> <span class="pl-k">int</span> TILE_DIM = <span class="pl-c1">32</span>;  <span class="pl-c"><span class="pl-c">//</span> tile维度</span>
-<span class="pl-k">const</span> <span class="pl-k">int</span> BLOCK_ROWS = <span class="pl-c1">8</span>;  <span class="pl-c"><span class="pl-c">//</span> 块行数</span>
-<span class="pl-k">const</span> <span class="pl-k">int</span> NUM_REPS = <span class="pl-c1">5</span>;  <span class="pl-c"><span class="pl-c">//</span> 内核重复执行次数</span>
+<span class="pl-k">const</span> <span class="pl-k">int</span> <span class="pl-c1">TILE_DIM</span> = <span class="pl-c1">32</span>;  <span class="pl-c"><span class="pl-c">//</span> tile维度</span>
+<span class="pl-k">const</span> <span class="pl-k">int</span> <span class="pl-c1">BLOCK_ROWS</span> = <span class="pl-c1">8</span>;  <span class="pl-c"><span class="pl-c">//</span> 块行数</span>
+<span class="pl-k">const</span> <span class="pl-k">int</span> <span class="pl-c1">NUM_REPS</span> = <span class="pl-c1">5</span>;  <span class="pl-c"><span class="pl-c">//</span> 内核重复执行次数</span>
 
 <span class="pl-c"><span class="pl-c">//</span> 检查错误并打印GB/s</span>
 <span class="pl-k">void</span> <span class="pl-en">postprocess</span>(<span class="pl-k">const</span> <span class="pl-k">double</span> *ref, <span class="pl-k">const</span> <span class="pl-k">double</span> *res, <span class="pl-k">int</span> n, <span class="pl-k">double</span> ms)
@@ -730,18 +730,18 @@ cudaError_t <span class="pl-en">checkCuda</span>(cudaError_t result)
       <span class="pl-k">break</span>;
     }
   <span class="pl-k">if</span> (passed)
-    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%20.2f<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-c1">2</span> * n * <span class="pl-k">sizeof</span>(<span class="pl-k">double</span>) * <span class="pl-c1">1e-6</span> * NUM_REPS / ms );
+    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%20.2f<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-c1">2</span> * n * <span class="pl-k">sizeof</span>(<span class="pl-k">double</span>) * <span class="pl-c1">1e-6</span> * <span class="pl-c1">NUM_REPS</span> / ms );
 }
 
 <span class="pl-c"><span class="pl-c">//</span> 简单复制内核</span>
 <span class="pl-c"><span class="pl-c">//</span> 作为基准案例，表示最佳有效带宽。</span>
 __global__ <span class="pl-k">void</span> <span class="pl-en">copy</span>(<span class="pl-k">double</span> *odata, <span class="pl-k">const</span> <span class="pl-k">double</span> *idata)
 {
-  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
-  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
-  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j+= BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j+= <span class="pl-c1">BLOCK_ROWS</span>)
     odata[(y+j)*width + x] = idata[(y+j)*width + x];
 }
 
@@ -749,19 +749,19 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">copy</span>(<span 
 <span class="pl-c"><span class="pl-c">//</span> 也是基准案例，展示了使用共享内存的效果。</span>
 __global__ <span class="pl-k">void</span> <span class="pl-en">copySharedMem</span>(<span class="pl-k">double</span> *odata, <span class="pl-k">const</span> <span class="pl-k">double</span> *idata)
 {
-  __shared__ <span class="pl-k">double</span> tile[TILE_DIM * TILE_DIM];
+  __shared__ <span class="pl-k">double</span> tile[<span class="pl-c1">TILE_DIM</span> * <span class="pl-c1">TILE_DIM</span>];
   
-  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
-  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
-  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
-     tile[(threadIdx.<span class="pl-smi">y</span>+j)*TILE_DIM + threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
+     tile[(threadIdx.<span class="pl-smi">y</span>+j)*<span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
 
   <span class="pl-c1">__syncthreads</span>();
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
-     odata[(y+j)*width + x] = tile[(threadIdx.<span class="pl-smi">y</span>+j)*TILE_DIM + threadIdx.<span class="pl-smi">x</span>];          
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
+     odata[(y+j)*width + x] = tile[(threadIdx.<span class="pl-smi">y</span>+j)*<span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>];          
 }
 
 <span class="pl-c"><span class="pl-c">//</span> 简单转置内核</span>
@@ -769,11 +769,11 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">copySharedMem</spa
 <span class="pl-c"><span class="pl-c">//</span> 全局内存读取是合并的，但写入不是。</span>
 __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNaive</span>(<span class="pl-k">double</span> *odata, <span class="pl-k">const</span> <span class="pl-k">double</span> *idata)
 {
-  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
-  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
-  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j+= BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j+= <span class="pl-c1">BLOCK_ROWS</span>)
     odata[x*width + (y+j)] = idata[(y+j)*width + x];
 }
 
@@ -782,21 +782,21 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNaive</sp
 <span class="pl-c"><span class="pl-c">//</span> tile宽度==ban k数量会导致共享内存bank冲突。</span>
 __global__ <span class="pl-k">void</span> <span class="pl-en">transposeCoalesced</span>(<span class="pl-k">double</span> *odata, <span class="pl-k">const</span> <span class="pl-k">double</span> *idata)
 {
-  __shared__ <span class="pl-k">double</span> tile[TILE_DIM][TILE_DIM];
+  __shared__ <span class="pl-k">double</span> tile[<span class="pl-c1">TILE_DIM</span>][<span class="pl-c1">TILE_DIM</span>];
     
-  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
-  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
-  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
      tile[threadIdx.<span class="pl-smi">y</span>+j][threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
 
   <span class="pl-c1">__syncthreads</span>();
 
-  x = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
-  y = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  x = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
+  y = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
      odata[(y+j)*width + x] = tile[threadIdx.<span class="pl-smi">x</span>][threadIdx.<span class="pl-smi">y</span> + j];
 }
 
@@ -805,22 +805,22 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeCoalesced
 <span class="pl-c"><span class="pl-c">//</span> 以避免共享内存bank冲突。</span>
 __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankConflicts</span>(<span class="pl-k">double</span> *odata, <span class="pl-k">const</span> <span class="pl-k">double</span> *idata)
 {
-  __shared__ <span class="pl-k">double</span> tile[TILE_DIM][TILE_DIM+<span class="pl-c1">1</span>];
+  __shared__ <span class="pl-k">double</span> tile[<span class="pl-c1">TILE_DIM</span>][<span class="pl-c1">TILE_DIM</span>+<span class="pl-c1">1</span>];
     
-  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;
-  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
-  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * TILE_DIM;
+  <span class="pl-k">int</span> x = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;
+  <span class="pl-k">int</span> y = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
+  <span class="pl-k">int</span> width = gridDim.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span>;
 
   <span class="pl-c"><span class="pl-c">//</span> 卷帘方式存取</span>
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
      tile[threadIdx.<span class="pl-smi">y</span>+j][threadIdx.<span class="pl-smi">x</span>] = idata[(y+j)*width + x];
 
   <span class="pl-c1">__syncthreads</span>();
 
-  x = blockIdx.<span class="pl-smi">y</span> * TILE_DIM + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
-  y = blockIdx.<span class="pl-smi">x</span> * TILE_DIM + threadIdx.<span class="pl-smi">y</span>;
+  x = blockIdx.<span class="pl-smi">y</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">x</span>;  <span class="pl-c"><span class="pl-c">//</span> 转置块偏移</span>
+  y = blockIdx.<span class="pl-smi">x</span> * <span class="pl-c1">TILE_DIM</span> + threadIdx.<span class="pl-smi">y</span>;
 
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; TILE_DIM; j += BLOCK_ROWS)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> j = <span class="pl-c1">0</span>; j &lt; <span class="pl-c1">TILE_DIM</span>; j += <span class="pl-c1">BLOCK_ROWS</span>)
      odata[(y+j)*width + x] = tile[threadIdx.<span class="pl-smi">x</span>][threadIdx.<span class="pl-smi">y</span> + j];
 }
 
@@ -830,8 +830,8 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-k">const</span> <span class="pl-k">int</span> ny = <span class="pl-c1">2048</span>;  <span class="pl-c"><span class="pl-c">//</span> 矩阵的y维度</span>
   <span class="pl-k">const</span> <span class="pl-k">int</span> mem_size = nx*ny*<span class="pl-k">sizeof</span>(<span class="pl-k">double</span>);  <span class="pl-c"><span class="pl-c">//</span> 矩阵所需的内存大小</span>
 
-  dim3 <span class="pl-smi">dimGrid</span>(nx/TILE_DIM, ny/TILE_DIM, <span class="pl-c1">1</span>);  <span class="pl-c"><span class="pl-c">//</span> 网格维度</span>
-  dim3 <span class="pl-smi">dimBlock</span>(TILE_DIM, BLOCK_ROWS, <span class="pl-c1">1</span>);  <span class="pl-c"><span class="pl-c">//</span> 块维度</span>
+  dim3 <span class="pl-smi">dimGrid</span>(nx/<span class="pl-c1">TILE_DIM</span>, ny/<span class="pl-c1">TILE_DIM</span>, <span class="pl-c1">1</span>);  <span class="pl-c"><span class="pl-c">//</span> 网格维度</span>
+  dim3 <span class="pl-smi">dimBlock</span>(<span class="pl-c1">TILE_DIM</span>, <span class="pl-c1">BLOCK_ROWS</span>, <span class="pl-c1">1</span>);  <span class="pl-c"><span class="pl-c">//</span> 块维度</span>
 
   <span class="pl-k">int</span> devId = <span class="pl-c1">0</span>;
   <span class="pl-k">if</span> (argc &gt; <span class="pl-c1">1</span>) devId = <span class="pl-c1">atoi</span>(argv[<span class="pl-c1">1</span>]);
@@ -840,7 +840,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaGetDeviceProperties</span>(&amp;prop, devId));
   <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\n</span>Device : %s<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, prop.<span class="pl-smi">name</span>);
   <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>Matrix size: %d %d, Block size: %d %d, Tile size: %d %d<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, 
-         nx, ny, TILE_DIM, BLOCK_ROWS, TILE_DIM, TILE_DIM);
+         nx, ny, <span class="pl-c1">TILE_DIM</span>, <span class="pl-c1">BLOCK_ROWS</span>, <span class="pl-c1">TILE_DIM</span>, <span class="pl-c1">TILE_DIM</span>);
   <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>dimGrid: %d %d %d. dimBlock: %d %d %d<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>,
          dimGrid.<span class="pl-smi">x</span>, dimGrid.<span class="pl-smi">y</span>, dimGrid.<span class="pl-smi">z</span>, dimBlock.<span class="pl-smi">x</span>, dimBlock.<span class="pl-smi">y</span>, dimBlock.<span class="pl-smi">z</span>);
   
@@ -857,12 +857,12 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaMalloc</span>(&amp;d_tdata, mem_size) );  <span class="pl-c"><span class="pl-c">//</span> 设备转置数据</span>
 
   <span class="pl-c"><span class="pl-c">//</span> 检查参数并计算执行配置</span>
-  <span class="pl-k">if</span> (nx % TILE_DIM || ny % TILE_DIM) {
+  <span class="pl-k">if</span> (nx % <span class="pl-c1">TILE_DIM</span> || ny % <span class="pl-c1">TILE_DIM</span>) {
     <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>nx 和 ny 必须是 TILE_DIM 的倍数<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
     <span class="pl-k">goto</span> error_exit;
   }
 
-  <span class="pl-k">if</span> (TILE_DIM % BLOCK_ROWS) {
+  <span class="pl-k">if</span> (<span class="pl-c1">TILE_DIM</span> % <span class="pl-c1">BLOCK_ROWS</span>) {
     <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>TILE_DIM 必须是 BLOCK_ROWS 的倍数<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
     <span class="pl-k">goto</span> error_exit;
   }
@@ -899,7 +899,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c"><span class="pl-c">//</span> 预热</span>
   copy&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">NUM_REPS</span>; i++)
      copy&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
@@ -915,7 +915,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c"><span class="pl-c">//</span> 预热</span>
   copySharedMem&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">NUM_REPS</span>; i++)
      copySharedMem&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_cdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
@@ -931,7 +931,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c"><span class="pl-c">//</span> 预热</span>
   transposeNaive&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">NUM_REPS</span>; i++)
      transposeNaive&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
@@ -947,7 +947,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c"><span class="pl-c">//</span> 预热</span>
   transposeCoalesced&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">NUM_REPS</span>; i++)
      transposeCoalesced&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );
@@ -963,7 +963,7 @@ __global__ <span class="pl-k">void</span> <span class="pl-en">transposeNoBankCon
   <span class="pl-c"><span class="pl-c">//</span> 预热</span>
   transposeNoBankConflicts&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(startEvent, <span class="pl-c1">0</span>) );
-  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; NUM_REPS; i++)
+  <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">NUM_REPS</span>; i++)
      transposeNoBankConflicts&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_tdata, d_idata);
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventRecord</span>(stopEvent, <span class="pl-c1">0</span>) );
   <span class="pl-c1">checkCuda</span>( <span class="pl-c1">cudaEventSynchronize</span>(stopEvent) );

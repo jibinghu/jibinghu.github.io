@@ -178,8 +178,8 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
     <div id="content">
 <div class="markdown-body" id="postBody"><p>btw -&gt; 看不到 nvcc时的解决办法：</p>
-<div class="highlight highlight-source-cuda-c++"><pre class="notranslate"><span class="pl-k">export</span> PATH=/usr/local/cuda-<span class="pl-c1">13.0</span>/bin:$PATH
-<span class="pl-k">export</span> LD_LIBRARY_PATH=/usr/local/cuda-<span class="pl-c1">13.0</span>/lib64:$LD_LIBRARY_PATH</pre></div>
+<div class="highlight highlight-source-cuda-c++"><pre class="notranslate"><span class="pl-k">export</span> <span class="pl-c1">PATH</span>=/usr/local/cuda-<span class="pl-c1">13.0</span>/bin:$<span class="pl-c1">PATH</span>
+<span class="pl-k">export</span> <span class="pl-c1">LD_LIBRARY_PATH</span>=/usr/local/cuda-<span class="pl-c1">13.0</span>/lib64:$<span class="pl-c1">LD_LIBRARY_PATH</span></pre></div>
 <p>类型：</p>
 <div class="highlight highlight-source-c++"><pre class="notranslate">#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>iostream<span class="pl-pds">&gt;</span></span>
 #<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cuda_runtime.h<span class="pl-pds">&gt;</span></span>

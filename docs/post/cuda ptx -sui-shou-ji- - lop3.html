@@ -169,8 +169,8 @@ $$</p>
   <span class="pl-c"><span class="pl-c">//</span> 这里 immuLut 是 lop3 的操作符</span>
   <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> immLut = (<span class="pl-c1">0xf0</span> &amp; <span class="pl-c1">0xcc</span>) | <span class="pl-c1">0xaa</span>;
   <span class="pl-c"><span class="pl-c">//</span> 0~7个int4</span>
-  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> BOTTOM_MASK = <span class="pl-c1">0x000f000f</span>;
-  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> TOP_MASK = <span class="pl-c1">0x00f000f0</span>;
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> <span class="pl-c1">BOTTOM_MASK</span> = <span class="pl-c1">0x000f000f</span>;
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> <span class="pl-c1">TOP_MASK</span> = <span class="pl-c1">0x00f000f0</span>;
   <span class="pl-c"><span class="pl-c">//</span> 0x6400 == 0b0110 0100 0000 0000 ### 1 5=25 8</span>
   <span class="pl-c"><span class="pl-c">//</span> 这里 6400 的作用就是把 int4或者说int8转为 fp16，exp=25(-15)</span>
   <span class="pl-c"><span class="pl-c">//</span> 最后还要减一个 6480，也就是减一个(1024+128)=1152，其中1024是科学计数法的1.0中的1，128是int转uint时多加的。</span>
@@ -189,22 +189,22 @@ $$</p>
   <span class="pl-c"><span class="pl-c">//</span> Extract elt_01 - (i4s &amp; 0x000f000f) | 0x64006400</span>
   <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>lop3.b32 %0, %1, %2, %3, %4;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
                : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">0</span>])
-               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(BOTTOM_MASK), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(<span class="pl-c1">BOTTOM_MASK</span>), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
                  <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(immLut));
   <span class="pl-c"><span class="pl-c">//</span> Extract elt_23 (i4s &amp; 0x00f000f0) | 0x64006400</span>
   <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>lop3.b32 %0, %1, %2, %3, %4;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
                : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">1</span>])
-               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(TOP_MASK), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(<span class="pl-c1">TOP_MASK</span>), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
                  <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(immLut));
   <span class="pl-c"><span class="pl-c">//</span> Extract elt_45 (top_i4s &amp; 0x000f000f) | 0x64006400</span>
   <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>lop3.b32 %0, %1, %2, %3, %4;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
                : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">2</span>])
-               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(top_i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(BOTTOM_MASK), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(top_i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(<span class="pl-c1">BOTTOM_MASK</span>), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
                  <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(immLut));
   <span class="pl-c"><span class="pl-c">//</span> Extract elt_67 (top_i4s &amp; 0x00f000f0) | 0x64006400</span>
   <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>lop3.b32 %0, %1, %2, %3, %4;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
                : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">3</span>])
-               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(top_i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(TOP_MASK), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(top_i4s), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(<span class="pl-c1">TOP_MASK</span>), <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(I4s_TO_F16s_MAGIC_NUM),
                  <span class="pl-s"><span class="pl-pds">"</span>n<span class="pl-pds">"</span></span>(immLut));
 
   <span class="pl-c"><span class="pl-c">//</span> I use inline PTX below because I am not sure if the compiler will emit</span>
@@ -216,15 +216,15 @@ $$</p>
   <span class="pl-c"><span class="pl-c">//</span> Haotian: subtract {1024, 1024} instead, we do not need to map to [-8, 7]</span>
   <span class="pl-c"><span class="pl-c">//</span> 定义用于最终转换的魔数常量</span>
   <span class="pl-c"><span class="pl-c">//</span> 表示fp16格式的{1024, 1024}</span>
-  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> FP16_TOP_MAGIC_NUM = <span class="pl-c1">0x64006400</span>;
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> <span class="pl-c1">FP16_TOP_MAGIC_NUM</span> = <span class="pl-c1">0x64006400</span>;
   <span class="pl-c"><span class="pl-c">//</span> This is the half2 {1 / 16, 1 / 16} represented as an integer.</span>
   <span class="pl-c"><span class="pl-c">//</span> 表示fp16格式的{1 / 16, 1 / 16}，用于缩放高4位的值</span>
-  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> ONE_SIXTEENTH = <span class="pl-c1">0x2c002c00</span>;
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> <span class="pl-c1">ONE_SIXTEENTH</span> = <span class="pl-c1">0x2c002c00</span>;
   <span class="pl-c"><span class="pl-c">//</span> This is the half2 {-72, -72} represented as an integer.</span>
   <span class="pl-c"><span class="pl-c">//</span> static constexpr uint32_t NEG_72 = 0xd480d480;</span>
   <span class="pl-c"><span class="pl-c">//</span> Haotian: Let's use {-64, -64}.</span>
   <span class="pl-c"><span class="pl-c">//</span> 表示fp16格式的{-64, -64}，用于偏移校正</span>
-  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> NEG_64 = <span class="pl-c1">0xd400d400</span>;
+  <span class="pl-k">static</span> <span class="pl-k">constexpr</span> <span class="pl-c1">uint32_t</span> <span class="pl-c1">NEG_64</span> = <span class="pl-c1">0xd400d400</span>;
 
   <span class="pl-c"><span class="pl-c">//</span> 交织？</span>
   <span class="pl-c"><span class="pl-c">//</span> e7 e3 e5 e1 e6 e2 e4 e0</span>
@@ -233,19 +233,19 @@ $$</p>
   <span class="pl-c"><span class="pl-c">//</span> Convert elt_01</span>
   <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>sub.f16x2 %0, %1, %2;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
                : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">0</span>])
-               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">0</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(FP16_TOP_MAGIC_NUM));
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">0</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(<span class="pl-c1">FP16_TOP_MAGIC_NUM</span>));
   <span class="pl-c"><span class="pl-c">//</span> Convert elt_23</span>
   <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>fma.rn.f16x2 %0, %1, %2, %3;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
                : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">1</span>])
-               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">1</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(ONE_SIXTEENTH), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(NEG_64));
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">1</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(<span class="pl-c1">ONE_SIXTEENTH</span>), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(<span class="pl-c1">NEG_64</span>));
   <span class="pl-c"><span class="pl-c">//</span> Convert elt_45</span>
   <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>sub.f16x2 %0, %1, %2;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
                : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">2</span>])
-               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">2</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(FP16_TOP_MAGIC_NUM));
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">2</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(<span class="pl-c1">FP16_TOP_MAGIC_NUM</span>));
   <span class="pl-c"><span class="pl-c">//</span> Convert elt_67</span>
   <span class="pl-k">asm</span> <span class="pl-smi">volatile</span>(<span class="pl-s"><span class="pl-pds">"</span>fma.rn.f16x2 %0, %1, %2, %3;<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>
                : <span class="pl-s"><span class="pl-pds">"</span>=r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">3</span>])
-               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">3</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(ONE_SIXTEENTH), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(NEG_64));
+               : <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(h[<span class="pl-c1">3</span>]), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(<span class="pl-c1">ONE_SIXTEENTH</span>), <span class="pl-s"><span class="pl-pds">"</span>r<span class="pl-pds">"</span></span>(<span class="pl-c1">NEG_64</span>));
 
   <span class="pl-k">return</span> result;
 #<span class="pl-k">endif</span>

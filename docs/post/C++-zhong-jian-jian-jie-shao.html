@@ -109,7 +109,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     grpc::Status <span class="pl-en">MyMethod</span>(grpc::ServerContext* context, <span class="pl-k">const</span> MyRequest* request, MyResponse* response) <span class="pl-k">override</span> {
         <span class="pl-c"><span class="pl-c">//</span> 实现服务逻辑</span>
         response-&gt;<span class="pl-c1">set_message</span>(<span class="pl-s"><span class="pl-pds">"</span>Hello, <span class="pl-pds">"</span></span> + request-&gt;<span class="pl-c1">name</span>());
-        <span class="pl-k">return</span> grpc::Status::OK;
+        <span class="pl-k">return</span> grpc::Status::<span class="pl-c1">OK</span>;
     }
 };
 
@@ -194,9 +194,9 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 
 <span class="pl-k">int</span> <span class="pl-en">main</span>() {
     boost::asio::io_service io_service;
-    AMQP::LibBoostAsioHandler <span class="pl-smi">handler</span>(io_service);
-    AMQP::TcpConnection <span class="pl-smi">connection</span>(&amp;handler, <span class="pl-c1">AMQP::Address</span>(<span class="pl-s"><span class="pl-pds">"</span>amqp://guest:guest@localhost/<span class="pl-pds">"</span></span>));
-    AMQP::TcpChannel <span class="pl-smi">channel</span>(&amp;connection);
+    <span class="pl-c1">AMQP</span>::LibBoostAsioHandler <span class="pl-smi">handler</span>(io_service);
+    <span class="pl-c1">AMQP</span>::TcpConnection <span class="pl-smi">connection</span>(&amp;handler, <span class="pl-c1">AMQP::Address</span>(<span class="pl-s"><span class="pl-pds">"</span>amqp://guest:guest@localhost/<span class="pl-pds">"</span></span>));
+    <span class="pl-c1">AMQP</span>::TcpChannel <span class="pl-smi">channel</span>(&amp;connection);
 
     channel.<span class="pl-c1">declareQueue</span>(<span class="pl-s"><span class="pl-pds">"</span>hello<span class="pl-pds">"</span></span>).<span class="pl-c1">onSuccess</span>([&amp;]() {
         channel.<span class="pl-c1">publish</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>hello<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Hello, RabbitMQ!<span class="pl-pds">"</span></span>);

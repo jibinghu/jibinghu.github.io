@@ -554,12 +554,12 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 #<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>cstdio<span class="pl-pds">&gt;</span></span>
 #<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">"</span>lock_free_queue.cuh<span class="pl-pds">"</span></span>
 
-<span class="pl-k">constexpr</span> <span class="pl-k">int</span> QUEUE_CAPACITY = <span class="pl-c1">1024</span>;  <span class="pl-c"><span class="pl-c">//</span> 必须是 2 的幂</span>
-<span class="pl-k">constexpr</span> <span class="pl-k">int</span> N_ITEMS        = <span class="pl-c1">1000</span>;  <span class="pl-c"><span class="pl-c">//</span> 需要传输的元素数量</span>
+<span class="pl-k">constexpr</span> <span class="pl-k">int</span> <span class="pl-c1">QUEUE_CAPACITY</span> = <span class="pl-c1">1024</span>;  <span class="pl-c"><span class="pl-c">//</span> 必须是 2 的幂</span>
+<span class="pl-k">constexpr</span> <span class="pl-k">int</span> <span class="pl-c1">N_ITEMS</span>        = <span class="pl-c1">1000</span>;  <span class="pl-c"><span class="pl-c">//</span> 需要传输的元素数量</span>
 
 <span class="pl-k">__global__</span> <span class="pl-k">void</span> <span class="pl-en">queue_kernel</span>(<span class="pl-k">int</span> *output) {
     <span class="pl-c"><span class="pl-c">//</span> 单个 block 里共享一个队列对象（放在共享内存里也行，这里简单放全局）</span>
-    <span class="pl-k">__shared__</span> LockFreeQueueSPSC&lt;<span class="pl-k">int</span>, QUEUE_CAPACITY&gt; queue;
+    <span class="pl-k">__shared__</span> LockFreeQueueSPSC&lt;<span class="pl-k">int</span>, <span class="pl-c1">QUEUE_CAPACITY</span>&gt; queue;
 
     <span class="pl-k">if</span> (<span class="pl-c1">threadIdx</span>.<span class="pl-smi">x</span> == <span class="pl-c1">0</span>) {
         <span class="pl-c"><span class="pl-c">//</span> 生产者初始化队列</span>
@@ -571,7 +571,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     <span class="pl-k">if</span> (<span class="pl-c1">threadIdx</span>.<span class="pl-smi">x</span> == <span class="pl-c1">0</span>) {
         <span class="pl-c"><span class="pl-c">//</span> 生产者</span>
         <span class="pl-k">int</span> produced = <span class="pl-c1">0</span>;
-        <span class="pl-k">while</span> (produced &lt; N_ITEMS) {
+        <span class="pl-k">while</span> (produced &lt; <span class="pl-c1">N_ITEMS</span>) {
             <span class="pl-k">if</span> (queue.<span class="pl-c1">push</span>(produced)) {
                 produced++;
             }
@@ -580,7 +580,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     } <span class="pl-k">else</span> <span class="pl-k">if</span> (<span class="pl-c1">threadIdx</span>.<span class="pl-smi">x</span> == <span class="pl-c1">1</span>) {
         <span class="pl-c"><span class="pl-c">//</span> 消费者</span>
         <span class="pl-k">int</span> consumed = <span class="pl-c1">0</span>;
-        <span class="pl-k">while</span> (consumed &lt; N_ITEMS) {
+        <span class="pl-k">while</span> (consumed &lt; <span class="pl-c1">N_ITEMS</span>) {
             <span class="pl-k">int</span> v;
             <span class="pl-k">if</span> (queue.<span class="pl-c1">pop</span>(v)) {
                 output[consumed] = v;
@@ -593,9 +593,9 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 
 <span class="pl-k">int</span> <span class="pl-en">main</span>() {
     <span class="pl-k">int</span> *d_out = <span class="pl-c1">nullptr</span>;
-    <span class="pl-k">int</span> *h_out = <span class="pl-k">new</span> <span class="pl-k">int</span>[N_ITEMS];
+    <span class="pl-k">int</span> *h_out = <span class="pl-k">new</span> <span class="pl-k">int</span>[<span class="pl-c1">N_ITEMS</span>];
 
-    <span class="pl-c1">cudaMalloc</span>(&amp;d_out, N_ITEMS * <span class="pl-k">sizeof</span>(<span class="pl-k">int</span>));
+    <span class="pl-c1">cudaMalloc</span>(&amp;d_out, <span class="pl-c1">N_ITEMS</span> * <span class="pl-k">sizeof</span>(<span class="pl-k">int</span>));
 
     <span class="pl-c"><span class="pl-c">//</span> 启动一个 block，至少两个线程：</span>
     <span class="pl-c"><span class="pl-c">//</span>   thread 0: producer</span>
@@ -603,11 +603,11 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     queue_kernel<span class="pl-k">&lt;&lt;&lt;<span class="pl-c1">1</span>, <span class="pl-c1">2</span>&gt;&gt;&gt;</span>(d_out);
     <span class="pl-c1">cudaDeviceSynchronize</span>();
 
-    <span class="pl-c1">cudaMemcpy</span>(h_out, d_out, N_ITEMS * <span class="pl-k">sizeof</span>(<span class="pl-k">int</span>), cudaMemcpyDeviceToHost);
+    <span class="pl-c1">cudaMemcpy</span>(h_out, d_out, <span class="pl-c1">N_ITEMS</span> * <span class="pl-k">sizeof</span>(<span class="pl-k">int</span>), cudaMemcpyDeviceToHost);
 
     <span class="pl-c"><span class="pl-c">//</span> 简单检查：应该是 0..N_ITEMS-1</span>
     <span class="pl-k">bool</span> ok = <span class="pl-c1">true</span>;
-    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; N_ITEMS; ++i) {
+    <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">N_ITEMS</span>; ++i) {
         <span class="pl-k">if</span> (h_out[i] != i) {
             <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>Mismatch at %d: got %d expected %d<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, i, h_out[i], i);
             ok = <span class="pl-c1">false</span>;
@@ -617,7 +617,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 
     <span class="pl-k">if</span> (ok) {
         <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>Queue works! First 10 values: <span class="pl-pds">"</span></span>);
-        <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">10</span> &amp;&amp; i &lt; N_ITEMS; ++i) {
+        <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; <span class="pl-c1">10</span> &amp;&amp; i &lt; <span class="pl-c1">N_ITEMS</span>; ++i) {
             <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>%d <span class="pl-pds">"</span></span>, h_out[i]);
         }
         <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);

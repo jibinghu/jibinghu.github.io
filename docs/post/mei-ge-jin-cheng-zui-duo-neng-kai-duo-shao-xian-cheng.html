@@ -187,7 +187,7 @@ cat /sys/fs/cgroup/pids.max <span class="pl-k">2&gt;</span>/dev/null <span class
 ulimit -s
 
 # 最小线程栈（pthread 的保底值）
-getconf PTHREAD_STACK_MIN
+getconf <span class="pl-c1">PTHREAD_STACK_MIN</span>
 
 # 可映射内存区域上限（map 数太多也会失败）
 cat /proc/sys/vm/max_map_count

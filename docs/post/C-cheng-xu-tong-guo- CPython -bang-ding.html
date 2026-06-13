@@ -113,7 +113,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 
 <span class="pl-c"><span class="pl-c">//</span> 定义模块方法表</span>
 <span class="pl-k">static</span> PyMethodDef MyModuleMethods[] = {
-    {<span class="pl-s"><span class="pl-pds">"</span>add<span class="pl-pds">"</span></span>, add, METH_VARARGS, <span class="pl-s"><span class="pl-pds">"</span>Add two integers<span class="pl-pds">"</span></span>},
+    {<span class="pl-s"><span class="pl-pds">"</span>add<span class="pl-pds">"</span></span>, add, <span class="pl-c1">METH_VARARGS</span>, <span class="pl-s"><span class="pl-pds">"</span>Add two integers<span class="pl-pds">"</span></span>},
     {<span class="pl-c1">nullptr</span>, <span class="pl-c1">nullptr</span>, <span class="pl-c1">0</span>, <span class="pl-c1">nullptr</span>} <span class="pl-c"><span class="pl-c">//</span> 结束符</span>
 };
 

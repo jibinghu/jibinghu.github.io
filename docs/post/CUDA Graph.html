@@ -146,7 +146,7 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     <span class="pl-k">for</span> (<span class="pl-k">int</span> i = <span class="pl-c1">0</span>; i &lt; N; ++i) {
         <span class="pl-k">if</span> (<span class="pl-c1">fabs</span>(h_A[i] + h_B[i] - h_C[i]) &gt; <span class="pl-c1">1e-5</span>) {
             std::cerr &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Result verification failed at element <span class="pl-pds">"</span></span> &lt;&lt; i &lt;&lt; std::endl;
-            <span class="pl-c1">exit</span>(EXIT_FAILURE);
+            <span class="pl-c1">exit</span>(<span class="pl-c1">EXIT_FAILURE</span>);
         }
     }
     std::cout &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>Test PASSED<span class="pl-pds">"</span></span> &lt;&lt; std::endl;

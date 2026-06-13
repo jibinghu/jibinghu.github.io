@@ -193,7 +193,7 @@ Permute bytes from register pair.</p>
 <span class="pl-k">struct</span> <span class="pl-en">FastInterleavedAndBiasedNumericArrayConverter</span>&lt;<span class="pl-c1">half_t</span>, <span class="pl-c1">uint8_t</span>, <span class="pl-c1">4</span>&gt; {
     <span class="pl-k">using</span> result_type = Array&lt;<span class="pl-c1">half_t</span>, <span class="pl-c1">4</span>&gt;;
     <span class="pl-k">using</span> source_type = Array&lt;<span class="pl-c1">uint8_t</span>, <span class="pl-c1">4</span>&gt;;
-    CUTLASS_DEVICE
+    <span class="pl-c1">CUTLASS_DEVICE</span>
     <span class="pl-k">static</span> result_type <span class="pl-en">convert</span>(source_type <span class="pl-k">const</span>&amp; source)
     {   
         result_type result; <span class="pl-c"><span class="pl-c">//</span> Array&lt;half_t, 4&gt;  32x2 bits</span>
@@ -247,7 +247,7 @@ Permute bytes from register pair.</p>
         <span class="pl-c"><span class="pl-c">//</span> arr[0] = e0_ori_f16, arr[1] = e1_ori_f16, arr[2] = e2_ori_f16, arr[3] = e3_ori_f16</span>
         <span class="pl-k">return</span> result;
     }
-    CUTLASS_DEVICE result_type <span class="pl-en">operator</span>()(source_type <span class="pl-k">const</span>&amp; s) { <span class="pl-k">return</span> <span class="pl-c1">convert</span>(s); }
+    <span class="pl-c1">CUTLASS_DEVICE</span> result_type <span class="pl-en">operator</span>()(source_type <span class="pl-k">const</span>&amp; s) { <span class="pl-k">return</span> <span class="pl-c1">convert</span>(s); }
 };</pre></div>
 <ul>
 <li>

@@ -136,23 +136,23 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
 </div>
     <div id="content">
 <div class="markdown-body" id="postBody"><p>对象生命周期（RAII）与智能指针所有权：</p>
-<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-en">TEST</span>(test_buffer, allocate) {
+<div class="highlight highlight-source-c++"><pre class="notranslate"><span class="pl-c1">TEST</span>(test_buffer, allocate) {
   <span class="pl-k">using</span> <span class="pl-k">namespace</span> <span class="pl-en">base</span><span class="pl-k">;</span>
   <span class="pl-k">auto</span> alloc = <span class="pl-c1">base::CPUDeviceAllocatorFactory::get_instance</span>();
   {
     Buffer <span class="pl-smi">buffer</span>(<span class="pl-c1">32</span>, alloc);
     <span class="pl-c1">ASSERT_NE</span>(buffer.<span class="pl-c1">ptr</span>(), <span class="pl-c1">nullptr</span>);
-    <span class="pl-c1">LOG</span>(INFO) &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>HERE1<span class="pl-pds">"</span></span>;
+    <span class="pl-c1">LOG</span>(<span class="pl-c1">INFO</span>) &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>HERE1<span class="pl-pds">"</span></span>;
   }
-  <span class="pl-c1">LOG</span>(INFO) &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>HERE2<span class="pl-pds">"</span></span>;
+  <span class="pl-c1">LOG</span>(<span class="pl-c1">INFO</span>) &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>HERE2<span class="pl-pds">"</span></span>;
 }
 
-<span class="pl-en">TEST</span>(test_buffer, allocate2) {
+<span class="pl-c1">TEST</span>(test_buffer, allocate2) {
   <span class="pl-k">using</span> <span class="pl-k">namespace</span> <span class="pl-en">base</span><span class="pl-k">;</span>
   <span class="pl-k">auto</span> alloc = <span class="pl-c1">base::CPUDeviceAllocatorFactory::get_instance</span>();
   std::shared_ptr&lt;Buffer&gt; buffer;
   { buffer = std::make_shared&lt;Buffer&gt;(<span class="pl-c1">32</span>, alloc); }
-  <span class="pl-c1">LOG</span>(INFO) &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>HERE<span class="pl-pds">"</span></span>;
+  <span class="pl-c1">LOG</span>(<span class="pl-c1">INFO</span>) &lt;&lt; <span class="pl-s"><span class="pl-pds">"</span>HERE<span class="pl-pds">"</span></span>;
   <span class="pl-c1">ASSERT_NE</span>(buffer-&gt;<span class="pl-c1">ptr</span>(), <span class="pl-c1">nullptr</span>);
 }</pre></div>
 <p>对于第一个测试：</p>

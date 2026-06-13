@@ -367,9 +367,9 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
         <span class="pl-k">return</span> -<span class="pl-c1">1</span>;
     }
 
-    <span class="pl-k">int</span> width  = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::CAP_PROP_FRAME_WIDTH));
-    <span class="pl-k">int</span> height = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::CAP_PROP_FRAME_HEIGHT));
-    <span class="pl-k">int</span> fps    = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::CAP_PROP_FPS));
+    <span class="pl-k">int</span> width  = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::<span class="pl-c1">CAP_PROP_FRAME_WIDTH</span>));
+    <span class="pl-k">int</span> height = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::<span class="pl-c1">CAP_PROP_FRAME_HEIGHT</span>));
+    <span class="pl-k">int</span> fps    = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::<span class="pl-c1">CAP_PROP_FPS</span>));
     <span class="pl-k">if</span> (fps == <span class="pl-c1">0</span>) fps = <span class="pl-c1">25</span>; <span class="pl-c"><span class="pl-c">//</span> 有些流无法正确获取fps，给个默认值</span>
 
     <span class="pl-c"><span class="pl-c">//</span> 准备 ffmpeg 命令</span>
@@ -381,9 +381,9 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
         output_url;
 
 #<span class="pl-k">ifdef</span> _WIN32
-    FILE* pipe = <span class="pl-c1">_popen</span>(ffmpeg_cmd.<span class="pl-c1">c_str</span>(), <span class="pl-s"><span class="pl-pds">"</span>wb<span class="pl-pds">"</span></span>);
+    <span class="pl-c1">FILE</span>* pipe = <span class="pl-c1">_popen</span>(ffmpeg_cmd.<span class="pl-c1">c_str</span>(), <span class="pl-s"><span class="pl-pds">"</span>wb<span class="pl-pds">"</span></span>);
 #<span class="pl-k">else</span>
-    FILE* pipe = <span class="pl-c1">popen</span>(ffmpeg_cmd.<span class="pl-c1">c_str</span>(), <span class="pl-s"><span class="pl-pds">"</span>w<span class="pl-pds">"</span></span>);
+    <span class="pl-c1">FILE</span>* pipe = <span class="pl-c1">popen</span>(ffmpeg_cmd.<span class="pl-c1">c_str</span>(), <span class="pl-s"><span class="pl-pds">"</span>w<span class="pl-pds">"</span></span>);
 #<span class="pl-k">endif</span>
 
     <span class="pl-k">if</span> (!pipe) {
@@ -429,11 +429,11 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
     }
 
     <span class="pl-c"><span class="pl-c">//</span> ⚡ 设置缓冲区大小为 1，避免延时累积</span>
-    cap.<span class="pl-c1">set</span>(cv::CAP_PROP_BUFFERSIZE, <span class="pl-c1">1</span>);
+    cap.<span class="pl-c1">set</span>(cv::<span class="pl-c1">CAP_PROP_BUFFERSIZE</span>, <span class="pl-c1">1</span>);
 
-    <span class="pl-k">int</span> width  = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::CAP_PROP_FRAME_WIDTH));
-    <span class="pl-k">int</span> height = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::CAP_PROP_FRAME_HEIGHT));
-    <span class="pl-k">int</span> fps    = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::CAP_PROP_FPS));
+    <span class="pl-k">int</span> width  = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::<span class="pl-c1">CAP_PROP_FRAME_WIDTH</span>));
+    <span class="pl-k">int</span> height = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::<span class="pl-c1">CAP_PROP_FRAME_HEIGHT</span>));
+    <span class="pl-k">int</span> fps    = <span class="pl-k">static_cast</span>&lt;<span class="pl-k">int</span>&gt;(cap.<span class="pl-c1">get</span>(cv::<span class="pl-c1">CAP_PROP_FPS</span>));
     <span class="pl-k">if</span> (fps == <span class="pl-c1">0</span>) fps = <span class="pl-c1">25</span>; <span class="pl-c"><span class="pl-c">//</span> 有些流获取不到fps，给默认值</span>
 
     <span class="pl-c"><span class="pl-c">//</span> 准备 ffmpeg 命令</span>
@@ -445,9 +445,9 @@ body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;
         output_url;
 
 #<span class="pl-k">ifdef</span> _WIN32
-    FILE* pipe = <span class="pl-c1">_popen</span>(ffmpeg_cmd.<span class="pl-c1">c_str</span>(), <span class="pl-s"><span class="pl-pds">"</span>wb<span class="pl-pds">"</span></span>);
+    <span class="pl-c1">FILE</span>* pipe = <span class="pl-c1">_popen</span>(ffmpeg_cmd.<span class="pl-c1">c_str</span>(), <span class="pl-s"><span class="pl-pds">"</span>wb<span class="pl-pds">"</span></span>);
 #<span class="pl-k">else</span>
-    FILE* pipe = <span class="pl-c1">popen</span>(ffmpeg_cmd.<span class="pl-c1">c_str</span>(), <span class="pl-s"><span class="pl-pds">"</span>w<span class="pl-pds">"</span></span>);
+    <span class="pl-c1">FILE</span>* pipe = <span class="pl-c1">popen</span>(ffmpeg_cmd.<span class="pl-c1">c_str</span>(), <span class="pl-s"><span class="pl-pds">"</span>w<span class="pl-pds">"</span></span>);
 #<span class="pl-k">endif</span>
 
     <span class="pl-k">if</span> (!pipe) {
